@@ -144,3 +144,4 @@ ohj2 325 läpi.
 | 2026-09-18 | ohj2 `dev` submoduleen, `main`in pages.yml | ohj2 `3f695b3`, `dc34b7e` |
 | 2026-09-18 | ohj1 `dev` + `main` submoduleen | ohj1 `ed8575d`, `e0aeb96` |
 | 2026-09-18 | juuren README:t: ohj1 Zensicalille (mdBook pois), jypelidocs ja ohj2 submodulen ohjeet | ohj1 `59c9b59`, `d65348b`; jypelidocs `00a7a68`; ohj2 `2887ff6` |
+| 2026-09-18 | mdBook pois ohj1:n kaikista haaroista (`book.toml`, `theme/`, `highlight/`, `mermaid/`, `start.sh`, VS Coden tehtävät → Zensical, devcontainerin portti 3000, Rust-pohjan .gitignore) ja jypelidocsista (.gitignore, kommentit) | ohj1 `a560b8c`, `3866ca7`, merge `6ac6f69`; jypelidocs `49bec2c` |

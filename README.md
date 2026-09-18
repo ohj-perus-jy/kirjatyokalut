@@ -8,6 +8,11 @@ työkaluketju: mdBook-murteella kirjoitettu `src/` muunnetaan
 git-submodulena, joten jokainen kirja ja haara kiinnittää oman versionsa, ja
 korjaus tehdään yhteen paikkaan.
 
+Merkkaus on mdBookin (`SUMMARY.md`, `{{#include}}`, `> [!VINKKI]`, `//-`-piilorivit
+ym.), koska kirjat kirjoitettiin alun perin mdBookille, mutta mdBookia itseään
+ei tarvita. ohj1:stä ja jypelidocsista se on poistettu kokonaan; ohj2:n `main`
+julkaistaan vielä mdBookilla ja `dev` Zensicalilla.
+
 - Miksi mikin ratkaisu on tehty: [PERUSTELUT.md](PERUSTELUT.md).
 - Mitä ominaisuuksia on ja mistä ne tulivat: [TAUSTA.md](TAUSTA.md).
 - Yhtenäistämisen tilanne ja avoimet asiat: [YHTENAISTYS.md](YHTENAISTYS.md).
