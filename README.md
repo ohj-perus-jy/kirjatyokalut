@@ -44,6 +44,7 @@ ylähakemisto) ja lukee materiaalin sen viereisestä `src/`:stä.
 | `puhe.py` | vaiheittaisen ohjeen äänet (Azure Speech) |
 | `run.sh`, `setup.sh` | ajo ja asennus kirjan hakemistosta käsin |
 | `tests/` | testit ja koekirja (`tests/book/`) |
+| `linkit/` | ulkoisten linkkien tarkistus (GitHub Action, lychee) |
 
 ## Kirjan asetukset: kirja.toml
 
@@ -195,6 +196,55 @@ ja käännös kirjan hakemistossa:
 `convert.py` tarvitsee vain standardikirjaston (Python 3.11+, `tomllib`).
 Kaaviot ovat kirjan versionhallinnassa (`cache/`), joten julkaisu ei tarvitse
 svgbobia eikä PlantUML-palvelinta; `--strict` kaataa ajon, jos jokin puuttuu.
+
+## Linkkitarkistus
+
+`linkit/` on GitHub Action, joka tarkistaa kirjan `src/`:n ulkoiset linkit
+lycheellä. Työnkulun pitää olla kirjan omassa `.github/workflows/`:ssa (GitHub
+ei aja submodulen työnkulkuja), mutta se vain kutsuu actionia, joten action
+päivittyy osoittimen mukana kuten muutkin työkalut:
+
+```yaml
+name: Check external links
+
+on:
+  push:
+    branches: ["main", "dev"]
+    paths: ["src/**", ".lycheeignore", ".github/workflows/links.yml", "zensical/tyokalut"]
+  pull_request:
+    paths: ["src/**", ".lycheeignore", ".github/workflows/links.yml", "zensical/tyokalut"]
+  # Linkit rikkoutuvat ilman committejakin. Ajetaan vain oletushaarassa.
+  schedule:
+    - cron: "0 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lychee:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: ./zensical/tyokalut/linkit
+```
+
+Yhteiset asetukset ovat `linkit/lychee.toml`:ssa:
+
+- Ajo kaatuu vain 404:stä ja 410:stä. 403 (esim. TIMin kirjautumista
+  vaativat sivut), 429 ja 5xx hyväksytään, koska ne eivät kerro linkin
+  kuolleen. Aikakatkaisu ja yhteysvirhe kaatavat ajon (3 uusintaa, 30 s).
+- Vain ulkoiset linkit (`^file://` ohitetaan). Paikalliset polut ovat
+  `{{#include}}`-liitosten takia suhteessa liittävään sivuun, mitä lychee ei
+  tiedä; `--root-dir src` tekee `/`-alkuisista poluista paikallisia, jotta
+  nekin ohitetaan eivätkä kaada ajoa.
+- `src/SUMMARY.md` ohitetaan: sen `[nimi<url>]()`-ulkolinkki näyttää
+  lycheelle tyhjältä URLilta.
+
+Kirjan omat ohitukset (regex, yksi per rivi) ovat kirjan juuren
+`.lycheeignore`ssa; lychee lisää ne yhteisten päälle.
 
 ## Testit
 

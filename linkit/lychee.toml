@@ -1,0 +1,13 @@
+# Kirjojen yhteiset lychee-asetukset, ks. action.yml ja README.
+no_progress = true
+max_retries = 3
+timeout = 30
+
+# Kaatuu vain 404:stä ja 410:stä.
+accept = ["100..=403", "405..=409", "411..=599"]
+
+# Vain ulkoiset linkit.
+exclude = ['^file://']
+
+# SUMMARY.md:n `[nimi<url>]()` näyttää lycheelle tyhjältä URLilta.
+exclude_path = ['src/SUMMARY\.md']

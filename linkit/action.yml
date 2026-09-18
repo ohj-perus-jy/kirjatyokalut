@@ -1,0 +1,12 @@
+name: Linkkitarkistus
+description: Tarkistaa kirjan src/-hakemiston ulkoiset linkit lycheellä.
+
+runs:
+  using: composite
+  steps:
+    - uses: lycheeverse/lychee-action@v2
+      with:
+        args: >-
+          --config '${{ github.action_path }}/lychee.toml'
+          --root-dir '${{ github.workspace }}/src'
+          'src/**/*.md'
