@@ -711,8 +711,8 @@ def test_svgbob_problems(art, svg, problem):
 
 @pytest.mark.parametrize("texts, size", [
     # Lainattu teksti oikealla ja alla: svgbob 0.7.6 mitoittaa vain laatikon.
-    ('<text x="74" y="12" >pitka teksti tassa</text>', (232, 64)),
-    ('<text x="18" y="76" >alla</text>', (58, 96)),
+    ('<text x="74" y="12" >pitka teksti tassa</text>', (224, 64)),
+    ('<text x="18" y="76" >alla</text>', (56, 96)),
     ('<text x="18" y="28" >a</text>', (56, 64)),
     ("", (56, 64)),
 ])

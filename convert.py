@@ -286,10 +286,10 @@ SVGBOB_TEXT_RE = re.compile(
 SVGBOB_QUOTED_RE = re.compile(r'"[^"]*"')
 SVGBOB_PAREN_RE = re.compile(r"\w[()]|[()]\w")
 
-# svgbob_fit_text: kuvan ja taustan koko sekä merkin todellinen leveys
-# (0,6 em 14 px:n kirjasimella; svgbob olettaa 8 px).
+# svgbob_fit_text: kuvan ja taustan koko sekä merkin leveys. diagrams.css
+# pakottaa tekstin svgbobin 8 px:n ruutuun (font-size: calc(8px / .6)).
 SVGBOB_SIZE_RE = re.compile(r'width="(?P<width>\d+)" height="(?P<height>\d+)"')
-SVGBOB_CHAR_WIDTH = 8.4
+SVGBOB_CHAR_WIDTH = 8
 
 # Tehtäväkortit: mdBookin omat elementit <task>, <task-title num="">, <points>,
 # <handout>, <task-link>. <task> ei ole Python-Markdownin BLOCK_LEVEL_ELEMENTS-
