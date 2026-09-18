@@ -103,14 +103,12 @@ ohj2 325 läpi.
 - Merkinnän otsikko "Kokeile käynnistää pelisi" on Jypeli-sanastoa; ohj2:ssa
   outo. Yleisempi oletus vai kirjan oma otsikko `kirja.toml`issa?
 - ohj2:n sivustovalikon lista päätetään, kun ohj2:n Zensical menee tuotantoon.
-- jypelidocs: `dev`-haaran työntö kääntyy mutta sen `deploy` kaatuu aina
-  (jo ennen siirtoa, 2026-09-16 alkaen): ilmeisesti `github-pages`-ympäristö
-  sallii julkaisun vain `main`ista. Joko ympäristön asetuksiin `dev` (kuten
-  ohj1:ssä) tai `dev` pois pages.yml:n laukaisijoista.
 - LICENSE puuttuu tästä reposta.
 
 ## Havainnot
 
+- jypelidocsin `dev`-työntöjen `deploy` kaatui 16.–18.9.2026 joka kerta
+  (käännös onnistui); 18.9. klo 13.51 ajosta `00a7a68` alkaen se menee läpi.
 - Ajonappi: palvelin ajaa Javan ilman `multifile`-kenttää (kokeiltu
   2026-09-18), joten ohj1:n playground.js kävi ohj2:een sellaisenaan.
 - Testit kääntävät koekirjan repon omalla mkdocs.yml:llä (`copy_book`), joten
@@ -145,3 +143,4 @@ ohj2 325 läpi.
 | 2026-09-18 | ohj1 `rakenne-2027` submoduleen | ohj1 `7f5d7ca` |
 | 2026-09-18 | ohj2 `dev` submoduleen, `main`in pages.yml | ohj2 `3f695b3`, `dc34b7e` |
 | 2026-09-18 | ohj1 `dev` + `main` submoduleen | ohj1 `ed8575d`, `e0aeb96` |
+| 2026-09-18 | juuren README:t: ohj1 Zensicalille (mdBook pois), jypelidocs ja ohj2 submodulen ohjeet | ohj1 `59c9b59`, `d65348b`; jypelidocs `00a7a68`; ohj2 `2887ff6` |
