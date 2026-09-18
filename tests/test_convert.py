@@ -7,6 +7,8 @@ import fcntl
 import json
 import os
 import re
+import shutil
+import subprocess
 import zlib
 from pathlib import Path
 
@@ -691,6 +693,57 @@ def test_convert_svgbob_keeps_the_fence_without_the_tool(monkeypatch):
     monkeypatch.setattr(convert, "svgbob_svg", lambda art: None)
     text = "```bob\n+---+\n```\n"
     assert convert.convert_svgbob(text) == (text, 0, set())
+
+
+@pytest.fixture
+def cargo(monkeypatch, tmp_path):
+    """svgbob_cli puuttuu, cargo on. Asennus kirjoittaa komennon CARGO_HOMEen
+    (tmp_path), joka ei ole PATHissa. -> ajetut komennot."""
+    calls = []
+
+    def run(command, **kwargs):
+        calls.append(command)
+        if command[1:2] == ["install"]:
+            (tmp_path / "bin").mkdir()
+            (tmp_path / "bin" / "svgbob_cli").touch(mode=0o755)
+        return subprocess.CompletedProcess(command, 0, stdout="<svg/>")
+
+    which = shutil.which
+    monkeypatch.setattr(convert.shutil, "which", lambda name, path=None:
+                        which(name, path=path) if path else
+                        "/usr/bin/cargo" if name == "cargo" else None)
+    monkeypatch.setattr(convert.subprocess, "run", run)
+    monkeypatch.setenv("CARGO_HOME", str(tmp_path))
+    monkeypatch.delenv("CARGO_INSTALL_ROOT", raising=False)
+    monkeypatch.setattr(convert, "SVGBOB_DIR", tmp_path / "cache")
+    monkeypatch.setattr(convert, "FAILED", set())
+    convert.install_svgbob.cache_clear()
+    yield calls
+    convert.install_svgbob.cache_clear()
+
+
+def test_svgbob_svg_installs_the_tool_for_a_new_drawing(cargo, tmp_path):
+    """Uusi kaavio ilman svgbob_cli:tä: asennetaan kiinnitetty versio kerran
+    ja piirretään asennetulla komennolla, vaikkei se ole PATHissa."""
+    assert convert.svgbob_svg("+--+") == "<svg/>"
+    assert convert.svgbob_svg("+----+") == "<svg/>"
+    command = str(tmp_path / "bin" / "svgbob_cli")
+    assert cargo == [["/usr/bin/cargo", "install", "--locked", "svgbob_cli@0.7.6"],
+                     [command, *convert.SVGBOB_OPTIONS],
+                     [command, *convert.SVGBOB_OPTIONS]]
+
+
+def test_svgbob_svg_does_not_install_in_strict_mode(cargo, monkeypatch):
+    """Julkaisussa kaavion kuuluu olla jo välimuistissa; puute on virhe."""
+    monkeypatch.setattr(convert, "STRICT", True)
+    assert convert.svgbob_svg("+--+") is None
+    assert cargo == [] and convert.FAILED == {"svgbob"}
+
+
+def test_svgbob_svg_warns_without_cargo(cargo, monkeypatch):
+    monkeypatch.setattr(convert.shutil, "which", lambda name, path=None: None)
+    assert convert.svgbob_svg("+--+") is None
+    assert cargo == [] and convert.FAILED == {"svgbob"}
 
 
 @pytest.mark.parametrize("art, svg, problem", [

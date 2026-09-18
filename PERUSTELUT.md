@@ -1668,7 +1668,7 @@ on jokaisen aiheen tietomalli.
 Sama piirtäjä on kuitenkin saatavana omana komentonaan:
 
 ```bash
-cargo install svgbob_cli     # svgbob 0.7.6, sama kuin mdbook-svgbobin sisällä
+cargo install svgbob_cli@0.7.6     # sama svgbob kuin mdbook-svgbobin sisällä
 ```
 
 Vaihtoehto olisi ollut ajaa `mdbook-svgbob`ia, joka on koneella jo kirjan takia
@@ -1684,6 +1684,13 @@ muuttunut tai uusi kaavio on lisätty, ja jos kumpaakaan ei saada, aita jätetä
 ennalleen ja ajo varoittaa — käännös ei kaadu koneella, jolla ei ole kumpaakaan.
 Käyttämättömät tiedostot siivotaan ajon lopuksi, jottei muokatun kaavion vanha
 versio jäisi hakemistoon.
+
+**Puuttuva svgbob asennetaan tarvittaessa.** Jos ascii-kaavio on uusi tai
+muuttunut eikä `svgbob_cli`:tä ole, `convert.py` ajaa `cargo install --locked
+svgbob_cli@0.7.6` (kerran prosessia kohden; käännös vie noin puoli minuuttia)
+ja piirtää kaavion asennetulla komennolla, vaikkei cargon hakemisto olisi
+PATHissa. Ilman cargoa jäädään varoitukseen. `--strict`-ajossa ei asenneta:
+julkaisussa kaavion kuuluu olla jo committoitu, ja puute on virhe.
 
 **Luokkakaavio on kuva, ascii-kaavio upotetaan.** Ero on värissä. PlantUMLin SVG
 tuo omat värinsä palvelimelta (vaaleanvihreät laatikot, musta teksti, valkoinen

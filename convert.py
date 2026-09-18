@@ -22,6 +22,7 @@ import contextlib
 import fcntl
 import filecmp
 import fnmatch
+import functools
 import hashlib
 import io
 import json
@@ -252,9 +253,10 @@ PLANTUML_ALPHABET = (
 # Kaikki kaaviot ovat luokkakaavioita, joten alt-teksti voi olla tarkka.
 PLANTUML_ALT = "UML-luokkakaavio"
 
-# ASCII-kaaviot: ```bob-aita piirretään svgbob_cli:llä (cargo install svgbob_cli,
-# sama svgbob kuin mdbook-svgbobissa). Riippuvuus on pehmeä: valmiit kaaviot
-# ovat versionhallinnassa (cache/svgbob/), ja ilman komentoa aita jää ennalleen.
+# ASCII-kaaviot: ```bob-aita piirretään svgbob_cli:llä (sama svgbob kuin
+# mdbook-svgbobissa). Riippuvuus on pehmeä: valmiit kaaviot ovat
+# versionhallinnassa (cache/svgbob/), ja ilman komentoa aita jää ennalleen.
+# Puuttuva komento asennetaan cargolla, kun sitä ensi kerran tarvitaan.
 # Julkaisussa --strict kaataa ajon, jottei kaavio katoa huomaamatta.
 # SVG upotetaan sivulle eikä viitata <img>:llä, koska sen värit tulevat sivun
 # CSS-muuttujista, joita <img>:n sisältö ei näe; siksi hakemisto on välimuisti
@@ -269,9 +271,9 @@ SVGBOB_DIR = BOOK / "cache" / "svgbob"
 SVGBOB_ID_RE = re.compile(r'\bid="(?P<name>[^"]+)"')
 SVGBOB_REF_RE = re.compile(r"url\(#(?P<name>[^)]+)\)")
 
+SVGBOB_VERSION = "0.7.6"
 # book.tomlin piirtoasetukset, värit ja kirjasin Zensicalin muuttujina.
-SVGBOB_COMMAND = [
-    "svgbob_cli",
+SVGBOB_OPTIONS = [
     "--font-size", "14",
     "--font-family", "var(--md-code-font-family)",
     "--fill-color", "var(--md-default-fg-color)",
@@ -384,6 +386,9 @@ LOCK = BOOK / ".convert.lock"
 # tyhjentää ajon aluksi. prune_diagrams ei saa siivota vajaan käytettyjen joukon
 # perusteella. Moduulitason joukko, koska testit nojaavat paluuarvojen muotoon.
 FAILED: set[str] = set()
+
+# --strict (julkaisu): puuttuvia piirtäjiä ei asenneta. main asettaa.
+STRICT = False
 
 
 def only_one_run():
@@ -1114,14 +1119,15 @@ def svgbob_svg(art: str) -> str | None:
     path = SVGBOB_DIR / (hashlib.sha1(art.encode("utf-8")).hexdigest() + ".svg")
     if path.is_file():
         return path.read_text(encoding="utf-8")
-    try:
-        result = subprocess.run(SVGBOB_COMMAND, input=art, capture_output=True,
-                                text=True, check=True)
-    except FileNotFoundError:
+    command = shutil.which("svgbob_cli") or install_svgbob()
+    if command is None:
         print("varoitus: svgbob_cli puuttuu, ascii-kaaviot jäävät koodilohkoiksi"
-              " (cargo install svgbob_cli)", file=sys.stderr)
+              f" (cargo install svgbob_cli@{SVGBOB_VERSION})", file=sys.stderr)
         FAILED.add("svgbob")
         return None
+    try:
+        result = subprocess.run([command, *SVGBOB_OPTIONS], input=art,
+                                capture_output=True, text=True, check=True)
     except subprocess.CalledProcessError as error:
         print(f"varoitus: svgbob epäonnistui: {error.stderr.strip()}",
               file=sys.stderr)
@@ -1130,6 +1136,27 @@ def svgbob_svg(art: str) -> str | None:
     SVGBOB_DIR.mkdir(parents=True, exist_ok=True)
     path.write_text(result.stdout, encoding="utf-8")
     return result.stdout
+
+
+@functools.cache
+def install_svgbob() -> str | None:
+    """Asenna svgbob_cli cargolla, kerran prosessia kohden. -> polku tai None.
+
+    Ei asenneta --strict-ajossa eikä ilman cargoa. Polku haetaan cargon
+    asennushakemistosta, jos se ei ole PATHissa.
+    """
+    cargo = shutil.which("cargo")
+    if STRICT or cargo is None:
+        return None
+    print("svgbob_cli puuttuu, asennetaan: cargo install"
+          f" svgbob_cli@{SVGBOB_VERSION} (kääntyy noin minuutissa)", file=sys.stderr)
+    if subprocess.run([cargo, "install", "--locked",
+                       f"svgbob_cli@{SVGBOB_VERSION}"]).returncode:
+        return None
+    root = Path(os.environ.get("CARGO_INSTALL_ROOT") or os.environ.get("CARGO_HOME")
+                or Path.home() / ".cargo")
+    return shutil.which("svgbob_cli") or shutil.which("svgbob_cli",
+                                                      path=str(root / "bin"))
 
 
 def svgbob_prefix_ids(svg: str, number: int) -> str:
@@ -2150,6 +2177,8 @@ def write_if_changed(path: Path, text: str) -> None:
 
 
 def main(strict: bool = False) -> int:
+    global STRICT
+    STRICT = strict
     if not (BOOK / CONFIG_NAME).is_file():
         print(f"{CONFIG_NAME} puuttuu: aja kirjan hakemistossa (esim. zensical/),"
               f" jossa se on; etsitty: {Path.cwd()}, {TOOL.parent}", file=sys.stderr)

@@ -196,6 +196,8 @@ ja käännös kirjan hakemistossa:
 `convert.py` tarvitsee vain standardikirjaston (Python 3.11+, `tomllib`).
 Kaaviot ovat kirjan versionhallinnassa (`cache/`), joten julkaisu ei tarvitse
 svgbobia eikä PlantUML-palvelinta; `--strict` kaataa ajon, jos jokin puuttuu.
+Paikallisesti `convert.py` asentaa puuttuvan `svgbob_cli`:n cargolla, kun uusi
+tai muuttunut bob-kaavio sitä tarvitsee.
 
 ## Linkkitarkistus
 
