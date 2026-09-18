@@ -285,6 +285,8 @@ SVGBOB_TEXT_RE = re.compile(
     r'<text x="(?P<x>\d+)" y="(?P<y>\d+)"\s*>(?P<text>[^<]*)</text>')
 SVGBOB_QUOTED_RE = re.compile(r'"[^"]*"')
 SVGBOB_PAREN_RE = re.compile(r"\w[()]|[()]\w")
+# Tarkoituksella piirretty soikio: sulun jälkeen väli, esim. ( 18 ) tai ( -148).
+SVGBOB_OVAL_RE = re.compile(r"\(\s[^()]*\)")
 
 # svgbob_fit_text: kuvan ja taustan koko sekä merkin leveys. diagrams.css
 # pakottaa tekstin svgbobin 8 px:n ruutuun (font-size: calc(8px / .6)).
@@ -1179,6 +1181,7 @@ def svgbob_problems(art: str, svg: str) -> list[str]:
             problems[f"teksti sotkeutuu: {line.strip()}"] = None
     for line in lines:
         bare = SVGBOB_QUOTED_RE.sub(lambda m: " " * len(m[0]), line)
+        bare = SVGBOB_OVAL_RE.sub(lambda m: " " * len(m[0]), bare)
         if SVGBOB_PAREN_RE.search(bare):
             problems[f"sulut piirtyvät kaarina: {line.strip()}"] = None
     return list(problems)

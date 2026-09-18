@@ -702,10 +702,12 @@ def test_convert_svgbob_keeps_the_fence_without_the_tool(monkeypatch):
      "sulut piirtyvät kaarina: Main()"),
     ('  "Main()"\n', '<text x="18" y="12" >Main()</text>', None),
     ("( )\n", "", None),
+    # Soikio, jonka sisällä on tekstiä: väli sulun jälkeen kertoo aikomuksen.
+    ("|---( -148)---( 18  )--->\n", "", None),
 ])
 def test_svgbob_problems(art, svg, problem):
     """Kumpaakaan vikaa ei näe ilman kuvaa, ja lainausmerkit korjaavat
-    molemmat; pelkkä piirrosmerkkinä käytetty sulku ei ole vika."""
+    molemmat; piirrosmerkkinä käytetty sulku (tyhjä tai soikio) ei ole vika."""
     assert convert.svgbob_problems(art, svg) == ([problem] if problem else [])
 
 
