@@ -1,10 +1,10 @@
 # Työkalujen yhtenäistäminen: tilanne
 
 Tavoite: `zensical/`-työkalut (convert.py, puhe.py, assets, overrides, testit)
-ovat yksi kopio repossa [kirjatyokalut](https://github.com/ohj-perus-jy/kirjatyokalut),
-ja kirjat (ohj1, ohj2, jypelidocs) käyttävät sitä git-submodulena. Tätä
-tiedostoa päivitetään jokaisen askeleen yhteydessä; se siirtyy lopuksi
-työkalurepoon.
+ovat yksi kopio tässä repossa, ja kirjat (ohj1, ohj2, jypelidocs) käyttävät
+sitä git-submodulena polussa `zensical/tyokalut/`. Tätä tiedostoa päivitetään
+jokaisen askeleen yhteydessä. (Aiempi kopio: ohj1 `rakenne-2027`,
+`zensical/YHTENAISTYS.md`.)
 
 Kopiot: **o1r** = ohj1 `rakenne-2027`, **o1d** = ohj1 `dev` = `main`
 (tuotanto), **o2** = ohj2 `dev`, **jy** = jypelidocs `main` (= `dev`).
@@ -41,28 +41,34 @@ Merkit: ✔ on, ✘ puuttuu, – ei koske.
 
 o1r ja o1d ovat työkaluiltaan tavulleen samat (ero vain tämä tiedosto).
 
-## Vaiheet 2–3 — tehdään kerran kirjatyokalut-repossa (päätös 2026-09-18)
+## Vaiheet 2–3 — työkalut irti kirjasta: VALMIS 2026-09-18
 
-Repo perustetaan puhtaalla aloituscommitilla o1r:n työkaluista (historia jää
-ohj1:een), ja vaiheet tehdään siellä omina committeinaan koekirjalla testaten.
+Tehty kerran tässä repossa (päätös 2026-09-18), puhdas aloituscommit o1r:n
+työkaluista, historia jäi ohj1:een.
 
-- [ ] aloituscommit: o1r:n `zensical/` ilman kirjan omia tiedostoja
-      (`cache/`, mkdocs.yml:n sivustorivit, ohj1:n dokumentit)
-- [ ] `kirja.toml` + lataus `tomllib`illa; vakioiden nimet säilyvät
-- [ ] puhe.py:n User-Agent asetuksista
-- [ ] polut kahtia: työkalut (skriptit, assets, icons, overrides) ja kirja
-      (kirja.toml, mkdocs.yml, cache/, docs/, nav.yml)
-- [ ] PlantUML-kuvat kirjan puolelle (`cache/plantuml/`), ei työkalujen `assets/`iin
-- [ ] mkdocs.yml:n yhteinen osa työkalujen pohjasta generoituun `nav.yml`iin
-- [ ] koekirjalle oma mkdocs.yml ja kirja.toml, jolloin test_sitemenu.py ja
-      test_convert.py ovat samat kaikille
-- [ ] test_book.py: kirjan omat poikkeukset (`KNOWN_BROKEN_IMAGES`) asetuksista
-- [ ] run.sh ja setup.sh toimimaan kirjan hakemistosta käsin
-- [ ] `SVGBOB_CHAR_WIDTH` 8,4 → 8 (CSS tekee merkistä tasan 8 px), README mukaan
-- [ ] `svgbob_problems`: ei varoitusta tarkoituksella piirretystä soikiosta `( -148)`
-- [ ] README: yhteinen osa työkaluihin; kirjan oma (tarkistuslistat,
-      KAYTTOONOTTO, PURKUSUUNNITELMA) jää kirjaan
-- [ ] oma CI: testit koekirjalla joka pushilla
+- [x] aloituscommit: o1r:n `zensical/` ilman kirjan omia tiedostoja (`b8a10ef`)
+- [x] `kirja.toml` + lataus `tomllib`illa; vakioiden nimet säilyvät (`4093bd4`)
+- [x] puhe.py:n User-Agent asetuksista (`nimi`)
+- [x] polut kahtia: työkalut (`TOOL`) ja kirja (`BOOK`); kirja löytyy
+      `kirja.toml`ista (ajohakemisto, muuten työkalujen ylähakemisto)
+- [x] PlantUML-kuvat kirjan `cache/plantuml/`:iin
+- [x] `mkdocs-pohja.yml` → generoitu `nav.yml`; kirjan mkdocs.yml:ään jäävät
+      `site_name`, `site_url`, `copyright`, `repo_url`, `extra.sites`
+- [x] koekirjalle oma `zensical/kirja.toml` ja `mkdocs.yml`; test_sitemenu.py
+      ja test_convert.py samat kaikille, test_book.py lukee kirjan poikkeukset
+      asetuksista (`[testit] rikkinaiset_kuvat`)
+- [x] run.sh ja setup.sh toimivat kirjan hakemistosta käsin
+- [x] `SVGBOB_CHAR_WIDTH` 8,4 → 8 (`4806372`)
+- [x] `svgbob_problems`: soikio `( -148)` ei varoita (`1303d5f`)
+- [x] README uusiksi, vanha talteen TAUSTA.md:ksi (`84804b9`)
+- [x] oma CI: testit koekirjalla joka pushilla (`b06361a`)
+
+Todennus: ohj1, ohj2 ja jypelidocs käännettynä vanhalla rakenteella ja
+uudella (työkalut `zensical/tyokalut/`:ssa, commit `4093bd4`) tuottivat
+tavulleen saman `docs/`:n ja `site/`:n (213, 580 ja 259 tiedostoa).
+Merkkileveyden korjauksen jälkeen ero on vain muutaman bob-kaavion leveys
+(esim. 133 → 128 px); selaimessa tarkistettu, että kaikkien 24 kaavion teksti
+mahtuu kuvaan.
 
 ## Vaihe 4 — kirjat submoduleen (`zensical/tyokalut/`)
 
@@ -70,8 +76,12 @@ ohj1:een), ja vaiheet tehdään siellä omina committeinaan koekirjalla testaten
 - [ ] ohj2 `dev`
 - [ ] ohj1 `rakenne-2027`
 - [ ] ohj1 `dev` + `main` (tuotanto)
-- [ ] joka kirjassa: pages.yml `submodules: true` ja uudet polut; devcontainer
-      ja run.sh päivittävät submodulen; vanhat kopiot pois
+- [ ] joka kirjassa: `kirja.toml`, karsittu mkdocs.yml, kääre `run.sh`,
+      pages.yml `submodules: true` ja uudet polut, vanhat kopiot pois;
+      kirjan README:hen jää vain kirjan oma osa (ohje: tämän repon README,
+      "Käyttöönotto uudessa kirjassa")
+- [ ] ohj2: `assets/plantuml/` → `cache/plantuml/`
+- [ ] kirjojen KAYTTOONOTTO.md:n kohta "korjaukset viedään käsin molempiin" vanhenee
 
 ## Avoimet kysymykset
 
