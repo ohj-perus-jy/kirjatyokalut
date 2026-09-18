@@ -56,7 +56,7 @@ def azure(document: str) -> bytes:
             "Ocp-Apim-Subscription-Key": key,
             "Content-Type": "application/ssml+xml",
             "X-Microsoft-OutputFormat": FORMAT,
-            "User-Agent": "ohj1-puhe",
+            "User-Agent": f"{convert.BOOK_NAME}-puhe",
         })
     with urllib.request.urlopen(request, timeout=120) as response:
         return response.read()

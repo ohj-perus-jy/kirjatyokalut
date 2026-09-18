@@ -1,0 +1,15 @@
+# Koekirjan sivustoasetukset kuten oikeassa kirjassa: yhteinen osa tulee
+# nav.yml:stä, jonka convert.py kirjoittaa (mkdocs-pohja.yml + navigaatio).
+INHERIT: nav.yml
+
+site_name: Ohjelmointi 1
+copyright: Koekirja
+repo_url: https://github.com/ohj-perus-jy/kirjatyokalut
+
+# tests/test_sitemenu.py: oma sivusto ja yksi ulos vievä.
+extra:
+  sites:
+    - name: Ohjelmointi 1
+      url: https://ohjelmointi1.it.jyu.fi/
+    - name: Jypeli-ohjeet
+      url: https://jypeli.it.jyu.fi/

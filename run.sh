@@ -1,20 +1,25 @@
 #!/usr/bin/env bash
-# Zensical-koeputken ajo:
+# Kirjan Zensical-sivuston ajo. Kirjan oma zensical/run.sh kutsuu tätä:
 #   ./run.sh              -> kopioi ../src -> docs/, vahdi muutoksia ja tarjoile
 #                            portissa 8001
 #   ./run.sh 8003         -> sama, eri portissa
 #   ./run.sh build        -> pelkkä rakennus site/-hakemistoon
 #   ./run.sh test         -> testit
 #   ./run.sh puhe SIVU    -> vaiheittaisen ohjeen äänet, esim.
-#                            ./run.sh puhe ../src/git-ht-ohje.md (puhe.py)
+#                            ./run.sh puhe ../src/sivu.md (puhe.py)
+# Kirjan hakemisto (kirja.toml, mkdocs.yml, .venv, docs/) on tämän hakemiston
+# ylähakemisto. Ilman kirjaa (työkalurepo yksinään) toimii vain test.
 set -euo pipefail
-cd "$(dirname "$0")"
+TOOL=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+BOOK=$(dirname "$TOOL")
+[[ -f $BOOK/kirja.toml ]] || BOOK=$TOOL
+cd "$BOOK"
 
-[[ -x .venv/bin/zensical ]] || ./setup.sh
+[[ -x .venv/bin/zensical ]] || "$TOOL/setup.sh"
 
 if [[ ${1:-} == puhe ]]; then
     shift
-    exec .venv/bin/python puhe.py "$@"
+    exec .venv/bin/python "$TOOL/puhe.py" "$@"
 fi
 
 # Testit kääntävät itse sen mitä tarvitsevat, joten convert.py:tä ei ajeta.
@@ -24,7 +29,7 @@ fi
 if [[ ${1:-} == test ]]; then
     shift
     if ! .venv/bin/python -c "import pytest, playwright" 2>/dev/null; then
-        .venv/bin/pip install --quiet -r requirements-dev.txt
+        .venv/bin/pip install --quiet -r "$TOOL/requirements-dev.txt"
     fi
     browser=$(.venv/bin/python -c 'from playwright.sync_api import sync_playwright
 with sync_playwright() as play:
@@ -35,10 +40,13 @@ print(path)' 2>/dev/null)
         echo "Asennetaan selaimen systeemikirjastot (vaatii sudon)..."
         sudo .venv/bin/playwright install-deps chromium
     fi
-    exec .venv/bin/python -m pytest "$@"
+    # Testit ajetaan työkalujen hakemistosta (pytest.ini, tests/); kirjan
+    # convert.py löytää ylähakemistosta.
+    cd "$TOOL"
+    exec "$BOOK/.venv/bin/python" -m pytest "$@"
 fi
 
-python3 convert.py
+python3 "$TOOL/convert.py"
 
 if [[ ${1:-} == build ]]; then
     exec .venv/bin/zensical build
@@ -46,7 +54,7 @@ fi
 
 # Vahti palvelimen rinnalle: `zensical serve` seuraa docs/:ia, ei ../src:iä
 # (convert.py: watch). Palvelinta ei exec:ata, jotta trap ehtii lopettaa vahdin.
-python3 convert.py --watch &
+python3 "$TOOL/convert.py" --watch &
 watcher=$!
 trap 'kill "$watcher" 2>/dev/null' EXIT INT TERM
 .venv/bin/zensical serve --dev-addr "0.0.0.0:${1:-8001}"

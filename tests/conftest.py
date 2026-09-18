@@ -16,8 +16,14 @@ from pathlib import Path
 
 import pytest
 
-ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT))
+TOOL = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(TOOL))
+
+import convert  # noqa: E402  (polku asetettu yllä)
+
+# Oikea kirja, jonka submodulena työkalut ovat (kirja.toml sen hakemistossa),
+# tai None, kun työkalurepoa testataan yksinään: silloin vain koekirja.
+BOOK = convert.BOOK if (convert.BOOK / convert.CONFIG_NAME).is_file() else None
 
 # zensical-komento on samassa hakemistossa kuin testejä ajava python (.venv/bin).
 ZENSICAL = Path(sys.executable).parent / "zensical"
@@ -29,20 +35,21 @@ def pytest_addoption(parser):
         help="älä käännä oikeaa kirjaa uudelleen, käytä olemassa olevaa site/:ä")
 
 
-def build(zensical_dir: Path) -> Path:
-    """convert.py + zensical build annetussa hakemistossa. -> site/."""
-    for command in ([sys.executable, "convert.py"], [str(ZENSICAL), "build"]):
-        result = subprocess.run(command, cwd=zensical_dir, capture_output=True,
+def build(book_dir: Path, tool: Path) -> Path:
+    """convert.py + zensical build kirjan hakemistossa. -> site/."""
+    for command in ([sys.executable, str(tool / "convert.py")], [str(ZENSICAL), "build"]):
+        result = subprocess.run(command, cwd=book_dir, capture_output=True,
                                 text=True)
         if result.returncode:
             raise AssertionError(
                 f"{' '.join(command)} epäonnistui:\n{result.stdout}\n{result.stderr}")
-    return zensical_dir / "site"
+    return book_dir / "site"
 
 
-# Kaikki, mistä käännetty sivusto riippuu: myös koeputken omat palaset
-# vanhentavat sivuston muuttuessaan.
-SOURCES = ("../src", "assets", "overrides", "convert.py", "mkdocs.yml")
+# Kaikki, mistä käännetty sivusto riippuu: myös työkalujen omat palaset
+# vanhentavat sivuston muuttuessaan. Polut kirjan ja työkalujen hakemistosta.
+BOOK_SOURCES = ("../src", "mkdocs.yml", "kirja.toml")
+TOOL_SOURCES = ("assets", "overrides", "icons", "convert.py", "mkdocs-pohja.yml")
 
 
 def is_stale(site: Path) -> bool:
@@ -52,8 +59,9 @@ def is_stale(site: Path) -> bool:
     if not index.is_file():
         return True
     built = index.stat().st_mtime
-    for name in SOURCES:
-        source = ROOT / name
+    sources = ([BOOK / name for name in BOOK_SOURCES]
+               + [TOOL / name for name in TOOL_SOURCES])
+    for source in sources:
         paths = source.rglob("*") if source.is_dir() else [source]
         if any(path.stat().st_mtime > built for path in paths if path.is_file()):
             return True
@@ -63,27 +71,37 @@ def is_stale(site: Path) -> bool:
 @pytest.fixture(scope="session")
 def real_site(request) -> Path:
     """Oikea kirja (../src) käännettynä. Käännetään vain jos site/ on jäljessä."""
-    site = ROOT / "site"
+    if BOOK is None:
+        pytest.skip("ei kirjaa: työkalut eivät ole kirjan submodulena")
+    site = BOOK / "site"
     if request.config.getoption("--nobuild"):
         if not (site / "index.html").is_file():
             pytest.skip("site/ puuttuu eikä --nobuild anna kääntää sitä")
         return site
-    return build(ROOT) if is_stale(site) else site
+    return build(BOOK, TOOL) if is_stale(site) else site
+
+
+# Työkalujen palat, jotka käännös tarvitsee.
+TOOL_FILES = ("convert.py", "mkdocs-pohja.yml")
+TOOL_DIRS = ("assets", "overrides", "icons")
 
 
 def copy_book(target: Path) -> Path:
-    """Koekirja + koeputken koneisto omaan hakemistoonsa. -> zensical-hakemisto.
+    """Koekirja + työkalut omaan hakemistoonsa. -> zensical-hakemisto.
 
-    Sama rakenne kuin repossa (src/ ja zensical/ sisaruksina), koska convert.py
-    etsii lähdepuun omasta sijainnistaan.
+    Sama rakenne kuin kirjan repossa: src/ ja zensical/ sisaruksina, työkalut
+    submodulen paikalla zensical/tyokalut/:ssa. Työkalut kopioidaan, koska
+    testit muuttavat niitäkin (test_change.py).
     """
-    shutil.copytree(ROOT / "tests" / "book" / "src", target / "src")
+    shutil.copytree(TOOL / "tests" / "book" / "src", target / "src")
     zensical = target / "zensical"
-    zensical.mkdir()
-    for name in ("convert.py", "mkdocs.yml"):
-        shutil.copy(ROOT / name, zensical / name)
-    for name in ("assets", "overrides"):
-        shutil.copytree(ROOT / name, zensical / name)
+    shutil.copytree(TOOL / "tests" / "book" / "zensical", zensical)
+    tool = zensical / "tyokalut"
+    tool.mkdir()
+    for name in TOOL_FILES:
+        shutil.copy(TOOL / name, tool / name)
+    for name in TOOL_DIRS:
+        shutil.copytree(TOOL / name, tool / name)
     return zensical
 
 
@@ -96,21 +114,21 @@ class Book:
     site: Path
 
     def rebuild(self) -> None:
-        self.site = build(self.zensical)
+        self.site = build(self.zensical, self.zensical / "tyokalut")
 
 
 @pytest.fixture(scope="session")
 def book(tmp_path_factory) -> Book:
     """Koekirja käännettynä kerran. Vain luettavaksi."""
     zensical = copy_book(tmp_path_factory.mktemp("book"))
-    return Book(zensical.parent / "src", zensical, build(zensical))
+    return Book(zensical.parent / "src", zensical, build(zensical, zensical / "tyokalut"))
 
 
 @pytest.fixture
 def mutable_book(tmp_path_factory) -> Book:
     """Oma koekirja testille, joka muuttaa materiaalia."""
     zensical = copy_book(tmp_path_factory.mktemp("book"))
-    return Book(zensical.parent / "src", zensical, build(zensical))
+    return Book(zensical.parent / "src", zensical, build(zensical, zensical / "tyokalut"))
 
 
 class QuietHandler(http.server.SimpleHTTPRequestHandler):

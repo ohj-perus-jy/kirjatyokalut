@@ -15,11 +15,23 @@ import pytest
 import convert
 
 
+@pytest.fixture(autouse=True)
+def page_config(monkeypatch):
+    """Kirjan asetukset (kirja.toml) kiinni arvoihin, joille testit on
+    kirjoitettu: testit ajetaan myös kirjan submodulena, jolloin convert.py on
+    lukenut sen kirjan asetukset."""
+    monkeypatch.setattr(convert, "NEST_UNDER",
+                        {"tenttiohjeet.md": "tentti.md", "git-ht-ohje.md": "git.md"})
+    monkeypatch.setattr(convert, "DROP_SECTIONS",
+                        {"index.md": "Navigointi tässä materiaalissa"})
+    monkeypatch.setattr(convert, "NOT_PAGES", ("exercises/*/starter/*.md",))
+
+
 @pytest.fixture
 def book_src(monkeypatch):
     """convert.SRC osoittamaan koekirjaan: build_nav lukee lähdepuun
     moduulivakiosta."""
-    src = convert.ROOT / "tests" / "book" / "src"
+    src = convert.TOOL / "tests" / "book" / "src"
     monkeypatch.setattr(convert, "SRC", src)
     return src
 
@@ -1517,10 +1529,12 @@ def test_changed_files_sees_edit_add_and_delete(watched):
         [str(page), str(src / "uusi.md"), str(assets / "tyyli.css")])
 
 
-def test_watch_label_names_one_file_and_counts_the_rest():
-    """Vahdin rivi on yksi rivi, koska se kulkee palvelimen lokin seassa."""
-    page = str(convert.SRC / "osa1" / "sivu.md")
-    style = str(convert.ASSETS / "css" / "tasks.css")
+def test_watch_label_names_one_file_and_counts_the_rest(monkeypatch, tmp_path):
+    """Vahdin rivi on yksi rivi, koska se kulkee palvelimen lokin seassa.
+    Polku näytetään kirjan repon juuresta."""
+    monkeypatch.setattr(convert, "BOOK", tmp_path / "zensical")
+    page = str(tmp_path / "src" / "osa1" / "sivu.md")
+    style = str(tmp_path / "zensical" / "tyokalut" / "assets" / "css" / "tasks.css")
     assert convert.watch_label([page]) == "src/osa1/sivu.md"
     assert convert.watch_label(sorted([page, style])) == "src/osa1/sivu.md (+1)"
 
@@ -1574,3 +1588,40 @@ def test_only_one_run_keeps_a_second_conversion_out(tmp_path, monkeypatch):
         with open(convert.LOCK, "w", encoding="utf-8") as second:
             with pytest.raises(BlockingIOError):
                 fcntl.flock(second, fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+
+# --- Työkalut ja kirja eri hakemistoissa (kirja.toml) ---------------------------
+
+def test_find_book_prefers_the_working_directory(tmp_path, monkeypatch):
+    """Kirja on siellä, missä kirja.toml on: ajohakemisto käy ensin, koska
+    run.sh, pages.yml ja testit ajavat kirjan hakemistosta."""
+    (tmp_path / convert.CONFIG_NAME).write_text('nimi = "koe"\n', encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+    assert convert.find_book() == tmp_path
+
+
+def test_find_book_falls_back_to_the_parent_of_the_tools(tmp_path, monkeypatch):
+    """Submodulena työkalut ovat kirjan hakemiston alla, joten muualta
+    ajettaessa kirja on työkalujen ylähakemisto."""
+    monkeypatch.chdir(tmp_path)
+    assert convert.find_book() == convert.TOOL.parent
+
+
+def test_main_refuses_to_run_without_the_book_config(tmp_path, monkeypatch, capsys):
+    """Ilman kirja.tomlia docs/ syntyisi väärään paikkaan."""
+    monkeypatch.setattr(convert, "BOOK", tmp_path)
+    assert convert.main() == 1
+    assert "kirja.toml puuttuu" in capsys.readouterr().err
+    assert not (tmp_path / "docs").exists()
+
+
+def test_build_base_points_the_theme_to_the_tools(tmp_path, monkeypatch):
+    """Zensical ratkaisee custom_dirin kirjan mkdocs.yml:n sijainnista, joten
+    pohjan paikkamerkki korvataan polulla kirjasta työkaluihin."""
+    monkeypatch.setattr(convert, "BOOK", convert.TOOL.parent)
+    base = convert.build_base()
+    assert f"  custom_dir: {convert.TOOL.name}/overrides\n" in base
+    assert "custom_dir: TYOKALUT" not in base
+    assert "extra_css:" in base and "extra_javascript:" in base
+    # nav: ja extra: tulevat perään (build_nav, build_extra), eivät pohjasta.
+    assert not re.search(r"^(nav|extra):", base, re.MULTILINE)

@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """Kääntää mdBookin lähdepuun (../src) Zensicalin docs/-hakemistoksi.
 
+Työkalut (tämä hakemisto: skriptit, assets, icons, overrides) ovat kirjoille
+yhteiset; kirjan omat tiedostot (kirja.toml, mkdocs.yml, cache/, docs/, nav.yml)
+ovat kirjan hakemistossa, ks. find_book.
+
 Ajo ilman argumentteja muuntaa kerran; `--watch` ajaa muunnoksen jokaisesta
 lähdepuun tai assettien muutoksesta (run.sh käynnistää sen palvelimen rinnalle).
 
@@ -28,6 +32,7 @@ import shutil
 import subprocess
 import sys
 import time
+import tomllib
 import unicodedata
 import traceback
 import urllib.error
@@ -36,40 +41,58 @@ import zlib
 from html import escape, unescape
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent
-SRC = ROOT.parent / "src"
-DOCS = ROOT / "docs"
-ASSETS = ROOT / "assets"
+TOOL = Path(__file__).resolve().parent
+CONFIG_NAME = "kirja.toml"
+
+
+def find_book() -> Path:
+    """Kirjan hakemisto: se, jossa kirja.toml on. Ajohakemisto (run.sh,
+    pages.yml, testit) tai työkalujen ylähakemisto (submodule tyokalut/).
+    Ilman asetustiedostoa ylähakemisto; main kieltäytyy silloin ajosta."""
+    for candidate in (Path.cwd(), TOOL.parent):
+        if (candidate / CONFIG_NAME).is_file():
+            return candidate
+    return TOOL.parent
+
+
+BOOK = find_book()
+SRC = BOOK.parent / "src"
+DOCS = BOOK / "docs"
+ASSETS = TOOL / "assets"
+
+# Kirjan asetukset. Vakioiden nimet ovat moduulitasolla, jotta testit voivat
+# kiinnittää ne (monkeypatch) kirjasta riippumatta.
+CONFIG = (tomllib.loads((BOOK / CONFIG_NAME).read_text(encoding="utf-8"))
+          if (BOOK / CONFIG_NAME).is_file() else {})
+
+# Kirjan lyhyt nimi verkkopyyntöjen User-Agentiin (PlantUML, puhe.py).
+BOOK_NAME = CONFIG.get("nimi", "kirja")
 
 # Kuvakkeiden glyfit (ks. ICON_MAP) kopioina Zensicalin templates/.icons/:sta,
 # koska run.sh ajaa skriptin systeemin python3:lla eikä .venv:stä. test_convert.py
 # vertaa kopiot teemaan.
-ICONS = ROOT / "icons"
+ICONS = TOOL / "icons"
 
 SUMMARY_LINK_RE = re.compile(
     r"^(?P<indent>\s*)(?P<bullet>[-*]\s*)?\[(?P<title>[^\]]*)\]\((?P<href>[^)]*)\)")
 
 # Etulinkkien sisäkkäisyys, jota mdBookin SUMMARY.md ei salli.
 # Avain = alasivun polku, arvo = sen sivun polku, jonka alle se siirretään.
-NEST_UNDER = {
-    "tenttiohjeet.md": "tentti.md",
-    "git-ht-ohje.md": "git.md",
-}
+# kirja.toml: [siirrot], esim. "tenttiohjeet.md" = "tentti.md".
+NEST_UNDER: dict[str, str] = dict(CONFIG.get("siirrot", {}))
 
 # Markdown-tiedostot, jotka eivät ole sivuja (fnmatch lähdepuun polusta).
 # mdBook kääntää vain SUMMARY.md:n luvut, Zensical jokaisen .md:n. ohj1:
 # tehtävän aloituspohja on opiskelijalle annettava tiedosto, jonka linkki
 # #lisaa_osoite on paikkamerkki ja siksi aina rikki. Ks. is_page.
-NOT_PAGES = (
-    "exercises/*/starter/*.md",
-)
+# kirja.toml: ei_sivuja = ["exercises/*/starter/*.md"].
+NOT_PAGES: tuple[str, ...] = tuple(CONFIG.get("ei_sivuja", ()))
 
 # Osiot, jotka kuvaavat mdBookin käyttöliittymää (laitanuolet) eivätkä pidä
 # Zensicalissa paikkaansa. Lähteeseen ei kosketa, joten poisto tehdään tässä.
 # Avain = sivun polku lähdepuussa, arvo = osion otsikko sellaisenaan.
-DROP_SECTIONS = {
-    "index.md": "Navigointi tässä materiaalissa",
-}
+# kirja.toml: [poistettavat_osiot], esim. "index.md" = "Navigointi tässä materiaalissa".
+DROP_SECTIONS: dict[str, str] = dict(CONFIG.get("poistettavat_osiot", {}))
 HEADING_RE = re.compile(r"(?P<level>#+)\s+(?P<title>.*?)\s*$")
 
 # Otsikko, jonka edessä on 1-3 välilyöntiä: CommonMark (mdBook) sallii sen,
@@ -214,14 +237,15 @@ DIV_RE = re.compile(r"<div(?![^>]*\bmarkdown=)(?P<attrs>[^>]*)>")
 
 # Luokkakaaviot: ```plantuml-aita lähetetään samalle PlantUML-palvelimelle kuin
 # kirjassa ja vastaus talletetaan tiedostoksi (nimi = lähteen sha1), aita
-# korvataan kuvaviittauksella. Tiedostot ovat versionhallinnassa
-# (assets/plantuml/), joten käännös tarvitsee verkkoa vain uudelle tai
-# muuttuneelle kaaviolle; jos palvelin ei vastaa, aita jää ennalleen ja ajo
-# varoittaa. Palvelin vaatii User-Agentin (muuten 403).
+# korvataan kuvaviittauksella. Tiedostot ovat kirjan versionhallinnassa
+# (cache/plantuml/, main kopioi ne docs/assets/plantuml/:iin), joten käännös
+# tarvitsee verkkoa vain uudelle tai muuttuneelle kaaviolle; jos palvelin ei
+# vastaa, aita jää ennalleen ja ajo varoittaa. Palvelin vaatii User-Agentin
+# (muuten 403).
 PLANTUML_FENCE_RE = re.compile(r"^(?P<indent>\s*)(?P<fence>```+|~~~+)plantuml\s*$")
 PLANTUML_URL = "https://www.plantuml.com/plantuml/svg/"
-PLANTUML_AGENT = "ohj1-zensical-koeputki"
-PLANTUML_DIR = ASSETS / "plantuml"
+PLANTUML_AGENT = f"{BOOK_NAME}-zensical"
+PLANTUML_DIR = BOOK / "cache" / "plantuml"
 PLANTUML_ALPHABET = (
     "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_")
 
@@ -237,7 +261,7 @@ PLANTUML_ALT = "UML-luokkakaavio"
 # eikä asset. Kääre on <div>, koska <svg> ei ole Python-Markdownin
 # BLOCK_LEVEL_ELEMENTS-listalla ja päätyisi kappaleen sisään.
 SVGBOB_FENCE_RE = re.compile(r"^(?P<indent>\s*)(?P<fence>```+|~~~+)bob\s*$")
-SVGBOB_DIR = ROOT / "cache" / "svgbob"
+SVGBOB_DIR = BOOK / "cache" / "svgbob"
 
 # svgbob kirjoittaa jokaiseen kaavioon samat id="arrow" ym. määrittelyt, joten
 # saman sivun kaaviot saavat juoksevan etuliitteen; print.js lisää tulostussivulla
@@ -352,7 +376,7 @@ ICON_MAP = {
 
 
 # Muunnoksen lukko, ks. only_one_run.
-LOCK = ROOT / ".convert.lock"
+LOCK = BOOK / ".convert.lock"
 
 # Piirtäjät, jotka epäonnistuivat tässä ajossa ("plantuml", "svgbob"); main
 # tyhjentää ajon aluksi. prune_diagrams ei saa siivota vajaan käytettyjen joukon
@@ -424,6 +448,19 @@ def prune_diagrams(folder: Path, used: set[str], complete: bool = True) -> int:
             path.unlink()
             removed += 1
     return removed
+
+
+def build_base() -> str:
+    """Kirjojen yhteiset asetukset (mkdocs-pohja.yml) nav.yml:n alkuun.
+
+    Kirjan mkdocs.yml perii nav.yml:n (INHERIT), joten sinne jäävät vain
+    kirjan omat rivit. Pohjan TYOKALUT on polku kirjan hakemistosta tähän
+    hakemistoon: Zensical ratkaisee custom_dirin mkdocs.yml:n sijainnista.
+    """
+    base = (TOOL / "mkdocs-pohja.yml").read_text(encoding="utf-8")
+    tool = Path(os.path.relpath(TOOL, BOOK)).as_posix()
+    return ("# Generoitu (convert.py): mkdocs-pohja.yml + navigaatio. Älä muokkaa.\n"
+            + base.replace("custom_dir: TYOKALUT/", f"custom_dir: {tool}/") + "\n")
 
 
 def build_extra(tab_labels: set[str]) -> str:
@@ -993,7 +1030,7 @@ def plantuml_encode(source: str) -> str:
 
 
 def plantuml_svg(source: str) -> str | None:
-    """Kaavion lähde -> tiedostonimi assets/plantuml/:ssä, tai None.
+    """Kaavion lähde -> tiedostonimi cache/plantuml/:ssä, tai None.
 
     Nimi on lähteen sha1, joten muuttunut kaavio hakee itsensä uudelleen ja
     muuttumaton luetaan levyltä. None tarkoittaa, ettei kaaviota saatu: silloin
@@ -2078,6 +2115,9 @@ def sync_docs() -> set[Path]:
                   file=sys.stderr)
     fresh |= {DOCS / "assets" / f.relative_to(ASSETS)
               for f in ASSETS.rglob("*") if f.is_file()}
+    if PLANTUML_DIR.is_dir():
+        fresh |= {DOCS / "assets" / "plantuml" / f.name
+                  for f in PLANTUML_DIR.iterdir() if f.is_file()}
     fresh.add(DOCS / PRINT_PAGE)
     return before - fresh
 
@@ -2107,6 +2147,10 @@ def write_if_changed(path: Path, text: str) -> None:
 
 
 def main(strict: bool = False) -> int:
+    if not (BOOK / CONFIG_NAME).is_file():
+        print(f"{CONFIG_NAME} puuttuu: aja kirjan hakemistossa (esim. zensical/),"
+              f" jossa se on; etsitty: {Path.cwd()}, {TOOL.parent}", file=sys.stderr)
+        return 1
     if not SRC.is_dir():
         print(f"lähdepuu puuttuu: {SRC}", file=sys.stderr)
         return 1
@@ -2184,8 +2228,13 @@ def main(strict: bool = False) -> int:
     for asset in ASSETS.rglob("*"):
         if asset.is_file():
             copy_if_changed(asset, DOCS / "assets" / asset.relative_to(ASSETS))
+    # Luokkakaaviot sivujen jälkeen: convert_plantuml haki juuri puuttuvat.
+    if PLANTUML_DIR.is_dir():
+        for diagram in PLANTUML_DIR.iterdir():
+            if diagram.is_file():
+                copy_if_changed(diagram, DOCS / "assets" / "plantuml" / diagram.name)
     nav = build_nav()
-    write_if_changed(ROOT / "nav.yml", nav + build_extra(tab_labels))
+    write_if_changed(BOOK / "nav.yml", build_base() + nav + build_extra(tab_labels))
     write_if_changed(DOCS / PRINT_PAGE, build_print_page(nav))
     prune_diagrams(PLANTUML_DIR, used_diagrams, "plantuml" not in FAILED)
     prune_diagrams(SVGBOB_DIR, used_drawings, "svgbob" not in FAILED)
@@ -2257,7 +2306,7 @@ def changed_files(before: dict[str, int], after: dict[str, int]) -> list[str]:
 def watch_label(changed: list[str]) -> str:
     """Muuttuneet tiedostot yhden rivin nimeksi: polku ja monelleko muulle."""
     try:
-        name = Path(changed[0]).relative_to(ROOT.parent).as_posix()
+        name = Path(changed[0]).relative_to(BOOK.parent).as_posix()
     except ValueError:
         name = changed[0]
     return name if len(changed) == 1 else f"{name} (+{len(changed) - 1})"
@@ -2308,9 +2357,9 @@ def watch() -> int:
             print(f"{time.strftime('%H:%M:%S')} {watch_label(changed)} -> "
                   + (f"muunnettu {elapsed} s" if status == 0
                      else "muunnos epäonnistui"), flush=True)
-            # Lähtötila vasta ajon jälkeen: muunnos kirjoittaa itse
-            # assets/plantuml/:iin, eikä se saa laukaista seuraavaa ajoa.
-            state = snapshot()
+            # Ajon aikana tehty tallennus näkyy seuraavalla kierroksella:
+            # muunnos ei itse kirjoita vahdittuihin puihin.
+            state = fresh
     except KeyboardInterrupt:
         return 0
 
