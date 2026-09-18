@@ -1,345 +1,210 @@
-# Zensical-koeputki
+# kirjatyokalut
 
-Kokeilu siitä, voisiko Ohj1-materiaalin siirtää mdBookista **Zensicaliin**
-(Material for MkDocsin tekijöiden uusi generaattori). Ei koske `../src`:ään
-eikä `../book.toml`:iin — `bash ../start.sh` toimii koko ajan entiseen tapaan.
+Ohjelmointikurssien kirjojen ([ohj1](https://github.com/ohj-perus-jy/ohj1),
+[ohj2](https://github.com/ohj-perus-jy/ohj2),
+[jypelidocs](https://github.com/ohj-perus-jy/jypelidocs)) yhteinen
+työkaluketju: mdBook-murteella kirjoitettu `src/` muunnetaan
+[Zensical](https://zensical.org)-sivustoksi. Kirja käyttää tätä repoa
+git-submodulena, joten jokainen kirja ja haara kiinnittää oman versionsa, ja
+korjaus tehdään yhteen paikkaan.
 
-**Tämä hakemisto on kopio ohj2:n `zensical/`-hakemistosta** (ohj2:n `dev`,
-commit `164510d`, 2026-09-11) ohj2:n KAYTTOONOTTO.md:n vaiheen 7 mukaisesti.
-Mikä ohj1:ssä on vielä tekemättä: [../TODO.md](../TODO.md). Mitä kopioon on
-muutettu ohj1:tä varten: kohta "Ohj1-kohtaiset muutokset" tämän tiedoston
-lopussa. Kolme muuta dokumenttia ovat ohj2:n
-sellaisenaan ja kuvaavat ohj2:n aineistoa ja työjärjestystä; ohj1:ssä ne
-ovat perusteluiden lähde, eivät tilanneraportti:
+- Miksi mikin ratkaisu on tehty: [PERUSTELUT.md](PERUSTELUT.md).
+- Mitä ominaisuuksia on ja mistä ne tulivat: [TAUSTA.md](TAUSTA.md).
+- Yhtenäistämisen tilanne ja avoimet asiat: [YHTENAISTYS.md](YHTENAISTYS.md).
 
-- [PERUSTELUT.md](PERUSTELUT.md): jokaisen ratkaisun perustelut, vaihtoehdot
-  ja todennus.
-- [PURKUSUUNNITELMA.md](PURKUSUUNNITELMA.md): mitä `convert.py`:stä poistuu,
-  jos koeputki voittaa ja mdBook puretaan.
-- [KAYTTOONOTTO.md](KAYTTOONOTTO.md): työjärjestys tuotantoon; vaihe 7 on
-  ohj1.
+## Rakenne
 
-Alla oleva teksti on ohj2:n README sellaisenaan lukuun ottamatta tätä
-johdantoa; luvut (esiintymät, testien määrä) ovat ohj2:n.
-
-## Käynnistys
-
-```bash
-./zensical/run.sh
+```
+kirja/                     kirjan repo
+  src/                     materiaali (mdBookin SUMMARY.md + sivut)
+  zensical/                kirjan hakemisto
+    kirja.toml             kirjan asetukset työkaluille
+    mkdocs.yml             kirjan omat sivustoasetukset (nimi, tekijät, repo)
+    run.sh                 kääre: tyokalut/run.sh
+    cache/svgbob/          kirjan bob-kaaviot (versionhallinnassa)
+    cache/plantuml/        kirjan luokkakaaviot (versionhallinnassa)
+    tyokalut/              TÄMÄ REPO submodulena
+    docs/ site/ nav.yml .venv/   generoitua, ei versionhallinnassa
 ```
 
-Ensimmäisellä kerralla se asentaa itse tarvitsemansa (`python3-venv`, `pip`,
-`zensical`) ja kysyy sudo-salasanaa apt:ta varten. Sen jälkeen sivusto on
-osoitteessa <http://localhost:8001>. Portti 8001 on välitetty
-devcontainerista; jos se ei aukea, avaa VS Coden **PORTS**-välilehti.
+Työkalut eivät tiedä, missä kirjassa ollaan: `convert.py` etsii kirjan
+hakemiston `kirja.toml`ista (ajohakemisto, muuten tämän hakemiston
+ylähakemisto) ja lukee materiaalin sen viereisestä `src/`:stä.
 
-```bash
-./zensical/run.sh 8003     # eri portti
-./zensical/run.sh build    # pelkkä rakennus site/-hakemistoon
+| Tiedosto | Mitä |
+| --- | --- |
+| `convert.py` | `../src` → `docs/` ja `nav.yml`; `--watch` vahtii, `--strict` kaatuu puuttuvaan kaavioon (julkaisu) |
+| `mkdocs-pohja.yml` | kirjojen yhteiset Zensical-asetukset: teema, tyylit, skriptit |
+| `assets/`, `overrides/`, `icons/` | tyylit ja skriptit, teeman mallit, kuvakkeiden glyfit |
+| `puhe.py` | vaiheittaisen ohjeen äänet (Azure Speech) |
+| `run.sh`, `setup.sh` | ajo ja asennus kirjan hakemistosta käsin |
+| `tests/` | testit ja koekirja (`tests/book/`) |
+
+## Kirjan asetukset: kirja.toml
+
+Kaikki avaimet ovat valinnaisia; tiedoston pitää silti olla olemassa, koska
+siitä kirjan hakemisto tunnistetaan.
+
+| Avain | Merkitys | convert.py |
+| --- | --- | --- |
+| `nimi` | kirjan lyhyt nimi verkkopyyntöjen User-Agentiin (PlantUML, puhe.py) | `BOOK_NAME` |
+| `ei_sivuja` | lista fnmatch-kuvioita `.md`-tiedostoille, joista ei tehdä sivua | `NOT_PAGES` |
+| `[siirrot]` | etulinkki toisen alle: `"tenttiohjeet.md" = "tentti.md"` | `NEST_UNDER` |
+| `[poistettavat_osiot]` | sivulta pois jätettävä osio: `"index.md" = "Osion otsikko"` | `DROP_SECTIONS` |
+| `[testit] rikkinaiset_kuvat` | kuvat, joiden tiedetään puuttuvan (test_book.py sallii ne) | – |
+
+Esimerkki (ohj1):
+
+```toml
+nimi = "ohj1"
+ei_sivuja = ["exercises/*/starter/*.md"]
+
+[siirrot]
+"tenttiohjeet.md" = "tentti.md"
+"git-ht-ohje.md" = "git.md"
+
+[poistettavat_osiot]
+"index.md" = "Navigointi tässä materiaalissa"
 ```
 
-**Muokattava puu on `../src`, ei `docs/`.** `docs/` on kertakäyttöinen kopio,
-jonka `convert.py` kirjoittaa yli; sinne tehty muutos katoaa seuraavassa
-ajossa.
+Asetukset luetaan käynnistyessä: muutoksen jälkeen `run.sh` käynnistetään
+uudelleen.
 
-`run.sh` käynnistää palvelimen rinnalle vahdin (`convert.py --watch`), joka
-ajaa muunnoksen aina kun `../src` tai `assets/` muuttuu. Tallennus siis
-riittää, eikä palvelinta tarvitse käynnistää uudelleen. Mitattuna selaimessa
-oikealla sivulla: **1,1-1,4 s** tallennuksesta, viisi tallennusta peräkkäin.
+## Kirjan mkdocs.yml
 
-| Vaihe                                            | Aika  |
-| ------------------------------------------------ | ----- |
-| vahti huomaa tallennuksen ja odottaa sen loppuun  | 0,6 s |
-| `convert.py`                                      | 0,3 s |
-| palvelimen käännös ja selaimen uudelleenlataus    | 0,4 s |
+Kirjan tiedostossa on vain kirjan omat rivit. Yhteiset asetukset
+(`mkdocs-pohja.yml`) ja navigaatio tulevat `nav.yml`:stä, jonka `convert.py`
+kirjoittaa joka ajolla; kirjan oma arvo voittaa pohjan.
 
-Vahti loppuu palvelimen mukana. Kertamuunnoksen voi yhä ajaa itse:
-`python3 convert.py`.
+```yaml
+INHERIT: nav.yml
 
-`convert.py` kirjoittaa vain sen, mikä oikeasti muuttui: yhden sivun muutos on
-yksi kirjoitus `docs/`:iin, ja muuttumaton ajo ei kirjoita mitään. Se ei ole
-nopeusoptimointi vaan ehto sille, että muutos näkyy selaimessa lainkaan —
-`zensical serve` ilmoittaa jokaisesta muuttuneesta tiedostosta selaimelle
-erikseen, ja koko puun uudelleenkirjoitus hukutti oikean ilmoituksen satojen
-turhien sekaan.
+site_name: Ohjelmointi 1
+site_url: https://ohjelmointi1.it.jyu.fi/     # jos sivustolla on oma osoite
+copyright: >-
+  Ohjelmointi 1 -oppimateriaali &copy; ...
+repo_url: https://github.com/ohj-perus-jy/ohj1
 
-Muunnoksia ajetaan yksi kerrallaan (tiedostolukko `.convert.lock`). Kaksi
-yhtä aikaa ajavaa muunnosta — esimerkiksi kaksi auki olevaa `run.sh`:ta —
-sekoittaisi `docs/`:n keskenään; mitattuna se poisti kymmenen
-versionhallinnassa ollutta `cache/svgbob/`-tiedostoa.
-
-Vahti kysyy tiedostojen muokkausajat 0,3 s välein (600 tiedostoa, 6 ms) eikä
-käytä inotifyä. Syy on ympäristössä: inotify ei saa tapahtumia lainkaan, jos
-repo on Windowsin levyllä 9p-liitoksen takana, ja siellä vahti olisi hiljaa
-rikki. Devcontainerin volume on ext4, joten kumpikin tapa toimisi täällä.
-
-`convert.py` ei tyhjennä `docs/`:ia, koska `zensical serve` (0.0.60) kaatuu tai
-unohtaa `docs/assets/`:n staattiset tiedostot, jos sen seuraama hakemisto
-katoaa kesken rakennuksen; perustelu on `convert.py`:n `sync_docs`-funktiossa.
-Jos tyylit silti katoavat — sivu näyttää paljaalta oletusteemalta ilman
-virheilmoitusta — syy näkyy näin:
-
-```bash
-curl -s localhost:8001/assets/css/layout.css | head -1
+# Sivustovalikko kurssin nimen vieressä; ilman listaa valikkoa ei näy ja nimi
+# on pelkkä linkki etusivulle. Kohta, jonka nimi on site_name, on tämä sivusto.
+extra:
+  sites:
+    - name: Ohjelmointi 1
+      url: https://ohjelmointi1.it.jyu.fi/
+    - name: Jypeli-ohjeet
+      url: https://jypeli.it.jyu.fi/
 ```
 
-Palvelin vastaa puuttuvaan tiedostoon etusivun HTML:llä (`<!doctype html>`,
-tilakoodi 200), ei 404:llä. Silloin käynnistä palvelin uudelleen.
+Uusi tyyli tai skripti lisätään `assets/`:iin ja `mkdocs-pohja.yml`:n listaan,
+ei kirjan tiedostoon.
+
+## Käyttö kirjassa
+
+```bash
+git clone --recurse-submodules <kirjan repo>    # tai kloonin jälkeen:
+git submodule update --init                     # (kirjan run.sh tekee tämän itse)
+
+./zensical/run.sh              # muunna, vahdi ../src:ää ja tarjoile portissa 8001
+./zensical/run.sh 8003         # eri portti
+./zensical/run.sh build        # pelkkä rakennus site/-hakemistoon
+./zensical/run.sh test         # testit: koekirja ja tämä kirja
+./zensical/run.sh puhe ../src/sivu.md   # vaiheittaisen ohjeen äänet
+```
+
+Ensimmäinen ajo asentaa `.venv`:n kirjan hakemistoon (`setup.sh`).
+**Muokattava puu on `src/`, ei `docs/`**: `docs/` on kertakäyttöinen kopio.
+
+`git pull` ei päivitä submodulea itsestään. Kertaalleen kloonissa:
+
+```bash
+git config submodule.recurse true
+```
+
+## Työkalujen muuttaminen
+
+`zensical/tyokalut/` on tavallinen git-repo kirjan sisällä, joten muutos
+tehdään paikan päällä sisältötyön lomassa:
+
+```bash
+cd zensical/tyokalut
+git switch main && git pull          # submodule on oletuksena irrallisessa HEADissa
+# ... muutos, ./run.sh test ...
+git commit -am "..." && git push
+cd ../..
+git add zensical/tyokalut            # kirja kiinnittää uuden version
+git commit -m "Työkalut: ..."
+```
+
+Muut kirjat ja haarat saavat muutoksen päivittämällä osoittimen:
+
+```bash
+git -C zensical/tyokalut pull origin main
+git add zensical/tyokalut && git commit -m "Työkalut: ..."
+```
+
+Jos kirjan osoittimen työntää ilman, että työkalucommit on työnnetty, kirjan
+julkaisu kaatuu checkoutiin. Se on tarkoitus: unohdus näkyy heti.
+
+Jos kirjan `pages.yml` kääntää useita haaroja (`main` ja `dev`), jokaisen
+haaran pitää toimia samalla `pages.yml`:llä: rakenteen muutos viedään kaikkiin
+käännettäviin haaroihin samalla kertaa.
+
+## Käyttöönotto uudessa kirjassa
+
+```bash
+git submodule add https://github.com/ohj-perus-jy/kirjatyokalut.git zensical/tyokalut
+```
+
+Lisäksi `zensical/kirja.toml`, `zensical/mkdocs.yml` (yllä), `.gitignore`iin
+`zensical/.venv*/`, `zensical/docs/`, `zensical/site/`, `zensical/nav.yml`,
+`zensical/.cache/`, `zensical/.convert.lock`, ja kääre `zensical/run.sh`:
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")"
+[[ -f tyokalut/run.sh ]] || git submodule update --init tyokalut
+exec tyokalut/run.sh "$@"
+```
+
+Julkaisu (`.github/workflows/pages.yml`): checkoutiin `submodules: true`,
+ja käännös kirjan hakemistossa:
+
+```yaml
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      # ...
+      - run: pip install -r zensical/tyokalut/requirements.txt
+      - working-directory: zensical
+        run: |
+          python3 tyokalut/convert.py --strict
+          zensical build
+```
+
+`convert.py` tarvitsee vain standardikirjaston (Python 3.11+, `tomllib`).
+Kaaviot ovat kirjan versionhallinnassa (`cache/`), joten julkaisu ei tarvitse
+svgbobia eikä PlantUML-palvelinta; `--strict` kaataa ajon, jos jokin puuttuu.
 
 ## Testit
 
 ```bash
-./zensical/run.sh test                        # kaikki, 198 testiä
-./zensical/run.sh test tests/test_convert.py  # pelkät muunnokset, 0,2 s
-./zensical/run.sh test --nobuild              # käytä olemassa olevaa site/:ä
+./zensical/run.sh test                        # kaikki
+./zensical/run.sh test tests/test_convert.py  # pelkät muunnokset, alle 1 s
+./zensical/run.sh test --nobuild              # käytä kirjan olemassa olevaa site/:ä
 ```
 
-Ensimmäisellä kerralla asentuvat `pytest`, `playwright`, sen chromium ja
-selaimen systeemikirjastot (`playwright install-deps`, vaatii sudon); sivuston
-rakentamiseen riittää yhä pelkkä `zensical`.
-
 Mitään ei jäljitellä: testit ajavat `convert.py`:n ja `zensical build`in
-oikeasti ja avaavat sivun oikeassa selaimessa. Kerroksia on kolme, koska
-rikkoutumisia on kolmea lajia:
+oikeasti ja avaavat sivun oikeassa selaimessa (Playwright). Koekirja
+(`tests/book/`: `src/` ja `zensical/` kuten oikeassa kirjassa) kopioidaan
+väliaikaishakemistoon työkalujen kanssa samaan rakenteeseen kuin kirjan
+repossa. `tests/test_book.py` kääntää sen kirjan, jonka submodulena työkalut
+ovat, ja ohittaa ominaisuudet, joita kirja ei käytä.
 
-| Tiedosto                | Mitä                                                          | Kesto      |
-| ----------------------- | ------------------------------------------------------------- | ---------- |
-| `tests/test_convert.py` | `convert.py`:n muunnokset yksin: ei käännöstä eikä selainta   | 0,2 s      |
-| `tests/test_print.py`   | tulostussivun kokoaminen selaimessa, koekirjalla              | 6 s        |
-| `tests/test_playground.py` | ajonapit koekirjalla, suorituspalvelin korvattuna          | 16 s       |
-| `tests/test_hidelines.py` | piilorivit ja silmänappi koekirjalla                       | 2 s        |
-| `tests/test_asciinema.py` | terminaalinauhoitukset koekirjalla                        | 4 s        |
-| `tests/test_highlights.py` | korostetut rivit koekirjalla                              | 2 s        |
-| `tests/test_change.py`  | koekirjan materiaalia muutetaan: näkyykö muutos tulosteessa   | 25 s       |
-| `tests/test_book.py`    | sama oikealla materiaalilla, 72 lukua                          | 10 s       |
+Tässä repossa yksinään (`./run.sh test`) ajetaan vain koekirjan testit;
+`test_book.py` ohitetaan. Sama ajo on GitHub Actionsissa joka pushilla
+(`.github/workflows/testit.yml`).
 
-Koekirja (`tests/book/src`), testeihin kirjatut tunnetut poikkeukset ja
-selaimen systeemikirjastot: [PERUSTELUT.md](PERUSTELUT.md).
-
-## Tarkistuslista
-
-| #  | mdBookin ominaisuus                          | Esiintymiä                | Tila nyt                                                                                                           |
-| -- | -------------------------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| 1  | `{{#include tiedosto}}`                      | 194                       | **tehty** — `convert_includes`; 4 makroa jää näkyviin, kohde puuttuu aineistosta                                   |
-| 2  | `//-` piilorivit                             | 1103                      | **tehty** — `hide_lines` + `assets/js/hidelines.js`; rivit piiloon ja silmänappi, ajoon ne menevät yhä               |
-| 3  | ` ```java ` ajonappi (playground)            | 231                       | **tehty** — `assets/js/playground.js`; sama palvelin ja sama pyyntö kuin mdBookissa, monitiedostolohkot mukaan lukien |
-| 4  | ` ```java,ignore` / `,noplayground`          | 289                       | **tehty** — attribuutit luokiksi (`{ .java .ignore }`), korostus palasi                                            |
-| 5  | `// FILE:` monitiedostolohkot                | 73 lohkoa / 194 tiedostoa | **tehty** — `pymdownx.tabbed`, tiedosto per välilehti                                                              |
-| 6  | `<task>` / `<points>` / `<handout>`          | 507                       | **tehty** — `convert_tasks` + `assets/css/tasks.css`; riippuva numerointi laatikon sijaan                          |
-| 7  | `> [!VINKKI]`-tyyliset alertit               | 75                        | **tehty** — `convert_alerts`; `admonition` on jo Zensicalin oletuslistalla, `mkdocs.yml` ennallaan                 |
-| 8  | `<details>`-lohkot                           | 88 + 6 `<summary>`        | **tehty** — `convert_details`; `markdown="1"` avaustagiin ja `markdown="block"` monirivisiin yhteenvetoihin       |
-| 9  | `HIGHLIGHT_*_BEGIN/END`                      | 120                       | **tehty** — `mark_highlights` + `assets/js/highlights.js`; värit kirkkautta muuttamatta, ks. kohta 9              |
-| 10 | Lukujen numerointi navigaatiossa             | koko nav                  | **tehty** — `convert.py`, 12 riviä                                                                                 |
-| 11 | Osan etusivu = osan oma linkki navissa       | 13 osaa                   | **tehty** — `navigation.indexes`                                                                                   |
-| 12 | Otsikoiden numerointi sivun sisällä          | —                         | ei ollut mdBookissakaan                                                                                            |
-| 13 | Ääkköset ankkureissa (`#käyttö`)             | 6 linkkiä                 | **tehty** — `convert_anchors` riisuu ankkurit samalla tavalla kuin teema otsikoiden tunnukset (`#kaytto`)          |
-| 14 | `.html`-päätteiset osoitteet (TIM)           | —                         | hyväksytty — vanhat `.html`-osoitteet menevät vaihdossa rikki, ks. [KAYTTOONOTTO.md](KAYTTOONOTTO.md)              |
-| 15 | plantuml / bob / mermaid                     | 17 / 11 / 2               | **tehty** — `convert_plantuml` (kuviksi), `convert_svgbob` (upotetuksi SVG:ksi); mermaid toimi jo itsestään        |
-| 16 | `<asciinema>`-upotukset                      | 13                        | **tehty** — `assets/js/asciinema.js` + kirjan soitin; convert.py:ssä ei mitään, soitin haetaan vain sivuille joilla on nauhoitus |
-| 17 | Ikonit `<i class="bi ...">` ja `<i class="fa ...">` | 150                | **tehty** — 66 bonusmerkkiä `convert_bonus_marks`, 58 valikkopolun nuolta merkkinä ja 22 kuvaketta teeman glyfeinä `convert_icons`; 4 poistui navigointiosion mukana |
-| 18 | JYU-paletti, kultainen korostus              | 30                        | siirretty myöhemmäksi — värit ovat toistaiseksi Materialin omat                                                    |
-| 19 | Lisenssi ja linkit alatunnisteessa           | —                         | **tehty** — tekijät, lisenssi, "Ehdota muutosta" ja "Ilmoita ongelmasta"                                           |
-| 20 | ACE-editori (`editable`-lohkot)              | 2                         | siirretty myöhemmäksi — `.editable` säilyy luokkana; ajonappi ajaa lohkon sellaisenaan, ks. kohdat 3 ja 4          |
-| 21 | KaTeX                                        | 0                         | voi jättää pois                                                                                                    |
-| 22 | Edellinen/seuraava sivun alareunassa         | joka sivu                 | **tehty** — `navigation.footer`                                                                                    |
-| 23 | `### [Windows](#tab/win)`-välilehdet         | 33 lohkoa / 9 joukkoa     | **tehty** — `pymdownx.tabbed` + `content.tabs.link`                                                                |
-| 24 | Tulostuspainike: koko kirja yhdeksi PDF:ksi  | joka sivu                 | **tehty** — `assets/js/print.js`, `print.css`, runko `convert.py`:stä, yläpalkin malli                             |
-| 25 | `<div class="ht-reqs">` vaatimuslohkot       | 9                         | **tehty** — `convert_divs` + `assets/css/requirements.css`; numerointi 1.1, 1.2, ... CSS-laskurista               |
-| 26 | Leipätekstin kirjasinvalikko yläpalkissa     | joka sivu                 | **tehty** — ei mdBookissa, lisätty pyynnöstä; `header.html`, `typography.css`, `fontmenu.css`, `fontmenu.js`; Source Serif 4 (oletus), Atkinson Hyperlegible Next, Literata; valinta muistetaan selaimessa |
-| 27 | Sivustovalikko kurssin nimen vieressä        | joka sivu                 | **tehty** — ei mdBookissa, lisätty pyynnöstä; `header.html`, `sitemenu.css`, `sitemenu.js`; kohdat `mkdocs.yml`:n `extra.sites`-listasta (Ohjelmointi 1, Jypeli-ohjeet); oma sivusto tunnistetaan `site_name`sta ja vie omalle etusivulle, joten sama lista kelpaa sellaisenaan sisarsivustolle |
-
-Zensical antaa itse ilman mitään lisäystä: oikean reunan sisällysluettelon,
-haun ja responsiivisen navigaation.
-
-## Mitä puuttuu
-
-Tarkistuslistalta kaksi kohtaa:
-
-- **18 JYU-paletti, kultainen korostus** (30 kohtaa) — tietoisesti siirretty
-  myöhemmäksi, ei tehdä tässä vaiheessa. Tehtäväkorttien bonusliuska käyttää
-  omaa tummennettua sävyään, koska kirjan `#C29A5B` on valkoista vasten vain
-  2,4:1.
-- **20 ACE-editori** (2 `editable`-lohkoa) — tietoisesti siirretty
-  myöhemmäksi, ei tehdä tässä vaiheessa. Lohko näkyy tavallisena koodina, ja
-  sen mukana `fa-history`-kuvake osoittaa "Peruuta muutokset" -nappiin, jota
-  sivustolla ei ole. "Hei, Java!" -sivun esimerkki korjataan sellaiseksi,
-  ettei se vaadi syötettä: [KAYTTOONOTTO.md](KAYTTOONOTTO.md).
-
-Pienempiä:
-
-- Kopioi koodi -nappi: teemalla on siihen valmis `content.code.copy`, se on
-  vain ottamatta käyttöön (1 rivi `mkdocs.yml`:ään).
-- Neljä `{{#include}}`-makroa jää sivuille näkyviin: kohde puuttuu
-  aineistosta.
-- Etusivun ja osan 1 ohjeteksteissä on kaksi mdBook-aikaista väitettä:
-  teemanapin "vaalea, tumma, automaattinen" (Zensicalissa nappi on
-  kaksiasentoinen) ja se, kumpi glyfi napissa milloinkin on. Kuvakkeet on
-  korjattu, virkkeet eivät.
-
-Käännös on varoitukseton. Kahdeksan viimeistä varoitusta oli aineiston omia
-rikkinäisiä linkkejä — väärä suhteellinen polku tai otsikko, joka on nimetty
-uudelleen linkkiä päivittämättä — ja ne olivat rikki myös mdBookin omassa
-käännöksessä, joten ne korjattiin `../src`:ssä eikä täällä. Se on ainoa kohta,
-jossa koeputki on koskenut lähdepuuhun, ja se on omana committinaan; luettelo
-on [PERUSTELUT.md](PERUSTELUT.md):n kohdassa "Ankkurit".
-
-`convert.py` varoittaa vielä neljästä `{{#include}}`-makrosta, joiden kohde
-puuttuu aineistosta, ja yhdestä tuntemattomasta alerttitunnuksesta
-("Tärkeää — invariantti"). Molemmat ovat samalla kirjan ulkopuolisella sivulla
-(`extra/luetelma-ja-hahmonsovitus.md`), jota mdBook ei käännä lainkaan.
-
-## Avoimet kysymykset
-
-- **Sivuston hakemistorakenne** — siirretty purun jälkeiseksi, ei estä
-  käyttöönottoa. `docs_dir: src` säilyttäisi sivujen sisäiset linkit,
-  kuvapolut, `edit_uri`:n ja Gitin historian koskemattomina. Se on nyt ainoa
-  jäljellä oleva syy siirtää sivukohtaiset muunnokset renderöintiin
-  (PERUSTELUT.md: vaihtoehto C), koska nopeussyy raukesi mittauksissa. Päätös
-  tehdään vasta, kun purku on näyttänyt, kuinka pieni siirrettävä joukko
-  oikeasti on: [KAYTTOONOTTO.md](KAYTTOONOTTO.md) vaihe 5 ja
-  [PURKUSUUNNITELMA.md](PURKUSUUNNITELMA.md).
-
-## Ratkaistut kysymykset
-
-- **Jääkö `convert.py` pysyväksi osaksi työnkulkua?** Jää, ja sen ympärille
-  tehtiin vahti (`--watch`). Ratkaiseva luku oli, kauanko tallennuksesta kuluu
-  selaimen päivittymiseen: mitattuna `zensical serve` kääntää vain muuttuneen
-  sivun ja tarjoilee sen **0,2–0,6 s** kuluttua, ja koko kierros `../src`:stä
-  selaimeen on **2,3 s**. Vaihtoehto oli perusteltu vain, jos luku olisi ollut
-  kymmeniä sekunteja. Perustelut ja hylätyt vaihtoehdot: PERUSTELUT.md.
-
-## Periaate
-
-Lähtötilanne on Zensicalin oletusteema sellaisenaan: jokainen lisätty rivi
-pitää pystyä perustelemaan jollakin mdBookin ominaisuudella, jota oikeasti
-tarvitaan. Perustelut ovat [PERUSTELUT.md](PERUSTELUT.md):ssä ja tiedostojen
-omissa alkukommenteissa. Aiempi, täysin viritetty versio on tallessa branchissa
-`spike/mkdocs`.
-
-## Ohj1-kohtaiset muutokset
-
-Mitä ohj2:n kopioon on muutettu. *Yleiskäyttöinen* = kannattaa viedä myös
-ohj2:een (KAYTTOONOTTO.md: "korjaukset viedään käsin molempiin").
-
-- `mkdocs.yml`: `site_name`, `copyright` (tekijät ../README.md:n
-  License-kohdasta), `repo_url`.
-- `convert.py`:
-  - `HIDELINE_LANGUAGES` ja `HIGHLIGHT_LANGUAGES`: `csharp` mukaan; java ja
-    javascript jäävät koekirjan ja testien takia.
-  - `ICON_MAP`: `bi-arrow-left-circle` ja `bi-arrow-right-circle` (glyfit
-    `icons/material/`). `PLANTUML_AGENT`. (`ALERT_KINDS`:iin lisätty
-    `lisatieto` poistettu: ainoa esiintymä on nyt `<details>`-lohko,
-    `src` e816bc7.)
-  - `ALERT_KINDS`: oppaiden merkinnät `> [!KOKEILE]`, `> [!EI TOIMI VIELÄ]`
-    ja `> [!KYSYMYS]` omiksi admonition-tyypeiksi (`kokeile`, `ei-toimi`,
-    `kysymys`; väri ja kuvake `assets/css/admonitions.css`). Tuotu
-    jypelidocsista (d8722b3), jossa ne korvaavat TIM-wikin PNG-kuvat.
-    Useimmiten lohko on pelkkä tunnusrivi, jolloin `convert_alerts` ei
-    kirjoita tyhjää riviä otsikon perään. *Yleiskäyttöinen.*
-  - Uusi `NOT_PAGES` ja `is_page`: `exercises/*/starter/*.md` ei tule
-    sivuksi. mdBook kääntää vain SUMMARY.md:n luvut, Zensical jokaisen
-    `.md`:n, ja tehtävän aloituspohjan paikkamerkkilinkki (`#lisaa_osoite`)
-    on tarkoituksella rikki. Mekanismi *yleiskäyttöinen*, kuvio ohj1:n.
-  - `SUMMARY_LINK_RE` hyväksyy `*`-luettelomerkin, ja `build_nav` laskee
-    tason sisennyspinosta (ohj1: 1, 3 ja 4 välilyöntiä) eikä jakamalla
-    kahdella; etulinkki on aina ylin taso. *Yleiskäyttöinen.*
-  - Uusi `convert_moved_links`: linkit NEST_UNDER-siirrettyihin sivuihin
-    (`index.md` ja `suorittaminen.md` → `tentti.md`) ja siirretyn sivun
-    omat suhteelliset linkit. ohj2:ssa kukaan ei linkitä `tentti.md`:hen,
-    joten puute ei näkynyt. *Yleiskäyttöinen.*
-  - Uusi `dedent_headings`: 1–3 välilyönnillä sisennetty otsikko, jonka
-    CommonMark sallii mutta Python-Markdown ei (ohj1:ssä kaksi, korjattu
-    myös `src`:ssä e816bc7). *Yleiskäyttöinen.*
-  - Uusi `svgbob_problems`: varoitus, kun svgbob 0.7.6 piirtää kaavion
-    tekstin väärin. Peräkkäiset ääkköset hajoavat päällekkäisiksi paloiksi
-    (`Käännä` → `Kän` + `änä`), ja kirjaimen vieressä oleva sulku piirtyy
-    kaarena (`Main()`). Kumpikin korjaantuu lainausmerkeillä (`"Main()"`),
-    joita svgbob ei piirrä; siksi merkkijonoliteraalin lainausmerkit eivät
-    näy kaaviossa. *Yleiskäyttöinen.*
-  - Uusi `svgbob_fit_text`: svgbob 0.7.6 laskee kuvan koon vain viivoista
-    ja lainaamattomasta tekstistä, joten juuri edellisen kohdan suosittelema
-    lainattu teksti leikkautui oikeasta tai alareunasta pois (ohj1:ssä neljä
-    kaaviota kymmenestä, esim. `TulostaViiva()` sivulla
-    `osa2/4-aliohjelmat.md`). Koko kasvatetaan upotettaessa tekstien mukaan,
-    joten `cache/svgbob/` pysyy svgbobin omana tulosteena. Merkin leveys on
-    8,4 px (0,6 em 14 px:n koodikirjasimella) eikä svgbobin olettama 8 px;
-    pitkä teksti ylittäisi muuten reunan lainaamattomanakin.
-    *Yleiskäyttöinen.*
-- `assets/js/playground.js`: `csharp` kieliin; `feature-*`-määre kielen
-  perään (`csharp-jypeli`) ja tulosteen data-URI-kuvat `<img>`-elementeiksi
-  kuten ../theme/playground_ext.js. `multifile`-kenttä vain
-  monitiedostolohkolle: palvelimen C#-polku aikakatkaisee pyynnön, jossa on
-  `multifile: false`, eikä ohj1:n mdBook-skripti lähetä kenttää lainkaan.
-  Pelkän kuvan tulosteessa (Jypelin ikkuna ilman tekstiä) tekstilaatikko jää
-  pois (`.jyu-result-image-only`); mdBookissa kuvan yllä lukee "No output".
-- `assets/css/playground.css`: kuvatuloste `.jyu-result-image` lohkona ja
-  koodilohkon kulmin, `.jyu-result-image-only > pre` piiloon.
-- Uudet `assets/css/search.css` ja `assets/js/search.js`: hakuikkunan
-  tekstikoot teeman rem-portaina (Zensicalin omat ovat kiinteät 12–14 px, kun
-  leipäteksti on 15–18 px) ja tyhjä "Filters / Tags" -paneeli painikkeineen
-  piiloon. Ikkuna on shadow DOM:issa, johon sivun CSS ei ulotu, joten skripti
-  liittää tyylitiedoston sinne `<link>`-elementtinä. Luokkanimet ovat
-  Zensicalin minifioituja; `tests/test_search.py` kertoo, jos ne vaihtuvat.
-  *Yleiskäyttöinen.*
-- `tests/book/src/osa1/csharp.md`: C#-lohkot (piilorivit, `ignore`,
-  `feature-jypeli`) SUMMARY.md:n ulkopuolella, jotta ohj2:n testien laskemat
-  luvut ja lohkot eivät muutu. Testit `tests/test_playground.py`:n lopussa.
-- Vaiheittainen ohje (`src/git-ht-ohje.md`): `convert.py`:n uusi
-  `convert_walkthroughs` (`<walkthrough scenes>` → `.jyu-walk`-div ja
-  kohtaustiedosto `<script>`-tagina, `<step scene>` → `.jyu-step`-section),
-  `assets/js/walkthrough.js` ja `assets/css/walkthrough.css`; `NEST_UNDER`:
-  `git-ht-ohje.md` → `git.md`. Koesivu `tests/book/src/osa1/vaiheet.md`
-  SUMMARY.md:n ulkopuolella, testit `tests/test_walkthrough.py`. Ääneen
-  lukeminen: `<walkthrough audio="kansio">`, äänet tekee `puhe.py` (Azure
-  Speech, `./run.sh puhe ../src/sivu.md`), ja `walkthrough_audio` jättää
-  vanhasta tekstistä tehdyn äänen pois ja varoittaa; testit
-  `tests/test_puhe.py`. Yksittäinen animaatio tavalliselle sivulle:
-  `<animation scenes scene>` (`convert_animations` convert_tabsin jälkeen,
-  tagin sisältö varalla ilman skriptiä ja tulosteessa), git.md ja tyokalut.md
-  käyttävät git-ht-ohjeen `avaa-windows`-kohtausta; koesivun lopussa
-  välilehdellä, testit samoissa tiedostoissa. *Yleiskäyttöinen.*
-- Testaa tietosi -visa (lukujen `<visa>`-osio, merkkaus:
-  ../curriculum/rakenne.md): `convert.py`:n uusi `convert_quizzes`
-  (`<vaittama vastaus>` ja `<kysymys>` → `.jyu-visa-q`-div, vaihtoehdot
-  listaksi, `<perustelu>` → `<details>`), `assets/js/visa.js` ja
-  `assets/css/visa.css`. Valinta paljastaa oikean vastauksen ja perustelun,
-  eikä vastausta voi vaihtaa; "Tyhjennä vastaukset" nollaa sivun visan.
-  - Oikea vastaus merkitään vaihtoehtoon itseensä (`- [x]`) eikä kirjaimena
-    tagiin, jotta vaihtoehtojen järjestyksen voi muuttaa rikkomatta vastausta.
-    Numerot ja kirjaimet tulevat CSS-laskureista samasta syystä.
-  - Ilman skriptiä kysymys on tekstiä, vaihtoehdot kirjainlista ja perustelu
-    avattava `<details>`. Tulostussivulle (print.js) napit jätetään
-    tarkoituksella tekemättä, joten paperilla on sama muoto.
-  - Vastaukset ovat localStoragen avaimessa `jyu-visa` (kysymyksen `data-id`
-    → valittu arvo). Tunniste on kysymyksen lähdetekstin tiiviste eikä
-    järjestysnumero: kysymysten lisääminen tai siirtäminen ei sekoita
-    tallennettuja vastauksia, ja muutettu kysymys unohtaa vanhan vastauksen.
-    Siksi muunnos ajetaan ennen `convert_fences`iä.
-  - Ilme on teeman tehtävälistan kevyt pallukka eikä reunustettu nappi.
-    Kirjain on pallukan sisällä, koska perustelut viittaavat kirjaimiin. Oma
-    valinta on täytetty pallukka, ja ✓/✗ tekstin perässä kertoo tuloksen
-    myös ilman väriä. Oikean ja väärän värit ovat omia tokeneita
-    (`--jyu-visa-ok`, `--jyu-visa-wrong`), koska teeman vihreä ja punainen
-    eivät riitä tekstin kontrastiin; perustelulaatikko käyttää
-    admonitions.css:n `--adm`-muuttujaa ja teeman check-kuvaketta, rasti on
-    saman Lucide-sarjan x.
-  - Koesivu `tests/book/src/osa1/visa.md` SUMMARY.md:n ulkopuolella, testit
-    `tests/test_visa.py`; oikean kirjan visat tarkistaa `tests/test_book.py`.
-  *Yleiskäyttöinen.*
-- `tests/test_book.py`: `source_uses` kääntää kuvion `re.MULTILINE`-lipulla.
-  Ilman sitä `^`-alkuiset kuviot (plantuml- ja bob-aidat) eivät osuneet
-  koskaan, ja kaavioiden olemassaolon tarkistus jäi ajamatta. *Yleiskäyttöinen.*
-- `tests/test_convert.py`: testit yllä oleville. `tests/test_book.py`:
-  `*`-luettelomerkki, `source_uses`-ohitukset ominaisuuksille joita kirja ei
-  käytä (*yleiskäyttöinen*). `KNOWN_BROKEN_IMAGES` poistettu, koska ohj1:n
-  kuvat on korjattu `src`:ssä (ohj2:ssa yhä `osa4/images/adventure.png`).
-- `cache/svgbob/`: ohj1:n bob-kaaviot (svgbob_cli 0.7.6, asennettu
-  `cargo install svgbob_cli@0.7.6`); ohj2:n kaaviot ja `assets/plantuml/`
-  jätetty pois.
-- Tämä README: johdanto ja tämä kohta. PERUSTELUT.md, PURKUSUUNNITELMA.md ja
-  KAYTTOONOTTO.md sellaisenaan.
-- `zensical/`-hakemiston ulkopuolella: `../.gitignore` (`zensical/`-rivit ja
-  `book` → `/book`, jottei koekirja `tests/book` jää sen alle),
-  `../.devcontainer/devcontainer.json` (portti 8001),
-  `../.github/workflows/pages.yml` (ohj2:n kaksoisjulkaisu ilman
-  `mdbook-dev-check`iä).
+`tests/test_convert.py` kiinnittää kirjan asetukset fixturella
+(`page_config`), joten tulos ei riipu siitä, minkä kirjan `kirja.toml` on
+luettu.
