@@ -70,24 +70,44 @@ Merkkileveyden korjauksen jälkeen ero on vain muutaman bob-kaavion leveys
 (esim. 133 → 128 px); selaimessa tarkistettu, että kaikkien 24 kaavion teksti
 mahtuu kuvaan.
 
-## Vaihe 4 — kirjat submoduleen (`zensical/tyokalut/`)
+## Vaihe 4 — kirjat submoduleen (`zensical/tyokalut/`): VALMIS 2026-09-18
 
-- [ ] jypelidocs `main` ja `dev`
-- [ ] ohj2 `dev`
-- [ ] ohj1 `rakenne-2027`
-- [ ] ohj1 `dev` + `main` (tuotanto)
-- [ ] joka kirjassa: `kirja.toml`, karsittu mkdocs.yml, kääre `run.sh`,
-      pages.yml `submodules: true` ja uudet polut, vanhat kopiot pois;
-      kirjan README:hen jää vain kirjan oma osa (ohje: tämän repon README,
-      "Käyttöönotto uudessa kirjassa")
-- [ ] ohj2: `assets/plantuml/` → `cache/plantuml/`
-- [ ] kirjojen KAYTTOONOTTO.md:n kohta "korjaukset viedään käsin molempiin" vanhenee
+- [x] jypelidocs `main` ja `dev` (`d4ae629`), julkaisu onnistui
+- [x] ohj1 `rakenne-2027` (`7f5d7ca`)
+- [x] ohj2 `dev` (`3f695b3`) ja `main`in pages.yml (`dc34b7e`), koska sekin
+      kääntää `dev`in
+- [x] ohj1 `dev` + `main` (`ed8575d`, merge `e0aeb96`)
+- [x] joka kirjassa: `kirja.toml`, karsittu mkdocs.yml, kääre `run.sh`,
+      pages.yml `submodules: true` ja uudet polut, vanhat kopiot pois, kirjan
+      README:ssä vain kirjan oma osa
+- [x] ohj2: `assets/plantuml/` → `cache/plantuml/`
+- [x] ohj2:n KAYTTOONOTTO.md: "korjaukset viedään käsin molempiin" päättyi
+
+Jokaisesta kirjasta on ennen siirtoa käännetty vertailusivusto vanhalla
+rakenteella: ero on vain bob-kaavioiden leveys (korjaus `4806372`). Testit
+submodulen kautta: jypelidocs 322, ohj1 `rakenne-2027` 323, ohj1 `dev` 322,
+ohj2 325 läpi.
+
+## Jatkossa
+
+- Työkalumuutos tehdään tähän repoon (README: "Työkalujen muuttaminen") ja
+  kirjat päivittävät osoittimen. Tuotantohaarat (ohj1 `main`, jypelidocs
+  `main`) kulkevat siis tarkoituksella perässä, kunnes osoitin päivitetään.
+- Kirjojen `git pull` ei päivitä submodulea: `git config submodule.recurse true`
+  joka kloonissa; kirjan `run.sh` huomauttaa eri versiosta.
+- ohj1:n ja ohj2:n devcontainer ei aja `setup.sh`:ta eikä hae submodulea;
+  `run.sh` hoitaa molemmat ensimmäisellä ajolla.
 
 ## Avoimet kysymykset
 
 - Merkinnän otsikko "Kokeile käynnistää pelisi" on Jypeli-sanastoa; ohj2:ssa
   outo. Yleisempi oletus vai kirjan oma otsikko `kirja.toml`issa?
 - ohj2:n sivustovalikon lista päätetään, kun ohj2:n Zensical menee tuotantoon.
+- jypelidocs: `dev`-haaran työntö kääntyy mutta sen `deploy` kaatuu aina
+  (jo ennen siirtoa, 2026-09-16 alkaen): ilmeisesti `github-pages`-ympäristö
+  sallii julkaisun vain `main`ista. Joko ympäristön asetuksiin `dev` (kuten
+  ohj1:ssä) tai `dev` pois pages.yml:n laukaisijoista.
+- LICENSE puuttuu tästä reposta.
 
 ## Havainnot
 
@@ -120,3 +140,8 @@ mahtuu kuvaan.
 | 2026-09-18 | sivustovalikon koodi, ajonappi, taulukot, nuoli, kielilistat → o2 | ohj2 `81d2093` |
 | 2026-09-18 | visa + svgbob-korjaukset → o1d (tuotanto) | ohj1 `3167de3`, `7d39912` |
 | 2026-09-18 | jypelidocsin julkaisu kaatui `--strict`iin, `dev` pikakelattu | jypelidocs `dev` = `520c2a0` |
+| 2026-09-18 | kirjatyokalut-repo: aloitus, kirja.toml + polkujako + pohja, README, CI, bob-korjaukset | `b8a10ef`…`1303d5f` |
+| 2026-09-18 | jypelidocs submoduleen (`main` + `dev`) | jypelidocs `d4ae629` |
+| 2026-09-18 | ohj1 `rakenne-2027` submoduleen | ohj1 `7f5d7ca` |
+| 2026-09-18 | ohj2 `dev` submoduleen, `main`in pages.yml | ohj2 `3f695b3`, `dc34b7e` |
+| 2026-09-18 | ohj1 `dev` + `main` submoduleen | ohj1 `ed8575d`, `e0aeb96` |
