@@ -1,0 +1,25 @@
+# Testit koekirjalla joka pushilla. Kirjojen omat testit (tests/test_book.py)
+# ajetaan kirjan repossa: ./zensical/run.sh test.
+name: Testit
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  testit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+      - name: Install Zensical, pytest and Playwright
+        run: |
+          pip install -r requirements-dev.txt
+          playwright install --with-deps chromium
+      - name: Run tests
+        run: python -m pytest
