@@ -1,12 +1,29 @@
 name: Linkkitarkistus
-description: Tarkistaa kirjan src/-hakemiston ulkoiset linkit lycheellä.
+description: >-
+  Tarkistaa lycheellä kirjan src/-hakemiston ulkoiset linkit, tai tim-syötteellä
+  kirja.toml:n TIM-kansioiden julkisten sivujen linkit.
+
+inputs:
+  tim:
+    description: "true: tarkista TIM-sivut ([linkit] tim_kansiot) src/:n sijaan"
+    default: "false"
 
 runs:
   using: composite
   steps:
-    - uses: lycheeverse/lychee-action@v2
+    - if: inputs.tim != 'true'
+      uses: lycheeverse/lychee-action@v2
       with:
         args: >-
           --config '${{ github.action_path }}/lychee.toml'
           --root-dir '${{ github.workspace }}/src'
           'src/**/*.md'
+    - if: inputs.tim == 'true'
+      shell: bash
+      run: python3 '${{ github.action_path }}/tim_sivut.py' > '${{ runner.temp }}/tim-sivut.txt'
+    - if: inputs.tim == 'true'
+      uses: lycheeverse/lychee-action@v2
+      with:
+        args: >-
+          --config '${{ github.action_path }}/lychee.toml'
+          --files-from '${{ runner.temp }}/tim-sivut.txt'

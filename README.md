@@ -58,6 +58,8 @@ siitä kirjan hakemisto tunnistetaan.
 | `[siirrot]` | etulinkki toisen alle: `"tenttiohjeet.md" = "tentti.md"` | `NEST_UNDER` |
 | `[poistettavat_osiot]` | sivulta pois jätettävä osio: `"index.md" = "Osion otsikko"` | `DROP_SECTIONS` |
 | `[testit] rikkinaiset_kuvat` | kuvat, joiden tiedetään puuttuvan (test_book.py sallii ne) | – |
+| `[linkit] tim_kansiot` | TIM-kansiot, joiden julkisten sivujen linkit tarkistetaan (ks. Linkkitarkistus) | – |
+| `[linkit] tim_pois` | tarkistuksesta pois jätettävät TIM-dokumentit (polku kuten kansioissa) | – |
 
 Esimerkki (ohj1):
 
@@ -231,7 +233,39 @@ jobs:
         with:
           submodules: true
       - uses: ./zensical/tyokalut/linkit
+
+  # TIM-sivut muuttuvat gitin ulkopuolella: vain ajastettuna ja käsin.
+  tim:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: ./zensical/tyokalut/linkit
+        with:
+          tim: true
 ```
+
+`tim`-työ tarkistaa kurssin TIM-sivujen linkit (esim. TIMin aikataulusta
+kirjaan). `linkit/tim_sivut.py` hakee kirja.toml:n `[linkit] tim_kansiot`
+-kansioiden dokumentit alikansioineen TIMin `getItems`-rajapinnalla, joka
+näyttää kirjautumatta vain julkiset sivut, ja lychee hakee ne sivut ja
+tarkistaa niiden linkit. Ajo on oma työnsä, koska TIMin virhe ei saa kaataa
+kirjan pushia. Tulos on työn yhteenvedossa (job summary), ja GitHub lähettää
+kaatuneesta ajastetusta ajosta sähköpostin sille, joka viimeksi muutti
+`schedule`-riviä. Esimerkki (ohj1):
+
+```toml
+[linkit]
+tim_kansiot = ["kurssit/tie/itkp102"]
+tim_pois = ["kurssit/tie/itkp102/materiaali/moniste"]
+```
+
+TIMin rakenteesta: kirjautumista vaativat sivut ja lisäosien (esim.
+koodilaatikon) sisällä olevat linkit jäävät tarkistuksen ulkopuolelle.
+Joidenkin sivujen otsikot näkyvät vain kirjautuneelle (esim. Oma
+eteneminen), jolloin niiden ankkurit on ohitettava kirjan `.lycheeignore`ssa.
 
 Yhteiset asetukset ovat `linkit/lychee.toml`:ssa:
 
@@ -244,6 +278,15 @@ Yhteiset asetukset ovat `linkit/lychee.toml`:ssa:
   nekin ohitetaan eivätkä kaada ajoa.
 - `src/SUMMARY.md` ohitetaan: sen `[nimi<url>]()`-ulkolinkki näyttää
   lycheelle tyhjältä URLilta.
+- Ankkurit tarkistetaan (`include_fragments = "anchor-only"`): ne rikkoutuvat
+  huomaamatta, kun otsikko vaihtuu tai sisältö siirtyy toiselle sivulle.
+  Ohitetaan sivustot, joilla ankkuri syntyy vasta JavaScriptillä tai on
+  sivun sisäinen reitti (GitLabin `#L`-rivit, DuckDuckGon asetukset);
+  tarkistettu selaimella ennen ohitusta.
+- `opencs.it.jyu.fi` ohitetaan: palvelin ei lähetä välivarmennetta, joten
+  TLS-tarkistus kaatuu, vaikka selain toimii.
+- TIM-sivujen omat tyyli- ja skriptitiedostot (`/js/`, `/static/`, `/css/`)
+  ohitetaan; TIMin tyylitiedosto antaa 404:n joka sivulla.
 
 Kirjan omat ohitukset (regex, yksi per rivi) ovat kirjan juuren
 `.lycheeignore`ssa; lychee lisää ne yhteisten päälle.
