@@ -25,10 +25,11 @@
         + "<div style=\"height:40px\">Yksi</div><div style=\"height:40px\">Kaksi</div></div></div>",
     }),
 
-    /* Yksittäinen animaatio (<animation>) samalla sivulla. */
+    /* Yksittäinen animaatio (<animation>) samalla sivulla. Hidastettu:
+     * merkin viive (data-type) ja tauko kirjoituksen jälkeen (data-wait). */
     animaatio: () => ui.window({
       title: "Animaatio",
-      body: '<p class="koe-anim-teksti" data-type>Moi</p>'
+      body: '<p class="koe-anim-teksti" data-type="100" data-wait="1200">Moi</p>'
         + '<p><span class="jw-btn koe-anim-nappi" data-click data-on="jw-on" data-ring>OK</span></p>',
     }),
   };

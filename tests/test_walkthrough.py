@@ -476,6 +476,53 @@ def test_animation_replay_starts_from_the_beginning(opened):
     assert errors == []
 
 
+def test_type_delay_and_wait_slow_the_animation_down(opened):
+    """data-type="100": kolme merkkiä vie vähintään 200 ms. data-wait="1200":
+    klikkaus tulee vasta tauon jälkeen (ilman taukoa alle sekunnissa)."""
+    page, errors = opened()
+    page.evaluate("""() => {
+        window.times = {};
+        const text = document.querySelector('.koe-anim-teksti');
+        const button = document.querySelector('.koe-anim-nappi');
+        new MutationObserver(() => {
+            const length = text.textContent.length;
+            if (length === 1) times.first ??= performance.now();
+            if (length === 3) times.typed ??= performance.now();
+            if (button.classList.contains('jw-on')) times.clicked ??= performance.now();
+        }).observe(text.closest('.jw-canvas'),
+            { subtree: true, childList: true, characterData: true, attributes: true });
+    }""")
+    open_animation_tab(page)
+    page.wait_for_function("window.times.clicked")
+    times = page.evaluate("times")
+    assert times["typed"] - times["first"] >= 190
+    assert times["clicked"] - times["typed"] >= 1900
+    assert errors == []
+
+
+def test_animation_has_a_close_up_in_a_narrow_column(opened):
+    """Kapeassa palstassa yksittäinenkin animaatio on lähikuvana, ja Koko
+    kuva -napista kohtaus palaa näyttämön levyiseksi. Leveässä nappia ei ole."""
+    scale = """() => {
+      const stage = document.querySelector('.jyu-anim .jw-stage');
+      return stage.querySelector('.jw-canvas').getBoundingClientRect().width / stage.clientWidth;
+    }"""
+    wide, wide_errors = opened()
+    open_animation_tab(wide)
+    assert not wide.is_visible(".jyu-anim .jw-zoom")
+    page, errors = opened(viewport=PHONE, ready=False)
+    page.wait_for_selector(".jyu-anim--live", state="attached")
+    open_animation_tab(page)
+    page.wait_for_selector(".jyu-anim .jw-ring")
+    assert page.inner_text(".jyu-anim .jw-zoom") == "Koko kuva"
+    assert page.evaluate(scale) > 1.3
+    page.click(".jyu-anim .jw-zoom")
+    assert page.inner_text(".jyu-anim .jw-zoom") == "Lähikuva"
+    assert page.evaluate(scale) == pytest.approx(1, abs=0.01)
+    assert wide_errors == []
+    assert errors == []
+
+
 def test_reduced_motion_shows_the_finished_animation(opened):
     """prefers-reduced-motion: kohtaus valmiina, kun se tulee näkyviin."""
     page, errors = opened(reduced_motion="reduce")

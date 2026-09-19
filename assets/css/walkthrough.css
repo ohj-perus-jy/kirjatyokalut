@@ -608,13 +608,22 @@
   border-top: 1px solid var(--md-default-fg-color--lightest);
 }
 
+/* Pyöristys kuten sivustovalikon riveillä (sitemenu.css). */
 .jw-anim-bar button {
   padding: 0.35rem 0.8rem;
   border: 0;
+  border-radius: 0.15rem;
   background: none;
   color: var(--md-default-fg-color--light);
   font: 0.7rem var(--md-text-font-family);
   cursor: pointer;
+}
+
+/* Sama hover kuin esityksen napeissa (.jw-bar button). */
+.jw-anim-bar button:hover,
+.jw-anim-bar button:focus-visible {
+  background: var(--md-accent-fg-color--transparent);
+  color: var(--md-accent-fg-color);
 }
 
 .jw-anim-bar button:focus-visible {

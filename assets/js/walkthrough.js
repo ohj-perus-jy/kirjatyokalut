@@ -12,13 +12,16 @@
  *
  * Kohtauksen HTML:ssä animaatiota ohjaavat attribuutit:
  *   data-type       elementin teksti kirjoittuu näkyviin merkki kerrallaan
- *                   (elementissä pelkkää tekstiä)
+ *                   (elementissä pelkkää tekstiä); data-type="ms" on yhden
+ *                   merkin viive, kun oletus on liian nopea
  *   data-show       elementti tulee näkyviin
  *   data-click      kursori siirtyy elementin päälle ja klikkaa;
  *                   data-on="luokka" lisää klikatessa luokan
  *   data-hide="n"   elementti poistuu kohdassa n (esim. suljettu ikkuna)
  *   data-scroll="px" sisältö vierittyy px verran ylös data-orderin kohdalla
  *                   (esim. pitkä lomake); sisäkkäiset vieritykset summautuvat
+ *   data-wait="ms"  tauko elementin tapahtuman (show, click, type) jälkeen,
+ *                   jotta katsoja ehtii nähdä, mitä tapahtui
  *   data-ring       korostuskehys, kun animaatio on lopussa
  *   data-order="n"  numeroidut ensin pienimmästä alkaen, sitten muut
  *                   dokumenttijärjestyksessä; saman elementin tapahtumat
@@ -273,6 +276,72 @@
     return `<div class="jw-missing">Kohtausta ei löytynyt: ${esc(name ?? "")}</div>`;
   }
 
+  /* Näyttämön kamera: piirrosalustan skaala ja kapean palstan lähikuva.
+   * Vaiheittainen ohje ja yksittäinen animaatio käyttävät samaa. Lähikuvassa
+   * point on kohtauksen piste, joka tulee näyttämön keskelle, kuitenkin niin,
+   * ettei kuvan reuna irtoa. zoomButton vaihtaa lähikuvan ja koko kuvan. */
+  function camera(stage, canvas, zoomButton) {
+    let closeUp = false;
+    let wantCloseUp = true;
+    let point = { x: WIDTH / 2, y: HEIGHT / 2 };
+
+    const apply = (animate) => {
+      const width = stage.clientWidth;
+      const height = stage.clientHeight;
+      const scale = closeUp ? CLOSE_UP : width / WIDTH;
+      let x = 0;
+      let y = 0;
+      if (closeUp) {
+        x = Math.min(0, Math.max(width - WIDTH * scale, width / 2 - point.x * scale));
+        y = Math.min(0, Math.max(height - HEIGHT * scale, height / 2 - point.y * scale));
+      }
+      canvas.classList.toggle("jw-canvas--moving", animate && !reducedMotion.matches);
+      canvas.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+    };
+
+    /* Lähikuva elementtien kohdalle. Näyttämöä leveämpi alue tasataan
+     * vasempaan reunaan ja korkeampi alareunaan: terminaalin uusin rivi on
+     * alimpana. -> siirtyikö kuva. */
+    const focus = (elements, animate) => {
+      if (!closeUp) return false;
+      const boxes = elements.filter(visible).map((element) => box(canvas, element));
+      if (!boxes.length) return false;
+      const left = Math.min(...boxes.map((b) => b.x));
+      const top = Math.min(...boxes.map((b) => b.y));
+      const right = Math.max(...boxes.map((b) => b.x + b.w));
+      const bottom = Math.max(...boxes.map((b) => b.y + b.h));
+      const seenWidth = stage.clientWidth / CLOSE_UP;
+      const seenHeight = stage.clientHeight / CLOSE_UP;
+      const next = {
+        x: right - left > seenWidth ? left - 12 + seenWidth / 2 : (left + right) / 2,
+        y: bottom - top > seenHeight ? bottom + 12 - seenHeight / 2 : (top + bottom) / 2,
+      };
+      const moved = Math.hypot(next.x - point.x, next.y - point.y) > 24;
+      point = next;
+      apply(animate);
+      return moved;
+    };
+
+    /* Näyttämön koko: lähikuva päälle tai pois. Piilossa oleva näyttämö
+     * (tekstinä, suljettu välilehti) on 0 px leveä, eikä sen mitasta päätetä
+     * mitään. */
+    const fit = () => {
+      if (!stage.clientWidth) return;
+      const small = stage.clientWidth < SMALL_WIDTH;
+      closeUp = small && wantCloseUp;
+      zoomButton.hidden = !small;
+      zoomButton.textContent = closeUp ? "Koko kuva" : "Lähikuva";
+      apply(false);
+    };
+
+    const toggle = () => {
+      wantCloseUp = !wantCloseUp;
+      fit();
+    };
+
+    return { focus, fit, toggle, closeUp: () => closeUp };
+  }
+
   /* Kohtauksen piirto ja animaatio piirrosalustalle. Vaiheittainen ohje ja
    * yksittäinen animaatio käyttävät samaa. focus(elementit, animoi): ohjeen
    * lähikuva, joka keskittää elementit. -> siirtyikö kuva. */
@@ -413,7 +482,8 @@
           await wait(450, token);
         } else if (kind === "type") {
           const text = texts.get(element);
-          const delay = Math.max(14, Math.min(45, 1500 / text.length));
+          const delay = Number(element.dataset.type)
+            || Math.max(14, Math.min(45, 1500 / text.length));
           for (let i = 1; i <= text.length; i++) {
             element.textContent = text.slice(0, i);
             await wait(delay, token);
@@ -423,6 +493,7 @@
           element.classList.add("jw-gone");
           await wait(300, token);
         }
+        if (kind !== "hide" && element.dataset.wait) await wait(Number(element.dataset.wait), token);
       }
       await wait(150, token);
       finish(false);
@@ -509,7 +580,7 @@
           `<button type="button" class="jw-tick" aria-label="Vaihe ${step.index + 1}: ${esc(step.title)}"`
           + ` title="${step.index + 1}. ${esc(step.title)}"></button>`).join("")}</div></div>`).join("")}</div>`
       + `<div class="jw-bar"><span class="jw-count" aria-live="polite"></span>`
-      + `<button type="button" class="jw-replay">Toista</button>`
+      + `<button type="button" class="jw-replay">Toista uudelleen</button>`
       + `<button type="button" class="jw-prev">← Edellinen</button>`
       + `<button type="button" class="jw-next">Seuraava →</button></div></div>`;
     root.prepend(shell);
@@ -530,67 +601,16 @@
     const chapterButtons = [...shell.querySelectorAll("[data-chapter]")];
 
     let current = 0;
-    let closeUp = false;
-    let wantCloseUp = true;
     let full = false;
     let native = false;
     let speaking = false;
     let started = false;
     /* Odottavan animaation käynnistys (go "wait"), kun toistonappi näkyy. */
     let startPlay = null;
-    let camera = { x: WIDTH / 2, y: HEIGHT / 2 };
 
-    /* Piirrosalustan skaala ja siirto. Lähikuvassa camera on kohtauksen piste,
-     * joka tulee näyttämön keskelle, kuitenkin niin, ettei kuvan reuna irtoa. */
-    const applyCamera = (animate) => {
-      const width = stage.clientWidth;
-      const height = stage.clientHeight;
-      const scale = closeUp ? CLOSE_UP : width / WIDTH;
-      let x = 0;
-      let y = 0;
-      if (closeUp) {
-        x = Math.min(0, Math.max(width - WIDTH * scale, width / 2 - camera.x * scale));
-        y = Math.min(0, Math.max(height - HEIGHT * scale, height / 2 - camera.y * scale));
-      }
-      canvas.classList.toggle("jw-canvas--moving", animate && !reducedMotion.matches);
-      canvas.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
-    };
-
-    /* Lähikuva elementtien kohdalle. Näyttämöä leveämpi alue tasataan
-     * vasempaan reunaan ja korkeampi alareunaan: terminaalin uusin rivi on
-     * alimpana. -> siirtyikö kuva. */
-    const focus = (elements, animate) => {
-      if (!closeUp) return false;
-      const boxes = elements.filter(visible).map((element) => box(canvas, element));
-      if (!boxes.length) return false;
-      const left = Math.min(...boxes.map((b) => b.x));
-      const top = Math.min(...boxes.map((b) => b.y));
-      const right = Math.max(...boxes.map((b) => b.x + b.w));
-      const bottom = Math.max(...boxes.map((b) => b.y + b.h));
-      const seenWidth = stage.clientWidth / CLOSE_UP;
-      const seenHeight = stage.clientHeight / CLOSE_UP;
-      const next = {
-        x: right - left > seenWidth ? left - 12 + seenWidth / 2 : (left + right) / 2,
-        y: bottom - top > seenHeight ? bottom + 12 - seenHeight / 2 : (top + bottom) / 2,
-      };
-      const moved = Math.hypot(next.x - camera.x, next.y - camera.y) > 24;
-      camera = next;
-      applyCamera(animate);
-      return moved;
-    };
-
-    const scene = player(canvas, focus);
-
-    /* Näyttämön koko: lähikuva päälle tai pois. Piilossa oleva näyttämö
-     * (tekstinä) on 0 px leveä, eikä sen mitasta päätetä mitään. */
-    const fit = () => {
-      if (!stage.clientWidth) return;
-      const small = stage.clientWidth < SMALL_WIDTH;
-      closeUp = small && wantCloseUp;
-      zoomButton.hidden = !small;
-      zoomButton.textContent = closeUp ? "Koko kuva" : "Lähikuva";
-      applyCamera(false);
-    };
+    const view = camera(stage, canvas, zoomButton);
+    const scene = player(canvas, view.focus);
+    const fit = view.fit;
 
     /* animate: false näyttää vaiheen valmiina, true animoi, "wait" jättää
      * vaiheen alkuunsa ja näyttämölle ison toistonapin, josta animaatio ja
@@ -766,9 +786,8 @@
       if (native && document.fullscreenElement !== root) setFull(false);
     });
     zoomButton.addEventListener("click", () => {
-      wantCloseUp = !wantCloseUp;
-      fit();
-      if (closeUp && scene.finished()) scene.focusFinished(false);
+      view.toggle();
+      if (view.closeUp() && scene.finished()) scene.focusFinished(false);
     });
     stage.addEventListener("click", () => root.focus({ preventScroll: true }));
     root.addEventListener("keydown", (event) => {
@@ -815,7 +834,7 @@
     new ResizeObserver(() => {
       fit();
       scene.drawRings();
-      if (closeUp && scene.finished()) scene.focusFinished(false);
+      if (view.closeUp() && scene.finished()) scene.focusFinished(false);
     }).observe(stage);
 
     if (root.clientWidth < SMALL_WIDTH) {
@@ -838,8 +857,8 @@
    * välilehti avataan. Siihen asti näkyy animaation alku. Vähemmän liikettä
    * pyytäneelle kohtaus piirretään valmiina, kun se tulee näkyviin, koska
    * piilossa olevalta välilehdeltä ei voi mitata kursorin ja kehysten
-   * paikkaa. Lähikuvaa ei ole: kapeassa palstassa kohtaus pienenee kuten
-   * kuva. Jos kohtausta ei ole, sisältö jää näkyviin. */
+   * paikkaa. Kapeassa palstassa on lähikuva kuten ohjeessa (camera). Jos
+   * kohtausta ei ole, sisältö jää näkyviin. */
   function enhanceAnimation(root, scenes) {
     const name = root.dataset.scene;
     if (!scenes[name]) {
@@ -849,20 +868,28 @@
 
     const shell = document.createElement("div");
     shell.className = "jw-anim";
-    shell.innerHTML = `<div class="jw-stage"><div class="jw-canvas" aria-hidden="true"></div></div>`
-      + `<div class="jw-anim-bar"><button type="button" class="jw-replay">Toista</button></div>`;
+    shell.innerHTML = `<div class="jw-stage"><div class="jw-canvas" aria-hidden="true"></div>`
+      + `<button type="button" class="jw-zoom jw-ui" hidden>Koko kuva</button></div>`
+      + `<div class="jw-anim-bar"><button type="button" class="jw-replay">Toista uudelleen</button></div>`;
     root.prepend(shell);
     root.classList.add("jyu-anim--live");
 
     const stage = shell.querySelector(".jw-stage");
     const canvas = shell.querySelector(".jw-canvas");
-    const scene = player(canvas);
+    const zoomButton = shell.querySelector(".jw-zoom");
+    const view = camera(stage, canvas, zoomButton);
+    const scene = player(canvas, view.focus);
 
     new ResizeObserver(() => {
-      if (!stage.clientWidth) return;
-      canvas.style.transform = `scale(${stage.clientWidth / WIDTH})`;
+      view.fit();
+      if (view.closeUp() && scene.finished()) scene.focusFinished(false);
       scene.drawRings();
     }).observe(stage);
+    zoomButton.addEventListener("click", () => {
+      view.toggle();
+      if (view.closeUp() && scene.finished()) scene.focusFinished(false);
+      scene.drawRings();
+    });
 
     /* Ensimmäinen ilmoitus tulee heti, ja isIntersecting on tosi pienestäkin
      * osasta, joten kynnys tarkistetaan itse (pyöristyksen varalla väljästi). */

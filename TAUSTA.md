@@ -284,7 +284,10 @@ ohj2:een (KAYTTOONOTTO.md: "korjaukset viedään käsin molempiin").
   `<animation scenes scene>` (`convert_animations` convert_tabsin jälkeen,
   tagin sisältö varalla ilman skriptiä ja tulosteessa), git.md ja tyokalut.md
   käyttävät git-ht-ohjeen `avaa-windows`-kohtausta; koesivun lopussa
-  välilehdellä, testit samoissa tiedostoissa. *Yleiskäyttöinen.*
+  välilehdellä, testit samoissa tiedostoissa. Tahti: `data-wait="ms"` (tauko
+  tapahtuman jälkeen) ja `data-type="ms"` (merkin viive). Kapeassa palstassa
+  animaatiolla on sama lähikuva kuin ohjeella (`camera`), koska koko
+  kohtauksen teksti jäi puhelimessa liian pieneksi. *Yleiskäyttöinen.*
 - Testaa tietosi -visa (lukujen `<visa>`-osio, merkkaus:
   ../curriculum/rakenne.md): `convert.py`:n uusi `convert_quizzes`
   (`<vaittama vastaus>` ja `<kysymys>` → `.jyu-visa-q`-div, vaihtoehdot
