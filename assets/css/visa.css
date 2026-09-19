@@ -87,7 +87,6 @@
   background: transparent;
   border: 0;
   border-radius: .2rem;
-  transition: background-color 125ms;
 }
 
 .md-typeset .jyu-visa-tt .jyu-visa-nappi {
@@ -114,7 +113,6 @@
   content: counter(jyu-visa-option, lower-alpha);
   border: .08rem solid currentcolor;
   border-radius: 50%;
-  transition: color 125ms, background-color 125ms;
 }
 
 .md-typeset .jyu-visa-tt .jyu-visa-nappi::before {
@@ -266,11 +264,4 @@
 
 .md-typeset .jyu-visa-nollaus button:hover {
   color: var(--md-accent-fg-color);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .md-typeset .jyu-visa-nappi,
-  .md-typeset .jyu-visa-nappi::before {
-    transition: none;
-  }
 }
