@@ -34,6 +34,12 @@ theme:
     # muistetaan sivulta toiselle. Ks. convert.py: convert_tabs.
     - content.tabs.link
 
+    # Alaviite näkyy viitemerkin päällä ponnahdusikkunana.
+    - content.footnote.tooltips
+
+    # Linkin otsikko ym. title-attribuutit teeman tooltipeinä.
+    - content.tooltips
+
   # Teema seuraa käyttöjärjestelmää ja vaihdin ohittaa sen, kuten book.tomlin
   # default-theme / preferred-dark-theme. Värit ovat Materialin omat.
   palette:
