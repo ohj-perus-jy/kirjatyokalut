@@ -14,6 +14,7 @@ runs:
     - if: inputs.tim != 'true'
       uses: lycheeverse/lychee-action@v2
       with:
+        # --root-dir: /-alkuiset polut paikallisiksi, jolloin ^file:// ohittaa ne.
         args: >-
           --config '${{ github.action_path }}/lychee.toml'
           --root-dir '${{ github.workspace }}/src'

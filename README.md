@@ -10,12 +10,12 @@ korjaus tehdään yhteen paikkaan.
 
 Merkkaus on mdBookin (`SUMMARY.md`, `{{#include}}`, `> [!VINKKI]`, `//-`-piilorivit
 ym.), koska kirjat kirjoitettiin alun perin mdBookille, mutta mdBookia itseään
-ei tarvita. ohj1:stä ja jypelidocsista se on poistettu kokonaan; ohj2:n `main`
-julkaistaan vielä mdBookilla ja `dev` Zensicalilla.
+ei tarvita: se on poistettu kaikista kirjoista (viimeisenä ohj2:sta 2026-09-20).
 
 - Miksi mikin ratkaisu on tehty: [PERUSTELUT.md](PERUSTELUT.md).
 - Mitä ominaisuuksia on ja mistä ne tulivat: [TAUSTA.md](TAUSTA.md).
-- Yhtenäistämisen tilanne ja avoimet asiat: [YHTENAISTYS.md](YHTENAISTYS.md).
+- Miten työkalut yhtenäistettiin (valmis 2026-09-18) ja avoimet kysymykset:
+  [YHTENAISTYS.md](YHTENAISTYS.md).
 
 ## Rakenne
 
@@ -43,8 +43,10 @@ ylähakemisto) ja lukee materiaalin sen viereisestä `src/`:stä.
 | `assets/`, `overrides/`, `icons/` | tyylit ja skriptit, teeman mallit, kuvakkeiden glyfit |
 | `puhe.py` | vaiheittaisen ohjeen äänet (Azure Speech) |
 | `run.sh`, `setup.sh` | ajo ja asennus kirjan hakemistosta käsin |
+| `requirements.txt` | kiinnitetty Zensical-versio; `requirements-dev.txt` lisää testien riippuvuudet |
 | `tests/` | testit ja koekirja (`tests/book/`) |
 | `linkit/` | ulkoisten linkkien tarkistus (GitHub Action, lychee) |
+| `CLAUDE.md` | kirjojen yhteiset kirjoitusohjeet Claudelle |
 
 ## Kirjan asetukset: kirja.toml
 
@@ -73,6 +75,10 @@ ei_sivuja = ["exercises/*/starter/*.md"]
 
 [poistettavat_osiot]
 "index.md" = "Navigointi tässä materiaalissa"
+
+[linkit]
+tim_kansiot = ["kurssit/tie/itkp102"]
+tim_pois = ["kurssit/tie/itkp102/materiaali/moniste"]
 ```
 
 Asetukset luetaan käynnistyessä: muutoksen jälkeen `run.sh` käynnistetään
@@ -119,7 +125,9 @@ git submodule update --init                     # (kirjan run.sh tekee tämän i
 ./zensical/run.sh puhe ../src/sivu.md   # vaiheittaisen ohjeen äänet
 ```
 
-Ensimmäinen ajo asentaa `.venv`:n kirjan hakemistoon (`setup.sh`).
+Ensimmäinen ajo asentaa `.venv`:n kirjan hakemistoon (`setup.sh`). Kun
+`requirements.txt`:n Zensical-versio vaihtuu, olemassa oleva `.venv` ei päivity
+itsestään: aja `zensical/tyokalut/setup.sh`.
 **Muokattava puu on `src/`, ei `docs/`**: `docs/` on kertakäyttöinen kopio.
 
 `git pull` ei päivitä submodulea itsestään. Kertaalleen kloonissa:
@@ -163,7 +171,8 @@ käännettäviin haaroihin samalla kertaa.
 git submodule add https://github.com/ohj-perus-jy/kirjatyokalut.git zensical/tyokalut
 ```
 
-Lisäksi `zensical/kirja.toml`, `zensical/mkdocs.yml` (yllä), `.gitignore`iin
+Lisäksi `zensical/kirja.toml`, `zensical/mkdocs.yml` (yllä), kirjan juuren
+`CLAUDE.md`:hen rivi `@zensical/tyokalut/CLAUDE.md`, `.gitignore`iin
 `zensical/.venv*/`, `zensical/docs/`, `zensical/site/`, `zensical/nav.yml`,
 `zensical/.cache/`, `zensical/.convert.lock`, ja kääre `zensical/run.sh`:
 
@@ -195,101 +204,47 @@ ja käännös kirjan hakemistossa:
           zensical build
 ```
 
-`convert.py` tarvitsee vain standardikirjaston (Python 3.11+, `tomllib`).
-Kaaviot ovat kirjan versionhallinnassa (`cache/`), joten julkaisu ei tarvitse
-svgbobia eikä PlantUML-palvelinta; `--strict` kaataa ajon, jos jokin puuttuu.
-Paikallisesti `convert.py` asentaa puuttuvan `svgbob_cli`:n cargolla, kun uusi
-tai muuttunut bob-kaavio sitä tarvitsee.
+`convert.py` tarvitsee vain standardikirjaston (Python 3.11+, `tomllib`), ja
+kaaviot tulevat kirjan `cache/`:sta, joten julkaisu ei tarvitse svgbobia eikä
+PlantUML-palvelinta. Paikallisesti `convert.py` asentaa puuttuvan
+`svgbob_cli`:n cargolla, kun uusi tai muuttunut bob-kaavio sitä tarvitsee.
 
 ## Linkkitarkistus
 
-`linkit/` on GitHub Action, joka tarkistaa kirjan `src/`:n ulkoiset linkit
-lycheellä. Työnkulun pitää olla kirjan omassa `.github/workflows/`:ssa (GitHub
-ei aja submodulen työnkulkuja), mutta se vain kutsuu actionia, joten action
-päivittyy osoittimen mukana kuten muutkin työkalut:
+`linkit/` on GitHub Action, joka tarkistaa lycheellä kirjan `src/`:n ulkoiset
+linkit ankkureineen. Työnkulun pitää olla kirjan omassa
+`.github/workflows/`:ssa (GitHub ei aja submodulen työnkulkuja), mutta se vain
+kutsuu actionia, joten tarkistus päivittyy osoittimen mukana. Malliksi käy
+ohj1:n `links.yml`; olennaiset askeleet:
 
 ```yaml
-name: Check external links
-
-on:
-  push:
-    branches: ["main", "dev"]
-    paths: ["src/**", ".lycheeignore", ".github/workflows/links.yml", "zensical/tyokalut"]
-  pull_request:
-    paths: ["src/**", ".lycheeignore", ".github/workflows/links.yml", "zensical/tyokalut"]
-  # Linkit rikkoutuvat ilman committejakin. Ajetaan vain oletushaarassa.
-  schedule:
-    - cron: "0 5 * * 1"
-  workflow_dispatch:
-
-permissions:
-  contents: read
-
-jobs:
-  lychee:
-    runs-on: ubuntu-latest
-    steps:
       - uses: actions/checkout@v4
         with:
           submodules: true
       - uses: ./zensical/tyokalut/linkit
-
-  # TIM-sivut muuttuvat gitin ulkopuolella: vain ajastettuna ja käsin.
-  tim:
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
-      - uses: ./zensical/tyokalut/linkit
-        with:
-          tim: true
 ```
 
-`tim`-työ tarkistaa kurssin TIM-sivujen linkit (esim. TIMin aikataulusta
-kirjaan). `linkit/tim_sivut.py` hakee kirja.toml:n `[linkit] tim_kansiot`
--kansioiden dokumentit alikansioineen TIMin `getItems`-rajapinnalla, joka
-näyttää kirjautumatta vain julkiset sivut, ja lychee hakee ne sivut ja
-tarkistaa niiden linkit. Ajo on oma työnsä, koska TIMin virhe ei saa kaataa
-kirjan pushia. Tulos on työn yhteenvedossa (job summary), ja GitHub lähettää
-kaatuneesta ajastetusta ajosta sähköpostin sille, joka viimeksi muutti
-`schedule`-riviä. Esimerkki (ohj1):
+Laukaisimen `paths`-listaan kuuluu myös `zensical/tyokalut`, ja viikoittainen
+`schedule` löytää linkit, jotka rikkoutuvat ilman committeja.
 
-```toml
-[linkit]
-tim_kansiot = ["kurssit/tie/itkp102"]
-tim_pois = ["kurssit/tie/itkp102/materiaali/moniste"]
-```
+Syötteellä `tim: true` action tarkistaa kirjan sijaan kurssin TIM-sivujen
+linkit (esim. TIMin aikataulusta kirjaan): `linkit/tim_sivut.py` listaa
+kirja.toml:n `[linkit]`-kansioiden julkiset dokumentit, ja lychee tarkistaa
+niiden linkit. Se ajetaan omana työnään vain ajastettuna ja käsin, koska
+TIM-sivut muuttuvat gitin ulkopuolella eikä TIMin virhe saa kaataa kirjan
+pushia. Kaatuneesta ajastetusta ajosta GitHub lähettää sähköpostin sille, joka
+viimeksi muutti `schedule`-riviä.
 
-TIMin rakenteesta: kirjautumista vaativat sivut ja lisäosien (esim.
-koodilaatikon) sisällä olevat linkit jäävät tarkistuksen ulkopuolelle.
-Joidenkin sivujen otsikot näkyvät vain kirjautuneelle (esim. Oma
-eteneminen), jolloin niiden ankkurit on ohitettava kirjan `.lycheeignore`ssa.
+Kirjautumista vaativat sivut ja lisäosien (esim. koodilaatikon) sisällä olevat
+linkit jäävät tarkistamatta. Jos sivun otsikko näkyy vain kirjautuneelle, sen
+ankkuri ohitetaan kirjan `.lycheeignore`ssa.
 
-Yhteiset asetukset ovat `linkit/lychee.toml`:ssa:
-
-- Ajo kaatuu vain 404:stä ja 410:stä. 403 (esim. TIMin kirjautumista
-  vaativat sivut), 429 ja 5xx hyväksytään, koska ne eivät kerro linkin
-  kuolleen. Aikakatkaisu ja yhteysvirhe kaatavat ajon (3 uusintaa, 30 s).
-- Vain ulkoiset linkit (`^file://` ohitetaan). Paikalliset polut ovat
-  `{{#include}}`-liitosten takia suhteessa liittävään sivuun, mitä lychee ei
-  tiedä; `--root-dir src` tekee `/`-alkuisista poluista paikallisia, jotta
-  nekin ohitetaan eivätkä kaada ajoa.
-- `src/SUMMARY.md` ohitetaan: sen `[nimi<url>]()`-ulkolinkki näyttää
-  lycheelle tyhjältä URLilta.
-- Ankkurit tarkistetaan (`include_fragments = "anchor-only"`): ne rikkoutuvat
-  huomaamatta, kun otsikko vaihtuu tai sisältö siirtyy toiselle sivulle.
-  Ohitetaan sivustot, joilla ankkuri syntyy vasta JavaScriptillä tai on
-  sivun sisäinen reitti (GitLabin `#L`-rivit, DuckDuckGon asetukset);
-  tarkistettu selaimella ennen ohitusta.
-- `opencs.it.jyu.fi` ohitetaan: palvelin ei lähetä välivarmennetta, joten
-  TLS-tarkistus kaatuu, vaikka selain toimii.
-- TIM-sivujen omat tyyli- ja skriptitiedostot (`/js/`, `/static/`, `/css/`)
-  ohitetaan; TIMin tyylitiedosto antaa 404:n joka sivulla.
-
-Kirjan omat ohitukset (regex, yksi per rivi) ovat kirjan juuren
-`.lycheeignore`ssa; lychee lisää ne yhteisten päälle.
+Yhteiset asetukset ja ohitukset ovat `linkit/lychee.toml`:ssa, kirjan omat
+ohitukset (regex, yksi per rivi) kirjan juuren `.lycheeignore`ssa. Ajo kaatuu
+vain 404:stä, 410:stä, aikakatkaisusta ja yhteysvirheestä; 403, 429 ja 5xx
+eivät kerro linkin kuolleen. Paikallisia linkkejä ei tarkisteta, koska
+`{{#include}}`-liitosten polut ovat suhteessa liittävään sivuun, mitä lychee ei
+tiedä.
 
 ## Testit
 
