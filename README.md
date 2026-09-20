@@ -13,9 +13,74 @@ ym.), koska kirjat kirjoitettiin alun perin mdBookille, mutta mdBookia itseään
 ei tarvita: se on poistettu kaikista kirjoista (viimeisenä ohj2:sta 2026-09-20).
 
 - Miksi mikin ratkaisu on tehty: [PERUSTELUT.md](PERUSTELUT.md).
-- Mitä ominaisuuksia on ja mistä ne tulivat: [TAUSTA.md](TAUSTA.md).
+- Mitä työkalut tarjoavat: [Ominaisuudet](#ominaisuudet) alla.
+- Mistä ominaisuudet tulivat (koeputken vanha README): [TAUSTA.md](TAUSTA.md).
 - Miten työkalut yhtenäistettiin (valmis 2026-09-18) ja avoimet kysymykset:
   [YHTENAISTYS.md](YHTENAISTYS.md).
+
+## Ominaisuudet
+
+Jokainen ominaisuus on kaikkien kirjojen käytössä: kirja ottaa sen käyttöön
+kirjoittamalla merkinnän `src/`:ään. Toteutus-sarakkeen funktiot ovat
+`convert.py`:ssä ja tiedostot `assets/`:ssa tai `overrides/partials/`:ssa.
+
+### Merkkaus: mitä `src/`:ään voi kirjoittaa
+
+| Merkintä | Tulos | Toteutus |
+| --- | --- | --- |
+| `SUMMARY.md` | navigaatio: osat, numeroidut luvut, osan otsikko linkkinä osan etusivulle | `build_nav` |
+| `{{#include tiedosto}}` | tiedoston sisältö tai valitut rivit paikalleen | `convert_includes` |
+| `> [!VINKKI]` ym. | värillinen laatikko: Osaamistavoitteet, Huomautus, Vinkki, Tärkeää, Varoitus, Todo, WIP; oppaiden merkinnät Kokeile, Ei toimi vielä, Kysymys | `convert_alerts`, admonitions.css |
+| `<details>`, `<summary>` | avattava osio, jonka sisällä Markdown toimii | `convert_details` |
+| `<task>`, `<task-title num>`, `<points>`, `<handout>`, `<task-link>` | tehtäväkortti: numero, pisteet, tehtävänanto; bonusmerkki | `convert_tasks`, `convert_bonus_marks`, tasks.css |
+| `<div class="ht-reqs">` | harjoitustyön vaatimuslohko, numerointi 1.1, 1.2, … | `convert_divs`, requirements.css |
+| `<visa>`, `<vaittama vastaus>`, `<kysymys>`, `<perustelu>` | Testaa tietosi -visa: valinta paljastaa vastauksen ja perustelun, vastaukset muistetaan selaimessa | `convert_quizzes`, visa.js/css |
+| `### [Windows](#tab/win)` | käyttöjärjestelmävälilehdet; valinta pätee koko sivustolla ja muistetaan | `convert_tabs` |
+| `<walkthrough scenes>`, `<step scene>` | vaiheittainen ohje: animoitu kohtaus askel kerrallaan, halutessa ääneen luettuna (`puhe.py`) | `convert_walkthroughs`, walkthrough.js/css |
+| `<animation scenes scene>` | yksittäinen animaatio tavallisella sivulla; tahti `data-wait`, `data-type` | `convert_animations` |
+| `<asciinema>` | terminaalinauhoitus soittimessa; soitin ladataan vain sivuille, joilla on nauhoitus | asciinema.js |
+| ` ```plantuml `, ` ```bob `, ` ```mermaid ` | luokkakaavio kuvana, ascii-kaavio upotettuna SVG:nä, mermaid sellaisenaan; kaaviot kirjan `cache/`:ssa | `convert_plantuml`, `convert_svgbob`, diagrams.css |
+| `<i class="bi …">`, `<i class="fa …">` | kuvake teeman glyfinä; valikkopolun nuoli merkkinä › | `convert_icons`, `icons/`, icons.css |
+| `[teksti](#käyttö)` | ankkuri ilman ääkkösiä, sama muoto kuin teeman otsikkotunnuksissa | `convert_anchors` |
+
+### Koodilohkot
+
+Kielet: `csharp`, `java`, `javascript` (korostetut rivit: `csharp`, `java`).
+
+| Merkintä | Tulos | Toteutus |
+| --- | --- | --- |
+| ` ```csharp ` | ajonappi: koodi ajetaan palvelimella, tuloste lohkon alle; Jypelin ikkuna kuvana | playground.js/css |
+| `,ignore`, `,noplayground` | ei ajonappia, väritys säilyy | `convert_fences` |
+| `,feature-jypeli` | ajo Jypeli-kirjaston kanssa (`csharp-jypeli`) | playground.js |
+| `,editable` | lukija voi muuttaa koodia sivulla ja ajaa sen; "Peruuta muutokset" | playground.js |
+| `//-` rivin alussa | piilorivi: ei näy, menee ajoon; silmänappi näyttää | `hide_lines`, hidelines.js/css |
+| `// HIGHLIGHT_GREEN_BEGIN` … `_END` | korostetut rivit: green, yellow, red, blue | `mark_highlights`, highlights.js/css |
+| `// FILE: Nimi.java` | monitiedostolohko: tiedosto per välilehti, ajetaan yhdessä | `convert_files` |
+
+### Sivusto: mitä lukija saa
+
+| Ominaisuus | Toteutus |
+| --- | --- |
+| Valikko kiinteänä kiskona, luvun avaus vierittää valikon kohdalleen | layout.css, nav-scroll.js |
+| Sivustovalikko kurssin nimen vieressä (`extra.sites`) | header.html, sitemenu.js/css |
+| Leipätekstin kirjasinvalikko: Source Serif 4, Atkinson Hyperlegible Next, Literata | header.html, fontmenu.js/css, typography.css |
+| Vaalea ja tumma teema käyttöjärjestelmän mukaan, vaihdin yläpalkissa | mkdocs-pohja.yml |
+| Haku; hakuikkunan teksti leipätekstin portaissa | search.js/css |
+| Tulosta: koko kirja yhdeksi PDF:ksi | `build_print_page`, print.js/css |
+| Alatunniste: edellinen/seuraava, tekijät ja lisenssi, "Ehdota muutosta", "Ilmoita ongelmasta" | copyright.html |
+| Alaviitteet ja `title`-attribuutit tooltipeinä | mkdocs-pohja.yml |
+| Taulukoiden, koodin ja nappirivin tyyli | tables.css, code.css, codebuttons.css |
+
+### Ylläpito
+
+| Ominaisuus | Toteutus |
+| --- | --- |
+| `./zensical/run.sh`: vahti, joka muuntaa tallennetun sivun ja päivittää selaimen | `convert.py --watch` |
+| `--strict`: julkaisu kaatuu puuttuvaan kaavioon | `convert.py`, kirjan pages.yml |
+| Varoitukset: puuttuva `{{#include}}`-kohde, virheellinen visa, tuntematon korostusväri, väärin piirtyvä bob-kaavio, vanhentunut ääni | `convert.py` |
+| Sivu toisen alasivuksi, tiedostoja pois sivuista, osioita pois | `kirja.toml` |
+| Ulkoisten linkkien ja ankkurien tarkistus, myös kurssin TIM-sivuilta | `linkit/` |
+| Testit koekirjalla ja kirjan omalla materiaalilla | `tests/`, `./zensical/run.sh test` |
 
 ## Rakenne
 
