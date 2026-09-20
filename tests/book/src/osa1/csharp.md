@@ -36,3 +36,15 @@ public class Peli : PhysicsGame
     }
 }
 ```
+
+## Muokattava ohjelma
+
+```csharp,editable
+//-public class Hei
+//-{
+//-    public static void Main()
+//-    {
+        System.Console.WriteLine("Hei, maailma!");
+//-    }
+//-}
+```

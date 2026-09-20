@@ -126,7 +126,7 @@ selaimen systeemikirjastot: [PERUSTELUT.md](PERUSTELUT.md).
 | 17 | Ikonit `<i class="bi ...">` ja `<i class="fa ...">` | 150                | **tehty** — 66 bonusmerkkiä `convert_bonus_marks`, 58 valikkopolun nuolta merkkinä ja 22 kuvaketta teeman glyfeinä `convert_icons`; 4 poistui navigointiosion mukana |
 | 18 | JYU-paletti, kultainen korostus              | 30                        | siirretty myöhemmäksi — värit ovat toistaiseksi Materialin omat                                                    |
 | 19 | Lisenssi ja linkit alatunnisteessa           | —                         | **tehty** — tekijät, lisenssi, "Ehdota muutosta" ja "Ilmoita ongelmasta"                                           |
-| 20 | ACE-editori (`editable`-lohkot)              | 2                         | siirretty myöhemmäksi — `.editable` säilyy luokkana; ajonappi ajaa lohkon sellaisenaan, ks. kohdat 3 ja 4          |
+| 20 | ACE-editori (`editable`-lohkot)              | 2                         | **tehty** kevyesti ilman ACE:a — `playground.js`: `<code>` on `contenteditable`, "Peruuta muutokset" -nappi; väritys ei päivity kirjoittaessa |
 | 21 | KaTeX                                        | 0                         | voi jättää pois                                                                                                    |
 | 22 | Edellinen/seuraava sivun alareunassa         | joka sivu                 | **tehty** — `navigation.footer`                                                                                    |
 | 23 | `### [Windows](#tab/win)`-välilehdet         | 33 lohkoa / 9 joukkoa     | **tehty** — `pymdownx.tabbed` + `content.tabs.link`                                                                |
@@ -140,17 +140,17 @@ haun ja responsiivisen navigaation.
 
 ## Mitä puuttuu
 
-Tarkistuslistalta kaksi kohtaa:
+Tarkistuslistalta yksi kohta:
 
 - **18 JYU-paletti, kultainen korostus** (30 kohtaa) — tietoisesti siirretty
   myöhemmäksi, ei tehdä tässä vaiheessa. Tehtäväkorttien bonusliuska käyttää
   omaa tummennettua sävyään, koska kirjan `#C29A5B` on valkoista vasten vain
   2,4:1.
-- **20 ACE-editori** (2 `editable`-lohkoa) — tietoisesti siirretty
-  myöhemmäksi, ei tehdä tässä vaiheessa. Lohko näkyy tavallisena koodina, ja
-  sen mukana `fa-history`-kuvake osoittaa "Peruuta muutokset" -nappiin, jota
-  sivustolla ei ole. "Hei, Java!" -sivun esimerkki korjataan sellaiseksi,
-  ettei se vaadi syötettä: [KAYTTOONOTTO.md](KAYTTOONOTTO.md).
+
+Kohdasta 20 (`editable`-lohkot) on tehty kevyt versio: koodia voi muokata ja
+muutettu koodi ajetaan, mutta editoria (ACE) ei ole, joten syntaksiväritys ei
+päivity kirjoittaessa eikä ohjelmalle voi antaa syötettä. Perustelut:
+[PERUSTELUT.md](PERUSTELUT.md), "Muokattavat lohkot".
 
 Pienempiä:
 

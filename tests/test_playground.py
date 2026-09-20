@@ -173,6 +173,7 @@ def test_no_console_errors(chapter):
 # --- ohj1: C#-lohkot -----------------------------------------------------------
 
 CSHARP = "div.highlight.language-csharp:not(.ignore):not(.feature-jypeli)"
+EDITABLE = "div.highlight.language-csharp.editable"
 JYPELI = "div.highlight.language-csharp.feature-jypeli"
 
 # Suorituspalvelin palauttaa Jypelin ikkunan PNG-kuvana data-URI:na merkkien
@@ -209,6 +210,7 @@ def test_csharp_button_is_added_to_runnable_blocks_only(csharp_chapter):
         ["language-csharp", 1],
         ["language-csharp ignore", 0],
         ["language-csharp feature-jypeli", 1],
+        ["language-csharp editable", 1],
     ]
 
 
@@ -274,3 +276,80 @@ def test_window_has_the_corners_of_a_code_block(csharp_chapter):
       return [img.display, img.borderRadius === code.borderRadius];
     }""") == ["block", True]
     assert csharp_chapter.errors == []
+
+
+# --- muokattavat lohkot (editable) ---------------------------------------------
+
+def edit_greeting(chapter: Chapter, text: str) -> None:
+    """Kohdistin tulostettavan merkkijonon loppuun ja `text` näppäimistöltä."""
+    chapter.page.evaluate("""selector => {
+      const code = document.querySelector(`${selector} code`);
+      code.focus();
+      const walker = document.createTreeWalker(code, NodeFilter.SHOW_TEXT);
+      while (walker.nextNode()) {
+        const at = walker.currentNode.data.indexOf('maailma!');
+        if (at < 0) continue;
+        getSelection().collapse(walker.currentNode, at + 'maailma!'.length);
+        return;
+      }
+    }""", EDITABLE)
+    chapter.page.keyboard.type(text)
+
+
+def test_only_editable_blocks_can_be_edited(csharp_chapter):
+    """Vain editable-lohkon koodi on muokattavissa, ja vain siinä on
+    peruutusnappi."""
+    assert csharp_chapter.page.evaluate("""() => [...document.querySelectorAll('div.highlight')]
+      .map(block => [block.querySelector('code').isContentEditable,
+                     block.querySelectorAll('[data-md-type=reset]').length])""") == [
+        [False, 0], [False, 0], [False, 0], [True, 1]]
+
+
+def test_edited_code_is_what_runs(csharp_chapter):
+    """Ajonappi lähettää muutetun koodin piiloriveineen."""
+    csharp_chapter.answer(output="Hei, maailma!!!\n")
+    edit_greeting(csharp_chapter, "!!")
+    csharp_chapter.run(EDITABLE)
+    assert csharp_chapter.requests[0]["code"] == (
+        "public class Hei\n{\n    public static void Main()\n    {\n"
+        '        System.Console.WriteLine("Hei, maailma!!!");\n    }\n}\n')
+    assert csharp_chapter.errors == []
+
+
+def test_enter_keeps_the_indentation_and_tab_indents(csharp_chapter):
+    """Rivinvaihto jatkaa rivin sisennyksellä ja sarkain on neljä välilyöntiä."""
+    page = csharp_chapter.page
+    edit_greeting(csharp_chapter, "")
+    page.keyboard.press("End")
+    page.keyboard.press("Enter")
+    page.keyboard.type("x;")
+    page.keyboard.press("Enter")
+    page.keyboard.press("Tab")
+    page.keyboard.type("y;")
+    assert ('maailma!");\n        x;\n            y;\n    }'
+            in page.text_content(f"{EDITABLE} code"))
+
+
+def test_reset_restores_the_original(csharp_chapter):
+    """Peruutusnappi on käytössä vasta muutoksen jälkeen ja palauttaa koodin
+    piiloriveineen."""
+    page = csharp_chapter.page
+    reset = page.locator(f"{EDITABLE} [data-md-type=reset]")
+    before = page.inner_html(f"{EDITABLE} code")
+    assert reset.is_disabled()
+    edit_greeting(csharp_chapter, "!!")
+    assert reset.is_enabled()
+    reset.click()
+    assert page.inner_html(f"{EDITABLE} code") == before
+    assert "boring" in before
+    assert reset.is_disabled()
+
+
+def test_ctrl_enter_runs_the_program(csharp_chapter):
+    """Ctrl+Enter koodissa painaa ajonappia."""
+    csharp_chapter.answer(output="Hei\n")
+    edit_greeting(csharp_chapter, "")
+    csharp_chapter.page.keyboard.press("Control+Enter")
+    csharp_chapter.page.wait_for_function(
+        "() => document.querySelector('.jyu-result code')?.textContent === 'Hei'")
+    assert len(csharp_chapter.requests) == 1

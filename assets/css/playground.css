@@ -6,11 +6,30 @@
   /* Teeman napit piirtävät kuvakkeen mask-imagella, joten tämä on samassa
    * muodossa: yksivärinen SVG, jonka värin nappi antaa. */
   --jyu-run-icon: url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8 5.14v14l11-7z"/></svg>');
+  --jyu-reset-icon: url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6a7 7 0 0 1 7-7 7 7 0 0 1 7 7 7 7 0 0 1-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 9-9 9 9 0 0 0-9-9m-1 5v5l4.25 2.52.77-1.28-3.52-2.09V8z"/></svg>');
 }
 
 .md-code__button[data-md-type="run"]::after {
   -webkit-mask-image: var(--jyu-run-icon);
   mask-image: var(--jyu-run-icon);
+}
+
+/* Muokattavan lohkon (editable) "Peruuta muutokset"; poissa käytöstä, kunnes
+ * koodia on muutettu. */
+.md-code__button[data-md-type="reset"]::after {
+  -webkit-mask-image: var(--jyu-reset-icon);
+  mask-image: var(--jyu-reset-icon);
+}
+
+/* Muokattavan koodin tunnistaa tekstikohdistimesta ja kohdistettuna kehyksestä.
+ * Kehys sisäpuolelle, koska pre leikkaa ulkopuolisen (overflow). */
+.md-typeset code[contenteditable] {
+  cursor: text;
+}
+
+.md-typeset code[contenteditable]:focus {
+  outline: none;
+  box-shadow: inset 0 0 0 0.1rem var(--md-accent-fg-color);
 }
 
 /* Ajon ajaksi nappi on poissa käytöstä, jottei samaa ohjelmaa lähetetä

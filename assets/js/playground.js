@@ -4,8 +4,8 @@
  *
  * Nappi on teeman oma koodilohkon nappi (nav.md-code__nav > button.md-code__button),
  * joten ulkoasu tulee teemalta; omaa on vain kuvake (assets/css/playground.css).
- * Tuloste on tavallinen koodilohko (div.highlight). Editoitavia lohkoja ei ole:
- * ajetaan se koodi, joka sivulla lukee. */
+ * Tuloste on tavallinen koodilohko (div.highlight). Ajetaan se koodi, joka
+ * sivulla lukee; editable-lohkossa lukija saa muuttaa sitä (makeEditable). */
 
 (() => {
   "use strict";
@@ -74,7 +74,7 @@
   /* Nappirivi tehdään itse, koska teema tekee sen vain kopiointi- tai
    * valintanapin kanssa (content.code.copy/select), joita ei ole käytössä.
    * Jos teeman rivi on olemassa, käytetään sitä. */
-  const addButton = (block) => {
+  const addButton = (block, type = "run", title = "Suorita ohjelma") => {
     const code = block.querySelector("code");
     const pre = code.parentElement;
     let nav = pre.querySelector(":scope > nav.md-code__nav");
@@ -85,11 +85,88 @@
     }
     const button = document.createElement("button");
     button.className = "md-code__button";
-    button.dataset.mdType = "run";
-    button.title = "Suorita ohjelma";
+    button.dataset.mdType = type;
+    button.title = title;
     button.setAttribute("aria-label", button.title);
     nav.append(button);
     return button;
+  };
+
+  /* Kohdistimen kohdalle tekstiä niin, että selaimen oma kumoaminen (Ctrl+Z)
+   * toimii; Range-rajapinnalla lisätty teksti ei menisi kumoamispinoon. */
+  const insert = (text) => document.execCommand("insertText", false, text);
+
+  /* Kohdistimen rivin sisennys. Range.toString() lukee tekstisolmut kuten
+   * textContent, joten piilorivit eivät sotke laskua. */
+  const indentAtCaret = (code) => {
+    const range = getSelection().getRangeAt(0).cloneRange();
+    range.setStart(code, 0);
+    return /[ \t]*/.exec(range.toString().split("\n").pop())[0];
+  };
+
+  /* Näkyvän koodin lopussa (viimeinen rivi tai piilorivien edellä) Chromium
+   * käyttää rivin oman rivinvaihdon uuden rivin vaihdoksi, jolloin seuraava
+   * (piilo)rivi jatkuisi kirjoitetun perään samalle riville. Rivit ovat
+   * <code>:n suoria span-lapsia; kohdistimen rivi saa vaihtonsa takaisin. */
+  const keepLineBreak = (code) => {
+    let line = getSelection().anchorNode;
+    while (line && line.parentNode !== code) line = line.parentNode;
+    if (line?.nodeType === Node.ELEMENT_NODE && line.nextSibling
+        && !line.textContent.endsWith("\n")) {
+      line.append("\n");
+    }
+  };
+
+  /* mdBookin "editable"-määre: koodia voi muuttaa sivulla. Editoria (ACE) ei
+   * ole, vaan <code> on contenteditable. Ajonappi lukee koodin vasta ajaessaan
+   * (source), joten muutettu koodi lähtee palvelimelle ilman muuta. Pygmentsin
+   * väritys ei päivity kirjoittaessa: uusi teksti saa sen tokenin värin, jonka
+   * sisään se kirjoitetaan. Selain ilman plaintext-only-tukea (Firefox < 136)
+   * jättää lohkon tavalliseksi ajettavaksi lohkoksi. */
+  const makeEditable = (block, runButton) => {
+    const code = block.querySelector("code");
+    try {
+      code.contentEditable = "plaintext-only";
+    } catch {
+      return;
+    }
+    code.spellcheck = false;
+    code.translate = false;
+    code.setAttribute("autocapitalize", "off");
+    code.setAttribute("autocorrect", "off");
+    code.setAttribute("aria-label", "Muokattava koodi");
+
+    /* Alkuperäinen talteen vasta kohdistuksessa: silloin hidelines.js ja
+     * highlights.js ovat jo merkinneet rivinsä, ja peruutus palauttaa nekin. */
+    let original = null;
+    const reset = addButton(block, "reset", "Peruuta muutokset");
+    reset.disabled = true;
+    code.addEventListener("focus", () => (original ??= code.innerHTML));
+    code.addEventListener("input", () => {
+      reset.disabled = code.innerHTML === original;
+    });
+    reset.addEventListener("click", () => {
+      code.innerHTML = original;
+      reset.disabled = true;
+    });
+
+    code.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+        event.preventDefault();
+        runButton.click();
+      } else if (event.key === "Enter") {
+        event.preventDefault();
+        insert(`\n${indentAtCaret(code)}`);
+        keepLineBreak(code);
+      } else if (event.key === "Tab" && !event.shiftKey
+                 && !event.ctrlKey && !event.altKey && !event.metaKey) {
+        event.preventDefault();
+        insert("    ");
+      } else if (event.key === "Escape") {
+        /* Sarkain sisentää, joten näppäimistöllä lohkosta pääsee pois näin. */
+        code.blur();
+      }
+    });
   };
 
   /* Tuloste koodin alle tavallisena koodilohkona; toinen ajo korvaa edellisen. */
@@ -174,9 +251,12 @@
   };
 
   for (const [anchor, blocks] of units) {
-    const buttons = blocks.map(addButton);
-    for (const button of buttons) {
+    const buttons = blocks.map((block) => addButton(block));
+    buttons.forEach((button, index) => {
       button.addEventListener("click", () => run(anchor, blocks, buttons));
-    }
+      if (blocks[index].classList.contains("editable")) {
+        makeEditable(blocks[index], button);
+      }
+    });
   }
 })();

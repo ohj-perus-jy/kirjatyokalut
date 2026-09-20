@@ -1867,6 +1867,51 @@ vastaamatta jäämisen. Koekirjaan tuli kolme lohkoa (ajettava lohko
 piiloriveineen, `noplayground`-lohko ja ajettava monitiedostolohko), minkä takia
 `test_print.py`:n välilehtijoukkojen määrä nousi kahdesta kolmeen.
 
+### Muokattavat lohkot (~75 riviä `playground.js`:ään + 3 sääntöä `playground.css`:ään)
+
+mdBookin `editable`-määre teki lohkosta ACE-editorin. Määre oli jo tallessa
+luokkana (`.editable`, ks. aitojen attribuutit), ja ajonappi lukee koodin vasta
+painettaessa (`source`), joten puuttui vain se, että koodia voi muuttaa.
+
+**Ei editoria, vaan `contenteditable="plaintext-only"` `<code>`-elementissä.**
+ACE on satoja kilotavuja, tarvitsisi oman teeman vaaleaan ja tummaan tilaan ja
+piirtäisi lohkon eri näköiseksi kuin sivun muut lohkot. Muokattavien
+esimerkkien käyttö on pieni muutos ja uusi ajo (vaihda tulostettava teksti,
+muuta lukua), ja siihen riittää tekstikenttä. `plaintext-only` pitää DOM:n
+tekstinä: rivinvaihto on `\n` eikä `<div>` tai `<br>`, ja liitetty teksti
+tulee ilman muotoiluja. Selain, joka ei tue arvoa (Firefox < 136), heittää
+sijoituksessa poikkeuksen, ja lohko jää tavalliseksi ajettavaksi lohkoksi.
+
+**Hinta: väritys ei päivity.** Pygments värittää rakennusvaiheessa, eikä
+selaimessa ole korostajaa. Uusi teksti saa sen tokenin värin, jonka sisään se
+kirjoitetaan: merkkijonon sisällä oikein, uusi lause rivin lopussa
+välimerkkien värillä. Jos tämä alkaa häiritä, seuraava askel on selainkorostaja
+(tai editori) vain sivuille, joilla on `editable`-lohko, kuten asciinema-soitin
+ladataan.
+
+**Näppäimet.** Enter jatkaa rivin sisennyksellä, sarkain on neljä välilyöntiä,
+Ctrl+Enter ajaa ohjelman ja Esc poistuu lohkosta (sarkain ei enää siirrä
+kohdistusta, joten näppäimistöllä on oltava toinen tie ulos). Teksti lisätään
+`execCommand("insertText")`:llä, koska vain se vie muutoksen selaimen
+kumoamispinoon.
+
+**Rivinvaihto piilorivien edellä.** Näkyvän koodin lopussa Chromium käyttää
+rivin oman `\n`:n uuden rivin vaihdoksi, jolloin seuraava piilorivi jatkuisi
+kirjoitetun rivin perään (`y;    }`), ja `//`-kommentti viimeisellä näkyvällä
+rivillä kommentoisi sulkevan aaltosulun pois. `keepLineBreak` palauttaa
+vaihdon Enterin jälkeen. Testattu vain Chromiumilla, koska testiympäristössä
+ei ole muuta selainta.
+
+**Peruuta muutokset** palauttaa `<code>`:n `innerHTML`:n. Alkuperäinen otetaan
+talteen vasta ensimmäisessä kohdistuksessa, jolloin `hidelines.js` ja
+`highlights.js` ovat jo merkinneet rivinsä; skriptien latausjärjestyksellä ei
+siksi ole väliä. Nappi on poissa käytöstä, kunnes koodi poikkeaa alkuperäisestä.
+
+Viisi testiä (`test_playground.py`, koekirjan `osa1/csharp.md`): vain
+`editable`-lohko on muokattavissa, muutettu koodi piiloriveineen on se mikä
+lähtee palvelimelle, Enter ja sarkain sisentävät eikä piilorivi liimaudu
+perään, peruutus palauttaa alkuperäisen ja Ctrl+Enter ajaa.
+
 ### Piilorivit ja silmänappi (uusi `assets/js/hidelines.js` + uusi `assets/css/hidelines.css` + ~50 riviä `convert.py`:hyn + 2 riviä `mkdocs.yml`:ään + 4 riviä `print.js`:ään)
 
 Kirjan koodiesimerkeissä on rivejä, jotka kuuluvat ohjelmaan muttei sivulle.
