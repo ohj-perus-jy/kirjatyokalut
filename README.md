@@ -190,9 +190,8 @@ git submodule update --init                     # (kirjan run.sh tekee tämän i
 ./zensical/run.sh puhe ../src/sivu.md   # vaiheittaisen ohjeen äänet
 ```
 
-Ensimmäinen ajo asentaa `.venv`:n kirjan hakemistoon (`setup.sh`). Kun
-`requirements.txt`:n Zensical-versio vaihtuu, olemassa oleva `.venv` ei päivity
-itsestään: aja `zensical/tyokalut/setup.sh`.
+Ensimmäinen ajo asentaa `.venv`:n kirjan hakemistoon (`setup.sh`), ja `run.sh`
+päivittää sen, kun `requirements.txt`:n Zensical-versio vaihtuu.
 **Muokattava puu on `src/`, ei `docs/`**: `docs/` on kertakäyttöinen kopio.
 
 `git pull` ei päivitä submodulea itsestään. Kertaalleen kloonissa:

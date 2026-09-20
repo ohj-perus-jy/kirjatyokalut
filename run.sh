@@ -15,7 +15,12 @@ BOOK=$(dirname "$TOOL")
 [[ -f $BOOK/kirja.toml ]] || BOOK=$TOOL
 cd "$BOOK"
 
-[[ -x .venv/bin/zensical ]] || "$TOOL/setup.sh"
+# Asenna, jos .venv puuttuu tai sen Zensical ei ole requirements.txt:n versio.
+pin=$(sed -n 's/^zensical==//p' "$TOOL/requirements.txt")
+if [[ ! -x .venv/bin/zensical ]] ||
+   ! compgen -G ".venv/lib/python*/site-packages/zensical-$pin.dist-info" >/dev/null; then
+    "$TOOL/setup.sh"
+fi
 
 if [[ ${1:-} == puhe ]]; then
     shift

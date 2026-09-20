@@ -98,15 +98,13 @@ ohj2 325 läpi.
   joka kloonissa; kirjan `run.sh` huomauttaa eri versiosta.
 - Kirjojen devcontainer hakee submodulen ja ajaa `setup.sh`:n
   (`postCreateCommand`); muualla `run.sh` hoitaa molemmat ensimmäisellä ajolla.
+- Sivustovalikko (`extra.sites`) on ohj1:ssä ja jypelidocsissa. ohj2:een sitä
+  ei tule (päätös 2026-09-20): kurssin nimi on siellä linkki etusivulle.
 
 ## Avoimet kysymykset
 
 - Merkinnän otsikko "Kokeile käynnistää pelisi" on Jypeli-sanastoa; ohj2:ssa
   outo. Yleisempi oletus vai kirjan oma otsikko `kirja.toml`issa?
-- Sivustovalikon lista: ohj2:n Zensical meni tuotantoon 2026-09-20
-  (<https://ohjelmointi2.it.jyu.fi/>), mutta ohj2:ssa ei ole `extra.sites`-listaa
-  eikä Ohjelmointi 2 ole ohj1:n ja jypelidocsin listoissa. Päätettävä kaikkien
-  kolmen kirjan lista.
 - LICENSE puuttuu tästä reposta.
 
 ## Havainnot
