@@ -288,8 +288,9 @@ ohj2:een (KAYTTOONOTTO.md: "korjaukset viedään käsin molempiin").
   tapahtuman jälkeen) ja `data-type="ms"` (merkin viive). Kapeassa palstassa
   animaatiolla on sama lähikuva kuin ohjeella (`camera`), koska koko
   kohtauksen teksti jäi puhelimessa liian pieneksi. *Yleiskäyttöinen.*
-- Testaa tietosi -visa (lukujen `<visa>`-osio, merkkaus:
-  ../curriculum/rakenne.md): `convert.py`:n uusi `convert_quizzes`
+- Testaa tietosi -visa (lukujen `<visa>`-osio, merkkaus: ohj1:n
+  `rakenne-2027`-haaran `curriculum/rakenne.md`): `convert.py`:n uusi
+  `convert_quizzes`
   (`<vaittama vastaus>` ja `<kysymys>` → `.jyu-visa-q`-div, vaihtoehdot
   listaksi, `<perustelu>` → `<details>`), `assets/js/visa.js` ja
   `assets/css/visa.css`. Valinta paljastaa oikean vastauksen ja perustelun,

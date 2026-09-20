@@ -1,13 +1,14 @@
-# Työkalujen yhtenäistäminen: tilanne
+# Työkalujen yhtenäistäminen: valmis 2026-09-18
 
 Tavoite: `zensical/`-työkalut (convert.py, puhe.py, assets, overrides, testit)
 ovat yksi kopio tässä repossa, ja kirjat (ohj1, ohj2, jypelidocs) käyttävät
-sitä git-submodulena polussa `zensical/tyokalut/`. Tätä tiedostoa päivitetään
-jokaisen askeleen yhteydessä. (Aiempi kopio: ohj1 `rakenne-2027`,
-`zensical/YHTENAISTYS.md`.)
+sitä git-submodulena polussa `zensical/tyokalut/`. Tavoite on saavutettu, ja
+tämä tiedosto on sen historia: myöhemmät työkalumuutokset näkyvät git-lokista ja
+ominaisuudet [README.md](README.md):stä. Auki ovat vain "Avoimet kysymykset".
 
 Kopiot: **o1r** = ohj1 `rakenne-2027`, **o1d** = ohj1 `dev` = `main`
-(tuotanto), **o2** = ohj2 `dev`, **jy** = jypelidocs `main` (= `dev`).
+(tuotanto), **o2** = ohj2 `dev` (2026-09-20 alkaen myös `main`, tuotanto),
+**jy** = jypelidocs `main` (= `dev`).
 
 Merkit: ✔ on, ✘ puuttuu, – ei koske.
 
@@ -95,14 +96,17 @@ ohj2 325 läpi.
   `main`) kulkevat siis tarkoituksella perässä, kunnes osoitin päivitetään.
 - Kirjojen `git pull` ei päivitä submodulea: `git config submodule.recurse true`
   joka kloonissa; kirjan `run.sh` huomauttaa eri versiosta.
-- ohj1:n ja ohj2:n devcontainer ei aja `setup.sh`:ta eikä hae submodulea;
-  `run.sh` hoitaa molemmat ensimmäisellä ajolla.
+- Kirjojen devcontainer hakee submodulen ja ajaa `setup.sh`:n
+  (`postCreateCommand`); muualla `run.sh` hoitaa molemmat ensimmäisellä ajolla.
 
 ## Avoimet kysymykset
 
 - Merkinnän otsikko "Kokeile käynnistää pelisi" on Jypeli-sanastoa; ohj2:ssa
   outo. Yleisempi oletus vai kirjan oma otsikko `kirja.toml`issa?
-- ohj2:n sivustovalikon lista päätetään, kun ohj2:n Zensical menee tuotantoon.
+- Sivustovalikon lista: ohj2:n Zensical meni tuotantoon 2026-09-20
+  (<https://ohjelmointi2.it.jyu.fi/>), mutta ohj2:ssa ei ole `extra.sites`-listaa
+  eikä Ohjelmointi 2 ole ohj1:n ja jypelidocsin listoissa. Päätettävä kaikkien
+  kolmen kirjan lista.
 - LICENSE puuttuu tästä reposta.
 
 ## Havainnot
@@ -113,16 +117,11 @@ ohj2 325 läpi.
   2026-09-18), joten ohj1:n playground.js kävi ohj2:een sellaisenaan.
 - Testit kääntävät koekirjan repon omalla mkdocs.yml:llä (`copy_book`), joten
   test_sitemenu.py riippuu kirjan `site_name`sta ja `extra.sites`-listasta.
-- ohj2: `svgbob_problems` varoittaa aiheetta sivulla
-  `osa6/02-kokoelmien-kasittely-stream-api.md`, jossa `( -148)` on tarkoituksella
-  piirretty soikio. Pelkkä varoitus.
 - jypelidocsin pages.yml kääntää samalla ajolla sekä `main`in että `dev`in.
   `--strict` kaatoi julkaisun 2026-09-18, koska `dev`in vanha convert.py ei
   tuntenut lippua; korjaantui, kun `dev` pikakelattiin `main`iin. Sama koskee
   submodulen käyttöönottoa: jokaisen haaran, jonka pages.yml kääntää, pitää
   siirtyä samalla kertaa.
-- README:n visakohta viittaa tiedostoon `../curriculum/rakenne.md`, jota ei
-  ole ohj1:n `dev`/`main`-haaroissa.
 
 ## Päiväkirja
 
@@ -145,3 +144,5 @@ ohj2 325 läpi.
 | 2026-09-18 | ohj1 `dev` + `main` submoduleen | ohj1 `ed8575d`, `e0aeb96` |
 | 2026-09-18 | juuren README:t: ohj1 Zensicalille (mdBook pois), jypelidocs ja ohj2 submodulen ohjeet | ohj1 `59c9b59`, `d65348b`; jypelidocs `00a7a68`; ohj2 `2887ff6` |
 | 2026-09-18 | mdBook pois ohj1:n kaikista haaroista (`book.toml`, `theme/`, `highlight/`, `mermaid/`, `start.sh`, VS Coden tehtävät → Zensical, devcontainerin portti 3000, Rust-pohjan .gitignore) ja jypelidocsista (.gitignore, kommentit) | ohj1 `a560b8c`, `3866ca7`, merge `6ac6f69`; jypelidocs `49bec2c` |
+| 2026-09-20 | ohj2 `main` Zensicalille, mdBook pois viimeisestäkin kirjasta | ohj2 `0c9d8de` |
+| 2026-09-20 | README:hen ominaisuusluettelo; tämä tiedosto suljettu | `c92f4be` |
