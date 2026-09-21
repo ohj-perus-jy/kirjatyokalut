@@ -2393,6 +2393,10 @@ otsikko, ja mukaan lähtee otsikko alaotsikoineen seuraavaan samantasoiseen
 otsikkoon asti. Jos osio poistetaan tai nimetään uudelleen lähteessä, ajo
 varoittaa.
 
+*Poistettu 2026-09-21:* kun mdBook poistui, osio poistettiin kirjojen
+lähteistä (ohj1, ohj2), ja `drop_sections`, `DROP_SECTIONS` sekä `kirja.toml`:n
+`[poistettavat_osiot]` lähtivät työkaluista.
+
 Todennettu näin:
 
 - **Jokainen tagi muuntui:** ajossa 58 nuolta ja 22 kuvaketta, tasan se mitä
@@ -2753,8 +2757,7 @@ muutoksen kokonaan näkymättä.
 **C:stä yksi tarkennus, jos siihen joskus palataan.** Sivun konteksti on
 laajennukselle saatavilla: `zensical.extensions.context` tarjoaa
 `ContextPreprocessor.from_markdown(md)` -> `Page.path` ja `Page.url`, mikä
-ratkaisisi sisällytyspolut, `DROP_SECTIONS`-sivukohtaisuuden ja svgbobin
-sivukohtaiset id-etuliitteet. Se on Zensicalin sisäinen rajapinta, ei MkDocsin
+ratkaisisi sisällytyspolut ja svgbobin sivukohtaiset id-etuliitteet. Se on Zensicalin sisäinen rajapinta, ei MkDocsin
 standardia. Avoimeksi jäisi silti kolme: PlantUML tekisi verkkokutsun ja
 kirjoittaisi tiedostoja renderöinnin sisällä, Zensicalin sisältötiivisteeseen
 perustuva välimuisti ei näkisi noita tiedostoja, ja `extra.tab_labels`

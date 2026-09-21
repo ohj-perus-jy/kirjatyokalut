@@ -24,8 +24,6 @@ def page_config(monkeypatch):
     lukenut sen kirjan asetukset."""
     monkeypatch.setattr(convert, "NEST_UNDER",
                         {"tenttiohjeet.md": "tentti.md", "git-ht-ohje.md": "git.md"})
-    monkeypatch.setattr(convert, "DROP_SECTIONS",
-                        {"index.md": "Navigointi tässä materiaalissa"})
     monkeypatch.setattr(convert, "NOT_PAGES", ("exercises/*/starter/*.md",))
 
 
@@ -1038,40 +1036,6 @@ def test_icon_glyph_matches_the_button_it_points_at(icon, css, variable):
     path = re.search(r'd="(?P<path>[^"]+)"', drawn)["path"]
     assert f"{variable}:" in rule
     assert path in rule
-
-
-# --- Poistetut osiot ---------------------------------------------------------
-
-def test_drop_sections_takes_the_heading_and_its_body():
-    """Osio on otsikkorivi ja kaikki seuraavaan samantasoiseen otsikkoon asti."""
-    text = ("# Sivu\n\n## Navigointi tässä materiaalissa\n\nvinkki\n\n"
-            "### Alaotsikko\n\nlisää\n\n## Palaute\n\nteksti\n")
-    converted, sections = convert.drop_sections(text, "index.md")
-    assert sections == 1
-    assert converted == "# Sivu\n\n## Palaute\n\nteksti\n"
-
-
-def test_drop_sections_only_touches_the_named_page():
-    """Avain on sivun polku lähdepuussa: sama otsikko muualla jää rauhaan."""
-    text = "## Navigointi tässä materiaalissa\n\nvinkki\n"
-    assert convert.drop_sections(text, "osa1/index.md") == (text, 0)
-
-
-def test_drop_sections_ignores_headings_inside_code():
-    """Aidan sisällä rivin aloittava ristikko on kommentti eikä otsikko."""
-    text = ("## Navigointi tässä materiaalissa\n\n```python\n"
-            "# kommentti\n```\n\n## Palaute\n\nteksti\n")
-    converted, sections = convert.drop_sections(text, "index.md")
-    assert sections == 1
-    assert converted == "## Palaute\n\nteksti\n"
-
-
-def test_drop_sections_warns_when_the_section_is_gone(capsys):
-    """Jos osio poistetaan tai nimetään uudelleen lähteessä, se pitää poistaa
-    myös täältä."""
-    converted, sections = convert.drop_sections("# Sivu\n", "index.md")
-    assert (converted, sections) == ("# Sivu\n", 0)
-    assert "DROP_SECTIONS" in capsys.readouterr().err
 
 
 def test_convert_tasks_lifts_the_tags_out_of_the_indentation():

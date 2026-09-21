@@ -89,13 +89,6 @@ NEST_UNDER: dict[str, str] = dict(CONFIG.get("siirrot", {}))
 # kirja.toml: ei_sivuja = ["exercises/*/starter/*.md"].
 NOT_PAGES: tuple[str, ...] = tuple(CONFIG.get("ei_sivuja", ()))
 
-# Osiot, jotka kuvaavat mdBookin käyttöliittymää (laitanuolet) eivätkä pidä
-# Zensicalissa paikkaansa. Lähteeseen ei kosketa, joten poisto tehdään tässä.
-# Avain = sivun polku lähdepuussa, arvo = osion otsikko sellaisenaan.
-# kirja.toml: [poistettavat_osiot], esim. "index.md" = "Navigointi tässä materiaalissa".
-DROP_SECTIONS: dict[str, str] = dict(CONFIG.get("poistettavat_osiot", {}))
-HEADING_RE = re.compile(r"(?P<level>#+)\s+(?P<title>.*?)\s*$")
-
 # Otsikko, jonka edessä on 1-3 välilyöntiä: CommonMark (mdBook) sallii sen,
 # Python-Markdown ei, vaan jättää risuaidat näkyviin. Ks. dedent_headings.
 INDENTED_HEADING_RE = re.compile(r"^ {1,3}(?=#{1,6}\s)")
@@ -618,40 +611,6 @@ def dedent_headings(text: str) -> tuple[str, int]:
             moved += 1
         out.append(line)
     return "\n".join(out), moved
-
-
-def drop_sections(text: str, relative: str) -> tuple[str, int]:
-    """DROP_SECTIONS-osio pois sivulta. -> (teksti, osioita).
-
-    Osio on otsikkorivi ja kaikki seuraavaan samantasoiseen tai ylempään
-    otsikkoon asti. Koodiaidat ohitetaan: aidan sisällä "#" on kommentti.
-    """
-    title = DROP_SECTIONS.get(relative)
-    if title is None:
-        return text, 0
-    out: list[str] = []
-    open_fence: str | None = None
-    dropping = 0
-    sections = 0
-    for line in text.split("\n"):
-        fence = CODE_FENCE_RE.match(line)
-        if fence and open_fence is None:
-            open_fence = fence["fence"]
-        elif (fence and not fence["info"].strip()
-                and len(fence["fence"]) >= len(open_fence)):
-            open_fence = None
-        match = HEADING_RE.match(line) if open_fence is None else None
-        if match and dropping and len(match["level"]) <= dropping:
-            dropping = 0
-        if match and not dropping and match["title"] == title:
-            dropping = len(match["level"])
-            sections += 1
-        if not dropping:
-            out.append(line)
-    if not sections:
-        print(f"varoitus: DROP_SECTIONS-osiota ei löytynyt: {relative}: {title}",
-              file=sys.stderr)
-    return "\n".join(out), sections
 
 
 def take_lines(content: str, selector: str) -> str | None:
@@ -2201,18 +2160,17 @@ def main(strict: bool = False) -> int:
         if not is_page(source_path):
             continue
         # Sivu kirjoitetaan NEST_UNDER-siirron jälkeiseen paikkaan, mutta
-        # sisällytykset ja DROP_SECTIONS ratkeavat lähdepuun polusta.
+        # sisällytykset ratkeavat lähdepuun polusta.
         page = DOCS / moves.get(source_path, source_path)
         source = origin.read_text(encoding="utf-8")
-        # Järjestys: poistuvat osiot ja sisällytykset ensin, jotta muut
-        # muunnokset näkevät lopullisen tekstin (sisällytyksissä on koodiaitoja
-        # ja FILE-merkintöjä). Ankkurit ennen kuin mikään muunnos kirjoittaa
+        # Järjestys: sisällytykset ensin, jotta muut muunnokset näkevät
+        # lopullisen tekstin (sisällytyksissä on koodiaitoja ja
+        # FILE-merkintöjä). Ankkurit ennen kuin mikään muunnos kirjoittaa
         # omia linkkejään tai SVG-tunnuksiaan. Muunnosten laskurit jäävät
         # käyttämättä.
-        # Sisennetyt otsikot ensin, jotta drop_sections ja convert_anchors
-        # tunnistavat ne otsikoiksi.
+        # Sisennetyt otsikot ensin, jotta convert_anchors tunnistaa ne
+        # otsikoiksi.
         converted, _ = dedent_headings(source)
-        converted, _ = drop_sections(converted, source_path)
         converted, _ = convert_includes(converted, origin)
         converted, _, _ = convert_anchors(converted)
         converted, _ = convert_moved_links(converted, source_path)

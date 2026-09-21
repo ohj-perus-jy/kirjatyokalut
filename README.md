@@ -123,7 +123,6 @@ siitä kirjan hakemisto tunnistetaan.
 | `nimi` | kirjan lyhyt nimi verkkopyyntöjen User-Agentiin (PlantUML, puhe.py) | `BOOK_NAME` |
 | `ei_sivuja` | lista fnmatch-kuvioita `.md`-tiedostoille, joista ei tehdä sivua | `NOT_PAGES` |
 | `[siirrot]` | etulinkki toisen alle: `"tenttiohjeet.md" = "tentti.md"` | `NEST_UNDER` |
-| `[poistettavat_osiot]` | sivulta pois jätettävä osio: `"index.md" = "Osion otsikko"` | `DROP_SECTIONS` |
 | `[testit] rikkinaiset_kuvat` | kuvat, joiden tiedetään puuttuvan (test_book.py sallii ne) | – |
 | `[linkit] tim_kansiot` | TIM-kansiot, joiden julkisten sivujen linkit tarkistetaan (ks. Linkkitarkistus) | – |
 | `[linkit] tim_pois` | tarkistuksesta pois jätettävät TIM-dokumentit (polku kuten kansioissa) | – |
@@ -137,9 +136,6 @@ ei_sivuja = ["exercises/*/starter/*.md"]
 [siirrot]
 "tenttiohjeet.md" = "tentti.md"
 "git-ht-ohje.md" = "git.md"
-
-[poistettavat_osiot]
-"index.md" = "Navigointi tässä materiaalissa"
 
 [linkit]
 tim_kansiot = ["kurssit/tie/itkp102"]
