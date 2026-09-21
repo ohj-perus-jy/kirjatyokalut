@@ -1,8 +1,8 @@
 # Summary
 
 [Aloitus](./index.md)
-[Tentti](./tentti.md)
-[Tenttiohjeet](./tenttiohjeet.md)
+[Tentti](./tentti/index.md)
+  [Tenttiohjeet](./tentti/tenttiohjeet.md)
 
 ---
 

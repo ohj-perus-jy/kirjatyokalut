@@ -28,7 +28,7 @@ kirjoittamalla merkinnän `src/`:ään. Toteutus-sarakkeen funktiot ovat
 
 | Merkintä | Tulos | Toteutus |
 | --- | --- | --- |
-| `SUMMARY.md` | navigaatio: osat, numeroidut luvut, osan otsikko linkkinä osan etusivulle | `build_nav` |
+| `SUMMARY.md` | navigaatio: osat, numeroidut luvut, osan otsikko linkkinä osan etusivulle; sisennetty etulinkki on edellisen etulinkin alasivu (edellinen on hakemistonsa `index.md`) | `build_nav` |
 | `{{#include tiedosto}}` | tiedoston sisältö tai valitut rivit paikalleen | `convert_includes` |
 | `> [!VINKKI]` ym. | värillinen laatikko: Osaamistavoitteet, Huomautus, Vinkki, Tärkeää, Varoitus, Todo, WIP; oppaiden merkinnät Kokeile, Ei toimi vielä, Kysymys | `convert_alerts`, admonitions.css |
 | `<details>`, `<summary>` | avattava osio, jonka sisällä Markdown toimii | `convert_details` |
@@ -122,7 +122,6 @@ siitä kirjan hakemisto tunnistetaan.
 | --- | --- | --- |
 | `nimi` | kirjan lyhyt nimi verkkopyyntöjen User-Agentiin (PlantUML, puhe.py) | `BOOK_NAME` |
 | `ei_sivuja` | lista fnmatch-kuvioita `.md`-tiedostoille, joista ei tehdä sivua | `NOT_PAGES` |
-| `[siirrot]` | etulinkki toisen alle: `"tenttiohjeet.md" = "tentti.md"` | `NEST_UNDER` |
 | `[testit] rikkinaiset_kuvat` | kuvat, joiden tiedetään puuttuvan (test_book.py sallii ne) | – |
 | `[linkit] tim_kansiot` | TIM-kansiot, joiden julkisten sivujen linkit tarkistetaan (ks. Linkkitarkistus) | – |
 | `[linkit] tim_pois` | tarkistuksesta pois jätettävät TIM-dokumentit (polku kuten kansioissa) | – |
@@ -132,10 +131,6 @@ Esimerkki (ohj1):
 ```toml
 nimi = "ohj1"
 ei_sivuja = ["exercises/*/starter/*.md"]
-
-[siirrot]
-"tenttiohjeet.md" = "tentti.md"
-"git-ht-ohje.md" = "git.md"
 
 [linkit]
 tim_kansiot = ["kurssit/tie/itkp102"]

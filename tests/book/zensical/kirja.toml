@@ -1,6 +1,3 @@
 # Koekirjan asetukset (tests/conftest.py: copy_book). Oikean kirjan vastaava
 # tiedosto on kirjan zensical/-hakemistossa; avaimet: README.md, "Kirjan asetukset".
 nimi = "koekirja"
-
-[siirrot]
-"tenttiohjeet.md" = "tentti.md"

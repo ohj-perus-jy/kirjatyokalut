@@ -25,7 +25,7 @@ def test_edited_text_is_printed(mutable_book, serve, browser):
     assert "Ankkurin kohde." in text(printed)
     assert "Uusi virke tenttiohjeisiin." not in text(printed)
 
-    page = mutable_book.src / "tenttiohjeet.md"
+    page = mutable_book.src / "tentti" / "tenttiohjeet.md"
     page.write_text(page.read_text(encoding="utf-8").replace(
         "Ankkurin kohde.", "Uusi virke tenttiohjeisiin."), encoding="utf-8")
     mutable_book.rebuild()

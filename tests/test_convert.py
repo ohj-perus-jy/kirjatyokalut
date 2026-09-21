@@ -22,8 +22,6 @@ def page_config(monkeypatch):
     """Kirjan asetukset (kirja.toml) kiinni arvoihin, joille testit on
     kirjoitettu: testit ajetaan myös kirjan submodulena, jolloin convert.py on
     lukenut sen kirjan asetukset."""
-    monkeypatch.setattr(convert, "NEST_UNDER",
-                        {"tenttiohjeet.md": "tentti.md", "git-ht-ohje.md": "git.md"})
     monkeypatch.setattr(convert, "NOT_PAGES", ("exercises/*/starter/*.md",))
 
 
@@ -1090,13 +1088,13 @@ def test_convert_walkthroughs_turns_the_tags_into_html():
         "</div>\n", 1)
 
 
-def test_convert_walkthroughs_writes_the_scenes_path_from_the_moved_page():
-    """NEST_UNDER siirtää sivun alikansioon (git-ht-ohje.md -> git/), joten
-    lähdepuun suhteellinen polku saa askeleen ylös. Hakemisto-osoitteen
-    askeleen lisää Zensical kuten <asciinema src>:lle."""
+def test_convert_walkthroughs_keeps_the_scenes_path_of_the_source():
+    """Polku on lähteessä sivun hakemistosta, kuten linkeissä, ja sivu on
+    docs/:ssä samassa paikassa, joten polku siirtyy sellaisenaan (siistittynä).
+    Hakemisto-osoitteen askeleen lisää Zensical kuten <asciinema src>:lle."""
     converted, _ = convert.convert_walkthroughs(
-        '<walkthrough scenes="images/git-ht-ohje/scenes.js">\n</walkthrough>\n',
-        "git-ht-ohje.md")
+        '<walkthrough scenes="./../images/git-ht-ohje/scenes.js">\n</walkthrough>\n',
+        "git/git-ht-ohje.md")
     assert converted.startswith(
         '<script src="../images/git-ht-ohje/scenes.js"></script>\n')
 
@@ -1167,11 +1165,12 @@ def test_convert_animations_keeps_the_tag_in_its_list_item_and_tab():
         '<script src="images/vaiheet.js"></script>\n', 1)
 
 
-def test_convert_animations_loads_each_scenes_file_once_from_the_moved_page():
-    """Sama tiedosto kahdesti -> yksi <script>. NEST_UNDER-siirretyn sivun
-    polku uudesta paikasta kuten ohjeessa (git.md -> git/index.md)."""
-    tag = '<animation scenes="images/git-ht-ohje/scenes.js" scene="{}">\n</animation>\n'
-    converted, count = convert.convert_animations(tag.format("a") + tag.format("b"), "git.md")
+def test_convert_animations_loads_each_scenes_file_once():
+    """Sama tiedosto kahdesti -> yksi <script>, myös eri kirjoitusasuin."""
+    tag = '<animation scenes="{}" scene="{}">\n</animation>\n'
+    converted, count = convert.convert_animations(
+        tag.format("../images/git-ht-ohje/scenes.js", "a")
+        + tag.format("./../images/git-ht-ohje/scenes.js", "b"), "git/index.md")
     assert count == 2
     assert converted.count("<script") == 1
     assert converted.endswith('<script src="../images/git-ht-ohje/scenes.js"></script>\n')
@@ -1219,16 +1218,17 @@ def test_walkthrough_audio_uses_only_audio_made_from_the_current_text(tmp_path):
     """Ääni kelpaa vain nykyisestä tekstistä tehtynä (puhe.json:n tiiviste);
     vanhentunut ja puuttuva jäävät pois ja listataan. Osoitteessa on
     hakemisto-osoitteen askel, koska Zensical ei korjaa data-attribuutteja."""
-    source = ('<walkthrough scenes="images/git-ht-ohje/scenes.js" audio="images/git-ht-ohje/puhe">\n'
+    source = ('<walkthrough scenes="../images/git-ht-ohje/scenes.js" audio="../images/git-ht-ohje/puhe">\n'
               '<step scene="a">\nEka.\n</step>\n<step scene="b">\nToka.\n</step>\n'
               '<step scene="c">\nKolmas.\n</step>\n</walkthrough>\n')
     folder = tmp_path / "images" / "git-ht-ohje" / "puhe"
     folder.mkdir(parents=True)
+    (tmp_path / "git").mkdir()
     for scene in "abc":
         (folder / f"{scene}.mp3").write_bytes(b"")
     (folder / "puhe.json").write_text(json.dumps({"voice": "fi-FI-NooraNeural", "steps": {
         "a": convert.speech_hash("Eka."), "b": convert.speech_hash("Vanha.")}}))
-    assert convert.walkthrough_audio(source, "git-ht-ohje.md", tmp_path) == (
+    assert convert.walkthrough_audio(source, "git/git-ht-ohje.md", tmp_path) == (
         {"a": "../../images/git-ht-ohje/puhe/a.mp3"}, ["b", "c"])
     assert convert.walkthrough_audio(WALK, "osa1/vaiheet.md", tmp_path) == ({}, [])
 
@@ -1389,8 +1389,8 @@ def test_is_page(source_path, page):
 
 def test_build_nav(book_src):
     """Numeron saavat vain listakohdat, juoksevasti myös ---erottimien yli;
-    osan etusivu toistuu ensimmäisenä lapsena numeroineen; NEST_UNDER siirtää
-    Tenttiohjeet Tentin alle; ulkoinen linkki tulee mukaan sellaisenaan."""
+    osan etusivu toistuu ensimmäisenä lapsena numeroineen; sisennetty
+    etulinkki Tenttiohjeet on Tentin alasivu; ulkoinen linkki tulee mukaan sellaisenaan."""
     assert convert.build_nav() == (
         'nav:\n'
         '  - "Aloitus": index.md\n'
@@ -1407,6 +1407,32 @@ def test_build_nav(book_src):
         '    - "2.2 Huomiot": osa2/02-huomiot.md\n'
         '    - "2.3 Sisällytys": osa2/03-sisallytys.md\n'
         '  - "Eteneminen": https://example.invalid/tim\n'
+    )
+
+
+def test_build_nav_nests_indented_prefix_link(tmp_path, monkeypatch):
+    """Sisennetty etulinkki on edellisen etulinkin alasivu ilman numeroa;
+    edellinen on hakemistonsa index.md (navigation.indexes). Luettelon
+    perään sisennetty etulinkki ei ole alasivu, koska sen yläpuolella ei ole
+    etulinkkiä."""
+    (tmp_path / "SUMMARY.md").write_text(
+        "# Summary\n\n"
+        "[Aloitus](./index.md)\n"
+        "[Tentti](./tentti/index.md)\n"
+        "  [Tenttiohjeet](./tentti/tenttiohjeet.md)\n"
+        "[Tyyliopas](./tyyliopas.md)\n\n---\n\n"
+        "- [Osa 1](./osa1/index.md)\n\n---\n\n"
+        "  [Eteneminen](./eteneminen.md)\n", encoding="utf-8")
+    monkeypatch.setattr(convert, "SRC", tmp_path)
+    assert convert.build_nav() == (
+        'nav:\n'
+        '  - "Aloitus": index.md\n'
+        '  - "Tentti":\n'
+        '    - "Tentti": tentti/index.md\n'
+        '    - "Tenttiohjeet": tentti/tenttiohjeet.md\n'
+        '  - "Tyyliopas": tyyliopas.md\n'
+        '  - "1 Osa 1": osa1/index.md\n'
+        '  - "Eteneminen": eteneminen.md\n'
     )
 
 
@@ -1438,45 +1464,6 @@ def test_build_nav_accepts_star_bullets_and_uneven_indent(tmp_path, monkeypatch)
     )
 
 
-def test_nest_moves():
-    """Yläsivu omaan hakemistoonsa index.md:ksi, alasivu sen viereen."""
-    assert convert.nest_moves() == {
-        "tentti.md": "tentti/index.md",
-        "tenttiohjeet.md": "tentti/tenttiohjeet.md",
-        "git.md": "git/index.md",
-        "git-ht-ohje.md": "git/git-ht-ohje.md",
-    }
-
-
-def test_convert_moved_links_points_at_the_new_place():
-    """Toisen sivun linkki siirrettyyn sivuun seuraa siirtoa; ankkuri säilyy."""
-    converted, count = convert.convert_moved_links(
-        "[Tentti](tentti.md) ja [ohjeet](./tenttiohjeet.md#jy) ja "
-        "[muu](ukk.md) ja [ulkoinen](https://example.invalid/tentti.md)",
-        "index.md")
-    assert count == 2
-    assert converted == (
-        "[Tentti](tentti/index.md) ja [ohjeet](tentti/tenttiohjeet.md#jy) ja "
-        "[muu](ukk.md) ja [ulkoinen](https://example.invalid/tentti.md)")
-
-
-def test_convert_moved_links_from_a_moved_page():
-    """Siirretyn sivun omat linkit: viereen siirtyneeseen sivuun lyhyt polku,
-    paikallaan pysyneeseen sivuun ja kuvaan askel ylös."""
-    converted, count = convert.convert_moved_links(
-        "[ohjeet](./tenttiohjeet.md) [ukk](ukk.md) ![k](images/kuva.png) [#](#a)",
-        "tentti.md")
-    assert count == 3
-    assert converted == (
-        "[ohjeet](tenttiohjeet.md) [ukk](../ukk.md) ![k](../images/kuva.png) [#](#a)")
-
-
-def test_convert_moved_links_leaves_other_pages_alone():
-    """Sivu ja kohde paikallaan: ei muutosta, ei edes polun siistimistä."""
-    text = "[a](./osa1/index.md) [b](../ukk.md#x)"
-    assert convert.convert_moved_links(text, "osa2/index.md") == (text, 0)
-
-
 # --- Tulostussivun runko (README kohta 24) -----------------------------------
 
 def test_build_print_page_lists_every_chapter(book_src):
@@ -1494,11 +1481,11 @@ def test_build_print_page_is_excluded_from_search(book_src):
     assert page.startswith("---\ntitle: Koko kirja\nsearch:\n  exclude: true\n")
 
 
-def test_build_extra_maps_moved_pages_back_to_src():
-    """Muokkauslinkki osoittaa ../src:ään, joten siirretyt sivut käännetään
-    takaisin ja generoidulta sivulta linkki jätetään pois."""
+def test_build_extra_drops_the_edit_link_of_the_generated_page():
+    """Muokkauslinkki osoittaa ../src:ään; generoitua sivua ei ole siellä, joten
+    siltä linkki jätetään pois. Muut sivut ovat samassa polussa, eivät riviä."""
     extra = convert.build_extra({"Windows"})
-    assert '"tentti/index.md": "tentti.md"' in extra
+    assert '  edit_source:\n    "tulosta.md": ""\n  tab_labels:' in extra
     assert '"tulosta.md": ""' in extra
     assert '    - "Windows"' in extra
 

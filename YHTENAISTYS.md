@@ -31,7 +31,7 @@ Merkit: ✔ on, ✘ puuttuu, – ei koske.
 
 `diff -rq` kopioiden välillä (2026-09-18) näyttää enää nämä:
 
-- convert.py: `NEST_UNDER`, `NOT_PAGES`, `DROP_SECTIONS`, `PLANTUML_AGENT`
+- convert.py: `NEST_UNDER` (poistettu 21.9.2026), `NOT_PAGES`, `DROP_SECTIONS`, `PLANTUML_AGENT`
 - puhe.py: User-Agent; run.sh: esimerkkisivun nimi kommentissa
 - mkdocs.yml: `site_name`, `site_url`, `copyright`, `repo_url`, `extra.sites`
   (ohj2:ssa ei listaa, joten valikkoa ei näy; nimi on linkki etusivulle)

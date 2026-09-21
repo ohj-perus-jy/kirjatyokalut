@@ -11,7 +11,7 @@ import pytest
 
 from conftest import open_print_page
 
-# Koekirjan luvut SUMMARY.md:n järjestyksessä NEST_UNDER-siirron jälkeen.
+# Koekirjan luvut SUMMARY.md:n järjestyksessä.
 CHAPTERS = [
     "Aloitus",
     "Tentti",

@@ -53,7 +53,7 @@ jota se saa rikkoa. Toiseksi se on nopea: koko kirjan kääntäminen kestää
 50 s, koekirjan 3 s. Siinä on yksi esimerkki jokaisesta asiasta, joka
 kokoamisessa voi mennä rikki — sama otsikko kahdessa luvussa, kuva
 alihakemistosta, sivun sisäinen ankkuri, lukujen välinen linkki, neljä
-välilehtijoukkoa, `NEST_UNDER`-siirto, ulkoinen linkki, huomiolaatikot ja
+välilehtijoukkoa, sisennetty etulinkki, ulkoinen linkki, huomiolaatikot ja
 sisällytykset kaikissa kolmessa muodossaan (koko tiedosto, yksi rivi
 taulukon soluun ja koodiaidan sisällä `// FILE:` -merkinnän jäljessä).
 Sisällytysten kohteet (`osa2/ohje.md` ja `osa2/Esimerkki.java`) eivät ole
@@ -355,6 +355,19 @@ muotoon `./tenttiohjeet/#jy-tenttiohjeet` ja molemmat ankkurit löytyvät.
 Varoitusten määrä on ennallaan 53, eli yhtään linkkiä ei katkennut. Lukujen
 numerointi on koskematon, koska numeron saavat vain listakohdat.
 
+**Myöhemmin (21.9.2026): siirto tehty lähteessä, `NEST_UNDER` poistettu.**
+Kun mdBook-julkaisu päättyi, `SUMMARY.md`:n ei tarvinnut enää kelvata
+mdBookille. Sivut siirrettiin `git mv`:llä lähteeseen samoihin paikkoihin kuin
+`docs/`:ssä (ohj1: `tentti/` ja `git/`, ohj2: `tentti/`), ja alasivu on
+`SUMMARY.md`:ssä sisennettynä etulinkkinä, jonka `build_nav` lukee edellisen
+etulinkin alasivuksi. Linkit korjattiin lähteeseen `convert_moved_links`illä
+ennen sen poistoa, joten ne ovat samat kuin muunnos tuotti. Todennettu
+vertaamalla ohj1:n ja ohj2:n `docs/`-hakemistot ennen ja jälkeen: ainoa ero on
+`edit_source`-kartan siirtorivien poistuminen (ja ohj1:ssä erikseen korjattu
+`suorittaminen.html`-linkki). `[siirrot]`, `nest_moves`, `convert_moved_links`
+ja siirtologiikka `sync_docs`:ssa, `build_nav`:ssa ja kaavio- ja
+ohjepoluissa poistuivat.
+
 ### Alatunniste: edellinen/seuraava, tekijät ja lisenssi
 
 Sivun alareunassa oli mdBookissa kaksi asiaa, ja kumpikaan ei tullut
@@ -496,6 +509,9 @@ siirtoja tai generoituja sivuja tulee lisää.
 Todennettu rakennetusta `site/`:stä ohjelmallisesti: linkki on 189 sivulla ja
 jokainen osoittaa tiedostoon, joka on olemassa `../src`:ssä (myös molemmat
 siirretyt); ainoa sivu ilman linkkiä on `tulosta/`.
+
+Myöhemmin (21.9.2026) siirrot tehtiin lähteessä (ks. *Tenttiohjeet Tentti-sivun
+alasivuksi*), joten kartassa on enää `tulosta.md`.
 
 ### Ongelmailmoitus alatunnisteeseen (`overrides/partials/copyright.html` + 5 riviä `layout.css`:ään)
 

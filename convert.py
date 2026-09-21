@@ -77,11 +77,6 @@ ICONS = TOOL / "icons"
 SUMMARY_LINK_RE = re.compile(
     r"^(?P<indent>\s*)(?P<bullet>[-*]\s*)?\[(?P<title>[^\]]*)\]\((?P<href>[^)]*)\)")
 
-# Etulinkkien sisäkkäisyys, jota mdBookin SUMMARY.md ei salli.
-# Avain = alasivun polku, arvo = sen sivun polku, jonka alle se siirretään.
-# kirja.toml: [siirrot], esim. "tenttiohjeet.md" = "tentti.md".
-NEST_UNDER: dict[str, str] = dict(CONFIG.get("siirrot", {}))
-
 # Markdown-tiedostot, jotka eivät ole sivuja (fnmatch lähdepuun polusta).
 # mdBook kääntää vain SUMMARY.md:n luvut, Zensical jokaisen .md:n. ohj1:
 # tehtävän aloituspohja on opiskelijalle annettava tiedosto, jonka linkki
@@ -406,21 +401,6 @@ def _locked():
             fcntl.flock(handle, fcntl.LOCK_UN)
 
 
-def nest_moves() -> dict[str, str]:
-    """NEST_UNDER -> siirrot docs/:ssä: vanha polku -> uusi polku.
-
-    navigation.indexes tekee osion otsikosta linkin vain, jos ensimmäinen sivu
-    on hakemistonsa index.md. Alasivu siirretään samaan hakemistoon, jotta
-    sivujen väliset suhteelliset linkit osoittavat yhä oikein.
-    """
-    moves: dict[str, str] = {}
-    for child, parent in NEST_UNDER.items():
-        folder = parent.removesuffix(".md")
-        moves[parent] = f"{folder}/index.md"
-        moves[child] = f"{folder}/{Path(child).name}"
-    return moves
-
-
 def is_page(source_path: str) -> bool:
     """Tuleeko lähdepuun Markdown-tiedostosta (polku lähdepuusta) sivu.
 
@@ -469,11 +449,11 @@ def build_extra(tab_labels: set[str]) -> str:
     tab_labels: convert_tabsin välilehtiotsikot, jotka content.tabs.link saa
     muistaa selaimessa (overrides/partials/javascripts/content.html) — ei
     tiedostonimiä, jotta klikattu tiedosto ei avaisi muita lohkoja väärältä
-    välilehdeltä. edit_source: docs/-polku -> src-polku NEST_UNDER-siirroille,
-    tyhjä PRINT_PAGElle = ei muokkauslinkkiä (overrides/partials/copyright.html).
+    välilehdeltä. edit_source: docs/-polku -> src-polku, tyhjä PRINT_PAGElle =
+    ei muokkauslinkkiä (overrides/partials/copyright.html). Muut sivut ovat
+    docs/:ssä samassa polussa kuin src:ssä, joten ne eivät tarvitse riviä.
     """
-    sources = {new_path: old_path for old_path, new_path in nest_moves().items()}
-    sources[PRINT_PAGE] = ""
+    sources = {PRINT_PAGE: ""}
     lines = ["", "# Muokkauslinkin polkukartta, ks. overrides/partials/copyright.html,",
              "# ja välilehtimuistin sallitut otsikot, ks.",
              "# overrides/partials/javascripts/content.html.",
@@ -535,24 +515,16 @@ def build_nav() -> str:
                 indents.append(width)
             level = len(indents) - 1
         else:
-            # Etu- ja jälkilinkki ei kuulu luetteloon: aina ylin taso, ja
-            # seuraava luettelo alkaa alusta.
+            # Etu- ja jälkilinkki ei kuulu luetteloon: ylin taso, ja seuraava
+            # luettelo alkaa alusta. Sisennetty etulinkki on edellisen etulinkin
+            # alasivu (mdBook ei sallinut tätä, Zensical sallii); edellinen on
+            # silloin hakemistonsa index.md, ks. navigation.indexes.
             indents.clear()
-            level = 0
+            nested = (match.group("indent") and entries
+                      and entries[-1][0] == 0 and not entries[-1][3])
+            level = 1 if nested else 0
         entries.append((level, title.replace('"', "'"), href,
                         bool(match.group("bullet"))))
-
-    moves = nest_moves()
-    entries = [(level, title, moves.get(href, href), numbered)
-               for level, title, href, numbered in entries]
-    for child_href, parent_href in NEST_UNDER.items():
-        child = next((e for e in entries if e[2] == moves[child_href]), None)
-        parent = next((e for e in entries if e[2] == moves[parent_href]), None)
-        if child is None or parent is None:
-            continue
-        entries.remove(child)
-        entries.insert(entries.index(parent) + 1,
-                       (parent[0] + 1, child[1], child[2], child[3]))
 
     counters: list[int] = []
 
@@ -703,45 +675,6 @@ def convert_anchors(text: str) -> tuple[str, int, int]:
             line = ANCHOR_LINK_RE.sub(fold, line)
         out.append(line)
     return "\n".join(out), links, headings
-
-
-# Suhteellinen linkki toiseen tiedostoon, ks. convert_moved_links. Ei
-# osoitteita (://), ei pelkkiä ankkureita (#...), ei absoluuttisia polkuja.
-RELATIVE_LINK_RE = re.compile(
-    r"\]\((?P<target>(?![a-z]+:|#|/)[^)\s#]+)(?P<fragment>#[^)\s]*)?\)")
-
-
-def convert_moved_links(text: str, source_path: str) -> tuple[str, int]:
-    """Linkit NEST_UNDER-siirtojen jälkeen. -> (teksti, korjattuja).
-
-    Siirretty sivu (tentti.md -> tentti/index.md) ei ole enää samassa
-    hakemistossa kuin ennen, joten sen omat suhteelliset linkit ja muiden
-    sivujen linkit siihen osoittaisivat harhaan. Kohde ratkaistaan lähdepuun
-    polusta, kuvataan siirron läpi ja kirjoitetaan suhteellisena sivun
-    uudesta paikasta. Sivuille ja kohteille, joita siirto ei koske, teksti
-    jää ennalleen. ohj1: index.md ja suorittaminen.md linkittävät tentti.md:hen.
-    """
-    moves = nest_moves()
-    page_dir = Path(moves.get(source_path, source_path)).parent
-    source_dir = Path(source_path).parent
-    count = 0
-
-    def fix(match: re.Match[str]) -> str:
-        nonlocal count
-        target = match["target"]
-        resolved = os.path.normpath(source_dir / target).replace(os.sep, "/")
-        if resolved.startswith(".."):
-            return match.group(0)
-        if resolved not in moves and source_path not in moves:
-            return match.group(0)
-        new_target = os.path.relpath(moves.get(resolved, resolved), page_dir)
-        new_target = new_target.replace(os.sep, "/")
-        if new_target == target:
-            return match.group(0)
-        count += 1
-        return f"]({new_target}{match['fragment'] or ''})"
-
-    return RELATIVE_LINK_RE.sub(fix, text), count
 
 
 def read_tab_set(lines: list[str],
@@ -1031,11 +964,9 @@ def plantuml_svg(source: str) -> str | None:
 def convert_plantuml(text: str, page: Path) -> tuple[str, int, set[str]]:
     """```plantuml-aidat kuviksi. -> (teksti, kaavioita, käytetyt tiedostot).
 
-    Kuvan osoite on suhteellinen sivun sijaintiin docs/:ssä, siis
-    NEST_UNDER-siirron jälkeiseen polkuun.
+    Kuvan osoite on suhteellinen sivun sijaintiin docs/:ssä.
     """
-    relative = page.relative_to(DOCS).as_posix()
-    depth = len(Path(nest_moves().get(relative, relative)).parent.parts)
+    depth = len(page.relative_to(DOCS).parent.parts)
     prefix = "../" * depth
     lines = text.split("\n")
     out: list[str] = []
@@ -1653,13 +1584,12 @@ WALK_CLOSE_RE = re.compile(r"^\s*</(?P<tag>walkthrough|step)>\s*$")
 WALK_CLOSING = {"walkthrough": "</div>", "step": "</section>"}
 
 
-def walkthrough_scenes_path(scenes: str, source_path: str) -> str:
-    """Kohtaustiedoston tai äänikansion polku sivun lopullisesta paikasta."""
+def walkthrough_scenes_path(scenes: str) -> str:
+    """Kohtaustiedoston tai äänikansion polku sivulta, normalisoituna, jotta
+    sama tiedosto eri kirjoitusasuin tulee sivulle vain kerran."""
     if re.match(r"^(?:[a-z]+:|/)", scenes):
         return scenes
-    page_dir = Path(nest_moves().get(source_path, source_path)).parent
-    resolved = os.path.normpath(Path(source_path).parent / scenes)
-    return os.path.relpath(resolved, page_dir).replace(os.sep, "/")
+    return os.path.normpath(scenes).replace(os.sep, "/")
 
 
 def walkthrough_tag(line: str, source_path: str,
@@ -1667,7 +1597,7 @@ def walkthrough_tag(line: str, source_path: str,
     """Yksi tagirivi HTML-riveiksi; None, jos rivi ei ole tagi. audio:
     kohtaus -> äänitiedoston osoite (walkthrough_audio)."""
     if match := WALK_OPEN_RE.match(line):
-        src = escape(walkthrough_scenes_path(match["scenes"], source_path))
+        src = escape(walkthrough_scenes_path(match["scenes"]))
         return [f'<script src="{src}"></script>', "",
                 '<div class="jyu-walk" markdown="1">']
     if match := STEP_OPEN_RE.match(line):
@@ -1690,10 +1620,9 @@ def convert_walkthroughs(text: str, source_path: str,
     Ohjeesta tulee div ja vaiheesta section, molemmat markdown="1", joten
     sisältö käännetään Markdownina ja ohje on ilman skriptiä tavallista tekstiä.
     Kohtaustiedosto tulee ohjeen eteen <script>-tagina. Sen polku on lähteessä
-    sivun hakemistosta kuten linkeissä; NEST_UNDER-siirretylle sivulle polku
-    kirjoitetaan uudesta paikasta (convert_moved_links korjaa vain
-    ](...)-linkit), ja hakemisto-osoitteen askeleen lisää Zensical kuten
-    <asciinema src>:lle. Tyhjät rivit ja koodiaidat kuten convert_tasksissa.
+    sivun hakemistosta kuten linkeissä, ja hakemisto-osoitteen askeleen
+    lisää Zensical kuten <asciinema src>:lle. Tyhjät rivit ja koodiaidat
+    kuten convert_tasksissa.
     """
     out: list[str] = []
     open_fence: str | None = None
@@ -1767,7 +1696,7 @@ def convert_animations(text: str, source_path: str) -> tuple[str, int]:
         elif open_fence is None:
             if opening := ANIM_OPEN_RE.match(line):
                 animations += 1
-                src = walkthrough_scenes_path(opening["scenes"], source_path)
+                src = walkthrough_scenes_path(opening["scenes"])
                 if src not in scripts:
                     scripts.append(src)
                 tag = (f'{opening["indent"]}<div class="jyu-anim"'
@@ -1939,8 +1868,8 @@ def walkthrough_audio(text: str, source_path: str,
         made = json.loads((folder / SPEECH_MANIFEST).read_text(encoding="utf-8"))["steps"]
     except (OSError, ValueError, KeyError):
         made = {}
-    base = walkthrough_scenes_path(audio, source_path)
-    if Path(nest_moves().get(source_path, source_path)).name != "index.md":
+    base = walkthrough_scenes_path(audio)
+    if Path(source_path).name != "index.md":
         base = f"../{base}"
     urls: dict[str, str] = {}
     silent: list[str] = []
@@ -2077,12 +2006,11 @@ def sync_docs() -> set[Path]:
 
     docs/:ia ei tyhjennetä eikä hakemistoja poisteta: `zensical serve` vahtii
     hakemistoa ja kaatuu tai unohtaa docs/assets/:n, jos tiedosto katoaa kesken
-    rakennuksen. Siksi kaikki kirjoitetaan suoraan lopulliseen paikkaansa
-    (NEST_UNDER-siirrot mukaan lukien), vain muuttunut (copy_if_changed), ja
+    rakennuksen. Siksi kaikki kirjoitetaan suoraan lopulliseen paikkaansa,
+    vain muuttunut (copy_if_changed), ja
     Markdown-sivut jätetään mainille kirjoitettaviksi muunnettuina. Jäänteet
     (poistetut sivut) main poistaa vasta lopuksi.
     """
-    moves = nest_moves()
     before = ({f for f in DOCS.rglob("*") if f.is_file()}
               if DOCS.exists() else set())
     fresh: set[Path] = set()
@@ -2092,16 +2020,12 @@ def sync_docs() -> set[Path]:
         relative = file.relative_to(SRC).as_posix()
         if file.suffix == ".md" and not is_page(relative):
             continue
-        target = DOCS / moves.get(relative, relative)
+        target = DOCS / relative
         fresh.add(target)
         if file.suffix == ".md":
             # Sivun kirjoittaa main muunnettuna, ks. write_if_changed.
             continue
         copy_if_changed(file, target)
-    for old_path in moves:
-        if not (SRC / old_path).is_file():
-            print(f"varoitus: NEST_UNDER viittaa puuttuvaan sivuun: {old_path}",
-                  file=sys.stderr)
     fresh |= {DOCS / "assets" / f.relative_to(ASSETS)
               for f in ASSETS.rglob("*") if f.is_file()}
     if PLANTUML_DIR.is_dir():
@@ -2152,16 +2076,13 @@ def main(strict: bool = False) -> int:
     tab_labels: set[str] = set()
     unknown_alerts: set[str] = set()
     unknown_icons: set[str] = set()
-    moves = nest_moves()
     # Silmukka käy lähdepuun eikä docs/:n, jottei sivua tarvitse ensin kopioida
     # raakana paikalleen (turha kirjoitus on vahdille tapahtuma).
     for origin in sorted(SRC.rglob("*.md")):
         source_path = origin.relative_to(SRC).as_posix()
         if not is_page(source_path):
             continue
-        # Sivu kirjoitetaan NEST_UNDER-siirron jälkeiseen paikkaan, mutta
-        # sisällytykset ratkeavat lähdepuun polusta.
-        page = DOCS / moves.get(source_path, source_path)
+        page = DOCS / source_path
         source = origin.read_text(encoding="utf-8")
         # Järjestys: sisällytykset ensin, jotta muut muunnokset näkevät
         # lopullisen tekstin (sisällytyksissä on koodiaitoja ja
@@ -2173,7 +2094,6 @@ def main(strict: bool = False) -> int:
         converted, _ = dedent_headings(source)
         converted, _ = convert_includes(converted, origin)
         converted, _, _ = convert_anchors(converted)
-        converted, _ = convert_moved_links(converted, source_path)
         # Visat ennen aitoja: kysymyksen tunniste lasketaan lähteen tekstistä.
         converted, _ = convert_quizzes(converted, source_path)
         # Monitiedostolohkot ennen convert_fencesiä: convert_fences ei koske
