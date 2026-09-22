@@ -95,8 +95,10 @@ def test_copy_is_acknowledged_beside_the_button(page):
     eikä teeman ilmoitukseen sivun alakulmassa (copy.js)."""
     page.context.grant_permissions(["clipboard-read", "clipboard-write"])
     page.click(f"{BLOCK} {COPY}")
-    note = page.locator(f"{BLOCK} nav.md-code__nav > :first-child")
-    assert note.get_attribute("class") == "jyu-copied jyu-copied--shown"
+    # Kuittaus tulee vasta leikepöydän luvattua (async), joten sitä odotetaan.
+    note = page.locator(f"{BLOCK} nav.md-code__nav > .jyu-copied--shown")
+    note.wait_for()
+    assert note.evaluate("note => note.previousElementSibling") is None
     assert note.inner_text() == "Kopioitu leikepöydälle"
     assert page.get_attribute(".md-dialog", "data-md-state") is None
     assert page.get_attribute(f"{BLOCK} {COPY}", "data-clipboard-target") is None
