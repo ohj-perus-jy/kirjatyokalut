@@ -2213,12 +2213,17 @@ def changed_files(before: dict[str, int], after: dict[str, int]) -> list[str]:
     return sorted(names)
 
 
+def repo_relative(path: str | Path) -> str:
+    """Polku repon juuresta lukien; juuren ulkopuolinen sellaisenaan."""
+    try:
+        return Path(path).relative_to(BOOK.parent).as_posix()
+    except ValueError:
+        return str(path)
+
+
 def watch_label(changed: list[str]) -> str:
     """Muuttuneet tiedostot yhden rivin nimeksi: polku ja monelleko muulle."""
-    try:
-        name = Path(changed[0]).relative_to(BOOK.parent).as_posix()
-    except ValueError:
-        name = changed[0]
+    name = repo_relative(changed[0])
     return name if len(changed) == 1 else f"{name} (+{len(changed) - 1})"
 
 
@@ -2238,7 +2243,9 @@ def watch() -> int:
     Ensimmäistä muunnosta ei tehdä: run.sh ajaa sen ennen vahtia, jotta
     `zensical serve` näkee valmiin docs/:n heti.
     """
-    print(f"vahti: {SRC} ja {ASSETS}, lopeta Ctrl-C", flush=True)
+    print(f"Vahti käynnissä: tallennus hakemistoon {repo_relative(SRC)}/ tai "
+          f"{repo_relative(ASSETS)}/ muuntaa kirjan uudelleen, ja palvelin "
+          "päivittää selaimen. Lopeta Ctrl-C.", flush=True)
     state = snapshot()
     try:
         while True:
