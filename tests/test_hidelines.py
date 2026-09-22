@@ -9,6 +9,7 @@ import pytest
 
 BLOCK = "div.highlight[data-hidden]"
 EYE = "[data-md-type=hidelines]"
+COPY = "[data-md-type=copy]"
 
 
 @pytest.fixture(scope="session")
@@ -63,9 +64,39 @@ def test_only_blocks_with_hidden_lines_get_an_eye(page):
     assert page.eval_on_selector_all(EYE, "buttons => buttons.length") == 1
 
 
-def test_both_buttons_share_one_row(page):
-    """Ajonappi ja silmä ovat samassa nappirivissä: ensin suoritus, sitten silmä."""
+def test_all_buttons_share_one_row(page):
+    """Teeman kopiointinappi, ajonappi ja silmä ovat samassa nappirivissä, siinä
+    järjestyksessä kuin mdBookissa. Teema tekee rivinsä vasta DOMContentLoaded-
+    tapahtumassa, joten omat napit odottavat sitä (hidelines.js: afterTheme)."""
+    assert page.eval_on_selector_all(f"{BLOCK} nav.md-code__nav", "navs => navs.length") == 1
     assert page.eval_on_selector_all(
         f"{BLOCK} nav.md-code__nav button",
         "buttons => buttons.map(button => button.dataset.mdType)") == [
-        "run", "hidelines"]
+        "copy", "run", "hidelines"]
+
+
+def test_copy_takes_hidden_lines_only_when_shown(page):
+    """Kopiointinappi kopioi näkyvän koodin: piilorivit tulevat mukaan vasta,
+    kun lukija on ottanut ne esiin silmällä. Rivi 1 on korostettu, joten
+    kopioinnin ajaksi vaihtuva display (highlights.css) ei saa paljastaa sitä."""
+    page.context.grant_permissions(["clipboard-read", "clipboard-write"])
+    page.click(f"{BLOCK} {COPY}")
+    assert page.evaluate("navigator.clipboard.readText()") == (
+        'IO.println("Hei, maailma!");')
+
+    page.click(f"{BLOCK} {EYE}")
+    page.click(f"{BLOCK} {COPY}")
+    assert page.evaluate("navigator.clipboard.readText()") == (
+        'void main() {\nIO.println("Hei, maailma!");\n}')
+
+
+def test_copy_is_acknowledged_beside_the_button(page):
+    """Kuittaus tulee nappirivin alkuun, kopiointinapin vasemmalle puolelle,
+    eikä teeman ilmoitukseen sivun alakulmassa (copy.js)."""
+    page.context.grant_permissions(["clipboard-read", "clipboard-write"])
+    page.click(f"{BLOCK} {COPY}")
+    note = page.locator(f"{BLOCK} nav.md-code__nav > :first-child")
+    assert note.get_attribute("class") == "jyu-copied jyu-copied--shown"
+    assert note.inner_text() == "Kopioitu leikepöydälle"
+    assert page.get_attribute(".md-dialog", "data-md-state") is None
+    assert page.get_attribute(f"{BLOCK} {COPY}", "data-clipboard-target") is None

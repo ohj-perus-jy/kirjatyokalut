@@ -40,6 +40,11 @@ theme:
     # Linkin otsikko ym. title-attribuutit teeman tooltipeinä.
     - content.tooltips
 
+    # Kopiointinappi koodilohkoihin, kuten mdBookissa. Teema kopioi näkyvän
+    # tekstin (innerText): piilorivit (hidelines.js) tulevat mukaan vain, jos
+    # lukija on ottanut ne esiin silmänapilla.
+    - content.code.copy
+
   # Teema seuraa käyttöjärjestelmää ja vaihdin ohittaa sen, kuten book.tomlin
   # default-theme / preferred-dark-theme. Värit ovat Materialin omat.
   palette:
@@ -104,6 +109,9 @@ extra_css:
   # Piilorivit ja silmänappi (assets/js/hidelines.js).
   - assets/css/hidelines.css
 
+  # Kopiointinapin kuittaus napin vieressä (assets/js/copy.js).
+  - assets/css/copy.css
+
   - assets/css/print.css
 
   # Vaiheittainen ohje (assets/js/walkthrough.js).
@@ -138,6 +146,9 @@ extra_javascript:
 
   # Korostetut rivit; järjestyksellä ei väliä.
   - assets/js/highlights.js
+
+  # Kopiointinapin kuittaus napin viereen teeman alakulman ilmoituksen sijaan.
+  - assets/js/copy.js
 
   # Terminaalinauhoitusten soitin; soitin ja tyyli haetaan vasta sivulla,
   # jolla on nauhoitus.

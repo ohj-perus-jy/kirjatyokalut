@@ -5,7 +5,7 @@
  * Rivit ovat Pygmentsin rivispaneja (line_spans), <code>:n suorat span-lapset
  * lähteen järjestyksessä. Tunnisteisiin ei nojata, koska tulostussivu
  * kirjoittaa ne uusiksi (print.js). Nappi menee samaan teeman nappiriviin kuin
- * ajonappi (playground.js); kumpi tahansa tiedosto voi olla ensin. */
+ * kopiointinappi ja ajonappi (playground.js). */
 
 (() => {
   "use strict";
@@ -15,6 +15,17 @@
     button.setAttribute("aria-pressed", String(shown));
     button.title = shown ? "Piilota rivit" : "Näytä piilotetut rivit";
     button.setAttribute("aria-label", button.title);
+  };
+
+  /* Teema tekee kopiointinapin rivin vasta DOMContentLoaded-tapahtumassa eikä
+   * katso, onko rivi jo olemassa; sama lykkäys kuin playground.js:ssä. Rivit
+   * piilotetaan silti heti, ettei piilorivi vilahda ennen tapahtumaa. */
+  const afterTheme = (callback) => {
+    if (document.readyState === "loading") {
+      addEventListener("DOMContentLoaded", callback);
+    } else {
+      callback();
+    }
   };
 
   const addButton = (code) => {
@@ -44,7 +55,7 @@
         lines[Number(number) - 1]?.classList.add("boring");
       }
       code.classList.add("hide-boring");
-      addButton(code);
+      afterTheme(() => addButton(code));
     }
   };
 

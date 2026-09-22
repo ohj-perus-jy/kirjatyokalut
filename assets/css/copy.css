@@ -1,0 +1,39 @@
+/* Kopiointinapin kuittaus nappirivissä napin vasemmalla puolella; toiminta:
+ * assets/js/copy.js. Ulkoasu on teeman oman ilmoituksen (.md-dialog):
+ * aksenttivärinen pilleri, mutta napin korkuinen ja leipätekstin kirjasimella,
+ * koska rivi on koodilohkossa, jonka kirjasin on koodin. */
+
+.jyu-copied {
+  display: flex;
+  align-items: center;
+  height: 1.75em;
+  padding: 0 0.6rem;
+  margin-right: 0.2rem;
+  font-family: var(--md-text-font-family);
+  font-size: 0.64rem;
+  line-height: 1;
+  color: var(--md-default-bg-color);
+  white-space: nowrap;
+  pointer-events: none;
+  background-color: var(--md-accent-fg-color);
+  border-radius: 1em;
+  box-shadow: var(--jyu-code-button-shadow);
+
+  /* Piilotettuna myös visibility, ettei kuittaus ole ruudunlukijalle olemassa;
+   * se vaihtuu vasta häivytyksen jälkeen, jotta häivytys näkyy. */
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.25s, visibility 0s 0.25s;
+}
+
+.jyu-copied--shown {
+  visibility: visible;
+  opacity: 1;
+  transition: opacity 0.25s, visibility 0s;
+}
+
+/* Tummassa teemassa teeman --md-default-bg-color on tumma; aksentin päälle
+ * valkoinen. */
+[data-md-color-scheme="slate"] .jyu-copied {
+  color: #fff;
+}

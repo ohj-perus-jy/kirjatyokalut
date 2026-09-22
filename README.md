@@ -49,6 +49,7 @@ Kielet: `csharp`, `java`, `javascript` (korostetut rivit: `csharp`, `java`).
 
 | Merkintä | Tulos | Toteutus |
 | --- | --- | --- |
+| mikä tahansa koodilohko | kopiointinappi: näkyvä koodi leikepöydälle (piilorivit vain silmällä esiin otettuina), kuittaus napin vieressä | mkdocs-pohja.yml (`content.code.copy`), copy.js/css |
 | ` ```csharp ` | ajonappi: koodi ajetaan palvelimella, tuloste lohkon alle; Jypelin ikkuna kuvana | playground.js/css |
 | `,ignore`, `,noplayground` | ei ajonappia, väritys säilyy | `convert_fences` |
 | `,feature-jypeli` | ajo Jypeli-kirjaston kanssa (`csharp-jypeli`) | playground.js |

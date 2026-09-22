@@ -71,9 +71,21 @@
     units.set(set || block, unit);
   }
 
-  /* Nappirivi tehdään itse, koska teema tekee sen vain kopiointi- tai
-   * valintanapin kanssa (content.code.copy/select), joita ei ole käytössä.
-   * Jos teeman rivi on olemassa, käytetään sitä. */
+  /* Teema tekee kopiointinapin ja sen nappirivin (content.code.copy) vasta
+   * DOMContentLoaded-tapahtumassa eikä katso, onko rivi jo olemassa. Omat
+   * napit lisätään siksi vasta sen jälkeen samaan riviin: teeman kuuntelija
+   * ehtii ensin, koska sen skripti on ladattu ennen tätä. Tulostussivulla
+   * (print.js) tapahtuma on jo ohi ja lohkoilla ei ole teeman riviä. */
+  const afterTheme = (callback) => {
+    if (document.readyState === "loading") {
+      addEventListener("DOMContentLoaded", callback);
+    } else {
+      callback();
+    }
+  };
+
+  /* Nappi teeman riviin; ilman kopiointinappia (ignore, noplayground eivät
+   * vaikuta siihen, mutta no-copy-luokka jättää sen pois) rivi tehdään itse. */
   const addButton = (block, type = "run", title = "Suorita ohjelma") => {
     const code = block.querySelector("code");
     const pre = code.parentElement;
@@ -250,13 +262,15 @@
     }
   };
 
-  for (const [anchor, blocks] of units) {
-    const buttons = blocks.map((block) => addButton(block));
-    buttons.forEach((button, index) => {
-      button.addEventListener("click", () => run(anchor, blocks, buttons));
-      if (blocks[index].classList.contains("editable")) {
-        makeEditable(blocks[index], button);
-      }
-    });
-  }
+  afterTheme(() => {
+    for (const [anchor, blocks] of units) {
+      const buttons = blocks.map((block) => addButton(block));
+      buttons.forEach((button, index) => {
+        button.addEventListener("click", () => run(anchor, blocks, buttons));
+        if (blocks[index].classList.contains("editable")) {
+          makeEditable(blocks[index], button);
+        }
+      });
+    }
+  });
 })();

@@ -19,9 +19,18 @@
   mask-image: var(--jyu-eye-off-icon);
 }
 
-/* Rivi on HTML:ssä tallessa myös piilotettuna (ajonappi lähettää sen, kopiointi
- * kopioi sen); vain näkyminen on kiinni luokasta. */
+/* Rivi on HTML:ssä tallessa myös piilotettuna (ajonappi lähettää sen); vain
+ * näkyminen on kiinni luokasta. Kopiointinappi kopioi näkyvän tekstin
+ * (innerText), joten piilorivi menee leikepöydälle vain silmällä esiin
+ * otettuna. */
 .md-typeset .hide-boring .boring {
+  display: none;
+}
+
+/* Kopioitaessa highlights.css muuttaa korostetun rivin displayn (contents),
+ * mikä painavampana voittaisi piilotuksen ja korostettu piilorivi vuotaisi
+ * leikepöydälle; tämä on vielä painavampi. */
+.md-typeset .highlight code[data-md-copying].hide-boring .boring {
   display: none;
 }
 
