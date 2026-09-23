@@ -1,7 +1,7 @@
 {#-
   Kopio teeman partials/copyright.html:stä (zensical 0.0.59), johon on lisätty
   alatunnisteen oikeaan reunaan muokkauslinkki ja ongelmailmoitus kuten
-  mdBookissa (merkitty kohta alempana). Jos Zensical muuttaa
+  mdBookissa sekä sivun muutoshistoria (merkitty kohta alempana). Jos Zensical muuttaa
   alatunnistettaan, tämä on päivitettävä käsin.
 
   .md-footer-meta__inner on flex-rivi, jonka lapset levitetään päihin, joten
@@ -25,29 +25,39 @@
 </div>
 {#- LISÄYS: alatunnisteen linkit. Zensical laskee page.edit_url:n docs/:n
     polusta, mutta versionhallinnassa on ../src; convert.py:n siirtämät sivut
-    käännetään takaisin extra.edit_source-kartalla (convert.py: build_extra). -#}
+    käännetään takaisin extra.edit_source-kartalla (convert.py: build_extra).
+    Muutoshistorian osoite on sama kuin muokkauslinkin, mutta edit/:n tilalla
+    on commits/, joten haara ja src/ tulevat edit_uri:sta.
+    Tekstit ovat lyhyitä ja kiinteitä, jotta kolme linkkiä mahtuu puhelimessakin
+    samalle riville (tests/test_layout.py). -#}
 {% set base = "" %}
+{% set history = "" %}
 {% set path = "" %}
 {% set source = "" %}
 {% if page.edit_url %}
   {% set base = config.repo_url ~ "/" ~ config.edit_uri ~ "/" %}
+  {% set history = config.repo_url ~ "/" ~ config.edit_uri | replace("edit/", "commits/") ~ "/" %}
   {% set path = page.edit_url[base | length:] %}
   {% set source = config.extra.edit_source[path] | default(path) %}
 {% endif %}
 <div class="jyu-footer-links">
   {#- Tyhjä source = sivua ei ole src:ssä (convert.py:n luoma tulosta.md),
-      jolloin muokkauslinkki jää pois. -#}
+      jolloin muokkauslinkki ja muutoshistoria jäävät pois. -#}
   {% if source %}
     <a href="{{ base ~ source }}" class="md-copyright md-copyright--link" rel="edit" title="{{ lang.t('action.edit') }} GitHubissa">
       {% include ".icons/material/github.svg" %}
-      {{ lang.t("action.edit") }}
+      Muokkaa
+    </a>
+    <a href="{{ history ~ source }}" class="md-copyright md-copyright--link" title="Sivun muutokset GitHubissa">
+      {% include ".icons/material/history.svg" %}
+      Muutoshistoria
     </a>
   {% endif %}
   {#- Ongelmailmoitus: sama issue-lomake kuin mdBookissa, url-kenttään sivun
       polku. Joka sivulla, myös ilman lähdetiedostoa; silloin polku on docs/:n
-      oma. Kielipaketissa ei ole tälle avainta, joten teksti on kiinteä. -#}
+      oma. -#}
   <a href="{{ config.repo_url }}/issues/new?template=ilmoita-ongelmasta.yml&amp;url={{ (source or path) | urlencode }}" class="md-copyright md-copyright--link" title="Avaa issue GitHubissa">
     {% include ".icons/material/flag-outline.svg" %}
-    Ilmoita ongelmasta
+    Ilmoita ongelma
   </a>
 </div>

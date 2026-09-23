@@ -511,7 +511,8 @@ jokainen osoittaa tiedostoon, joka on olemassa `../src`:ssä (myös molemmat
 siirretyt); ainoa sivu ilman linkkiä on `tulosta/`.
 
 Myöhemmin (21.9.2026) siirrot tehtiin lähteessä (ks. *Tenttiohjeet Tentti-sivun
-alasivuksi*), joten kartassa on enää `tulosta.md`.
+alasivuksi*), joten kartassa on enää `tulosta.md`. 23.9.2026 linkin teksti
+lyhennettiin muotoon "Muokkaa", ks. *Muutoshistoria alatunnisteeseen*.
 
 ### Ongelmailmoitus alatunnisteeseen (`overrides/partials/copyright.html` + 5 riviä `layout.css`:ään)
 
@@ -564,6 +565,45 @@ ei voi muokata.
 Todennettu rakennetusta `site/`:stä ohjelmallisesti: linkki on kaikilla 190
 sivulla, esitäytetty polku on 189:llä sama tiedosto kuin muokkauslinkin kohde
 `../src`:ssä, ja `tulosta/` on ainoa, jolla polku osoittaa `docs/`:iin.
+
+Myöhemmin (23.9.2026) teksti lyhennettiin muotoon "Ilmoita ongelma", ks.
+*Muutoshistoria alatunnisteeseen*.
+
+### Muutoshistoria alatunnisteeseen (`overrides/partials/copyright.html`)
+
+Tälle ei ole vastinetta mdBookissa. Muokkauslinkin viereen tuli
+"Muutoshistoria": GitHubin commit-luettelo juuri sen sivun lähdetiedostosta.
+Opiskelija näkee, mitä sivulla on muuttunut kurssin aikana, ja opettaja näkee,
+kuka sivua muutti ja milloin, eikä tiedostoa tarvitse etsiä reposta.
+
+Osoite on muokkauslinkin osoite, jossa `edit/`:n tilalla on `commits/`:
+
+```
+{repo_url}/commits/main/src/{sivun polku}
+```
+
+Osoite kootaan korvaamalla `edit_uri`:sta osa eikä omasta asetuksesta, joten
+haara ja `src/` ovat edelleen vain yhdessä paikassa. Polku kulkee saman
+`extra.edit_source`-kartan läpi kuin muokkauslinkillä, ja linkki jää pois
+samalla ehdolla: `tulosta/`:llä ei ole lähdetiedostoa eikä siis historiaakaan.
+Kuvake on `material/history`. Historia katkeaa siihen, kun tiedosto on siirretty
+tai nimetty uudelleen. GitHub näyttää silloin luettelon lopussa vihjeen, josta
+pääsee vanhempaan historiaan.
+
+**Tekstit lyhennettiin, jotta kolme linkkiä mahtuu puhelimessa samalle
+riville.** "Muokkaa tätä sivua" (kielipaketin `action.edit`) muuttui muotoon
+"Muokkaa" ja "Ilmoita ongelmasta" muotoon "Ilmoita ongelma". Kaikki kolme ovat
+nyt kiinteitä. Kielipaketin teksti on jäljellä muokkauslinkin
+`title`-attribuutissa. Marginaaleineen rivi vie 344 px, ja 360 px:n näytöllä
+kääreelle jää 352 px. Kapeimmallakin yleisellä puhelimella (360) linkit ovat
+siis samalla rivillä, mutta 320:llä viimeinen linkki taittuu omalle rivilleen.
+`tests/test_layout.py` tarkistaa rivin leveyksillä 360 ja 390 puhelinta
+emuloiden. Työpöytäselaimen vierityspalkki (15 px) veisi rivistä enemmän tilaa
+kuin sitä on jäljellä, mutta puhelimessa palkki on sisällön päällä.
+
+Todennettu koekirjasta: kaikilla 14 sivulla on sekä muokkaus- että
+historialinkki, kumpikin osoittaa olemassa olevaan `src`:n tiedostoon, eikä
+`tulosta/`:lla ole kumpaakaan (`tests/test_book.py` ajettuna koekirjalla).
 
 ### Repo-linkki pois (`overrides/partials/source.html`)
 

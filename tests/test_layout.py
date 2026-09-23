@@ -93,3 +93,36 @@ def test_drawer_scrollbar_stays_between_the_rounded_corners(browser, chapter_url
     assert track == [radius, radius]
     assert (rail["top"], rail["bottom"]) == (box["top"], box["bottom"])
     context.close()
+
+
+# Alatunnisteen linkit (overrides/partials/copyright.html).
+FOOTER_LINKS = ".jyu-footer-links a"
+REPO = "https://github.com/ohj-perus-jy/kirjatyokalut"
+
+
+def test_footer_links_lead_to_the_page_on_github(page):
+    """Muokkaus ja muutoshistoria avaavat luvun lähdetiedoston ../src:ssä,
+    ongelmailmoitus issue-lomakkeen sivun polulla."""
+    links = page.locator(FOOTER_LINKS)
+    assert [text.strip() for text in links.all_inner_texts()] == [
+        "Muokkaa", "Muutoshistoria", "Ilmoita ongelma"]
+    assert links.evaluate_all("links => links.map(link => link.href)") == [
+        f"{REPO}/edit/main/src/osa1/01-hei.md",
+        f"{REPO}/commits/main/src/osa1/01-hei.md",
+        f"{REPO}/issues/new?template=ilmoita-ongelmasta.yml&url=osa1/01-hei.md"]
+
+
+@pytest.mark.parametrize("width", [360, 390])
+def test_footer_links_fit_on_one_row_on_a_phone(browser, chapter_url, width):
+    """Linkit ovat samalla rivillä kapeimmallakin yleisellä puhelimella (360 px).
+    Puhelimen vierityspalkki on sisällön päällä, joten is_mobile: työpöydän
+    palkki veisi rivistä 15 px, ja väljyyttä on vain 8 px."""
+    context = browser.new_context(viewport={"width": width, "height": 700},
+                                  is_mobile=True, has_touch=True)
+    page = context.new_page()
+    page.goto(chapter_url, wait_until="load")
+    tops = page.locator(FOOTER_LINKS).evaluate_all(
+        "links => links.map(link => Math.round(link.getBoundingClientRect().top))")
+    assert len(tops) == 3
+    assert len(set(tops)) == 1
+    context.close()

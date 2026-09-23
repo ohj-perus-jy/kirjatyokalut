@@ -22,7 +22,8 @@ KNOWN_BROKEN_IMAGES = set(convert.CONFIG.get("testit", {}).get("rikkinaiset_kuva
 # testi vertaa tulostetta lähteeseen eikä skriptiä itseensä.
 # Luettelomerkki on "-" (ohj2) tai "*" (ohj1).
 SUMMARY_LINK = re.compile(r"^\s*(?:[-*]\s*)?\[[^\]]*\]\((?P<href>[^)]*)\)")
-EDIT_LINK = re.compile(r'href="[^"]*/edit/main/src/(?P<path>[^"]*)"')
+# Alatunnisteen linkit lähdetiedostoon: muokkaus (edit) ja muutoshistoria (commits).
+SOURCE_LINK = re.compile(r'href="[^"]*/(?P<kind>edit|commits)/main/src/(?P<path>[^"]*)"')
 
 
 def chapter_titles() -> list[str]:
@@ -288,25 +289,28 @@ def test_no_console_errors(printed):
 
 # --- Sivusto ilman selainta --------------------------------------------------
 
-def test_every_edit_link_points_to_an_existing_source_file(real_site):
-    """Muokkauslinkki osoittaa ../src:ään, ei docs/:iin. Siirretyt sivut
-    hoidetaan polkukartalla, joten uusi siirto rikkoisi linkin hiljaisesti."""
-    pages = missing = 0
+def test_every_source_link_points_to_an_existing_source_file(real_site):
+    """Muokkauslinkki ja muutoshistoria osoittavat ../src:ään, ei docs/:iin.
+    Siirretyt sivut hoidetaan polkukartalla, joten uusi siirto rikkoisi linkit
+    hiljaisesti."""
+    links = {"edit": 0, "commits": 0}
+    missing = 0
     for page in real_site.rglob("index.html"):
-        for match in EDIT_LINK.finditer(page.read_text(encoding="utf-8")):
-            pages += 1
+        for match in SOURCE_LINK.finditer(page.read_text(encoding="utf-8")):
+            links[match["kind"]] += 1
             if not (SRC / match["path"]).is_file():
                 missing += 1
                 print(f"{page}: {match['path']} puuttuu ../src:stä")
     # Vähintään yksi linkki per luku; SUMMARY.md:n ulkopuoliset sivut lisäävät.
-    assert pages >= len(chapter_titles())
+    assert links["edit"] == links["commits"] >= len(chapter_titles())
     assert missing == 0
 
 
-def test_print_page_has_no_edit_link(real_site):
-    """Tulostussivu syntyy convert.py:ssä eikä sitä voi muokata."""
+def test_print_page_has_no_source_links(real_site):
+    """Tulostussivu syntyy convert.py:ssä: sitä ei voi muokata eikä sillä ole
+    historiaa."""
     html = (real_site / "tulosta" / "index.html").read_text(encoding="utf-8")
-    assert EDIT_LINK.search(html) is None
+    assert SOURCE_LINK.search(html) is None
 
 
 def test_print_page_is_not_in_the_search_index(real_site):
