@@ -7,6 +7,7 @@ Tiedostojako: PERUSTELUT.md, "Testien rakenne".
 
 import functools
 import http.server
+import importlib.metadata
 import shutil
 import subprocess
 import sys
@@ -43,7 +44,9 @@ def build(book_dir: Path, tool: Path) -> Path:
         if result.returncode:
             raise AssertionError(
                 f"{' '.join(command)} epäonnistui:\n{result.stdout}\n{result.stderr}")
-    return book_dir / "site"
+    site = book_dir / "site"
+    (site / VERSION_FILE).write_text(zensical_version(), encoding="utf-8")
+    return site
 
 
 # Kaikki, mistä käännetty sivusto riippuu: myös työkalujen omat palaset
@@ -51,12 +54,27 @@ def build(book_dir: Path, tool: Path) -> Path:
 BOOK_SOURCES = ("../src", "mkdocs.yml", "kirja.toml")
 TOOL_SOURCES = ("assets", "overrides", "icons", "convert.py", "mkdocs-pohja.yml")
 
+# Suuri osa HTML:stä tulee Zensicalilta, joten myös sen versio vanhentaa
+# sivuston. Versio ei näy lähdetiedostojen aikaleimoissa, joten käännös
+# jättää siitä merkin sivustoon.
+VERSION_FILE = ".zensical-versio"
+
+
+def zensical_version() -> str:
+    """Testejä ajavaan ympäristöön asennetun Zensicalin versio."""
+    return importlib.metadata.version("zensical")
+
 
 def is_stale(site: Path) -> bool:
-    """Onko käännetty sivusto jäljessä lähteistään? Käännös on hidas eikä
-    sitä tehdä turhaan, mutta vanhalla sivustolla ei saa testata."""
+    """Onko käännetty sivusto jäljessä lähteistään tai Zensicalin versiosta?
+    Käännös on hidas eikä sitä tehdä turhaan, mutta vanhalla sivustolla ei
+    saa testata."""
     index = site / "index.html"
     if not index.is_file():
+        return True
+    stamp = site / VERSION_FILE
+    if (not stamp.is_file()
+            or stamp.read_text(encoding="utf-8").strip() != zensical_version()):
         return True
     built = index.stat().st_mtime
     sources = ([BOOK / name for name in BOOK_SOURCES]
