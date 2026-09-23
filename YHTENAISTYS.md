@@ -5,10 +5,11 @@ ovat yksi kopio tässä repossa, ja kirjat (ohj1, ohj2, jypelidocs) käyttävät
 sitä git-submodulena polussa `zensical/tyokalut/`. Tavoite on saavutettu, ja
 tämä tiedosto on sen historia: myöhemmät työkalumuutokset näkyvät git-lokista ja
 ominaisuudet [README.md](README.md):stä. Auki ovat vain "Avoimet kysymykset".
+Kirjojen tila tarkistettu viimeksi 2026-09-23.
 
-Kopiot: **o1r** = ohj1 `rakenne-2027`, **o1d** = ohj1 `dev` = `main`
-(tuotanto), **o2** = ohj2 `dev` (2026-09-20 alkaen myös `main`, tuotanto),
-**jy** = jypelidocs `main` (= `dev`).
+Kopiot (tilanne 2026-09-18): **o1r** = ohj1 `rakenne-2027`, **o1d** = ohj1
+`dev` = `main` (tuotanto), **o2** = ohj2 `dev` (2026-09-20 alkaen myös
+`main`, tuotanto), **jy** = jypelidocs `main` (= `dev`).
 
 Merkit: ✔ on, ✘ puuttuu, – ei koske.
 
@@ -31,7 +32,8 @@ Merkit: ✔ on, ✘ puuttuu, – ei koske.
 
 `diff -rq` kopioiden välillä (2026-09-18) näyttää enää nämä:
 
-- convert.py: `NEST_UNDER` (poistettu 21.9.2026), `NOT_PAGES`, `DROP_SECTIONS`, `PLANTUML_AGENT`
+- convert.py: `NEST_UNDER` ja `DROP_SECTIONS` (molemmat poistettu 21.9.2026),
+  `NOT_PAGES`, `PLANTUML_AGENT`
 - puhe.py: User-Agent; run.sh: esimerkkisivun nimi kommentissa
 - mkdocs.yml: `site_name`, `site_url`, `copyright`, `repo_url`, `extra.sites`
   (ohj2:ssa ei listaa, joten valikkoa ei näy; nimi on linkki etusivulle)
@@ -92,14 +94,19 @@ ohj2 325 läpi.
 ## Jatkossa
 
 - Työkalumuutos tehdään tähän repoon (README: "Työkalujen muuttaminen") ja
-  kirjat päivittävät osoittimen. Tuotantohaarat (ohj1 `main`, jypelidocs
-  `main`) kulkevat siis tarkoituksella perässä, kunnes osoitin päivitetään.
+  kirjat päivittävät osoittimen. Jokainen haara kulkee siis perässä, kunnes
+  sen osoitin päivitetään. Osoitin päivitetään käytännössä kirjan `main`iin:
+  2026-09-23 kaikkien kolmen kirjan `main` on tämän repon uusimmassa
+  (`ac32f1e`), mutta `dev`-haarat ovat jäljessä (ohj1 `dev` ja `rakenne-2027`
+  `f63fd1f`, ohj2 `dev` `4dad3fd`, jypelidocs `dev` `c43903d`).
 - Kirjojen `git pull` ei päivitä submodulea: `git config submodule.recurse true`
   joka kloonissa; kirjan `run.sh` huomauttaa eri versiosta.
 - Kirjojen devcontainer hakee submodulen ja ajaa `setup.sh`:n
   (`postCreateCommand`); muualla `run.sh` hoitaa molemmat ensimmäisellä ajolla.
 - Sivustovalikko (`extra.sites`) on ohj1:ssä ja jypelidocsissa. ohj2:een sitä
   ei tule (päätös 2026-09-20): kurssin nimi on siellä linkki etusivulle.
+- `dev`-haarat ja `/dev/`-esikatselu pidetään (päätös 2026-09-23), vaikka
+  muutokset ja osoittimen päivitykset menevät nyt ensin `main`iin.
 
 ## Avoimet kysymykset
 
@@ -115,11 +122,16 @@ ohj2 325 läpi.
   2026-09-18), joten ohj1:n playground.js kävi ohj2:een sellaisenaan.
 - Testit kääntävät koekirjan repon omalla mkdocs.yml:llä (`copy_book`), joten
   test_sitemenu.py riippuu kirjan `site_name`sta ja `extra.sites`-listasta.
-- jypelidocsin pages.yml kääntää samalla ajolla sekä `main`in että `dev`in.
-  `--strict` kaatoi julkaisun 2026-09-18, koska `dev`in vanha convert.py ei
-  tuntenut lippua; korjaantui, kun `dev` pikakelattiin `main`iin. Sama koskee
-  submodulen käyttöönottoa: jokaisen haaran, jonka pages.yml kääntää, pitää
-  siirtyä samalla kertaa.
+- Kaikkien kolmen kirjan pages.yml kääntää samalla ajolla sekä `main`in
+  (juureen) että `dev`in (`/dev/`:iin); ohj2:ssa näin 2026-09-20 alkaen
+  (ohj2 `f2c6594`). Kumpikin haara käännetään omalla työkaluosoittimellaan
+  mutta `main`in pages.yml:n komennoilla. jypelidocsissa `--strict` kaatoi
+  julkaisun 2026-09-18, koska `dev`in vanha convert.py ei tuntenut lippua;
+  korjaantui, kun `dev` pikakelattiin `main`iin. Kun työkalujen käyttötapa
+  (komentorivi, polut) muuttuu, jokaisen haaran, jonka pages.yml kääntää,
+  pitää siirtyä samalla kertaa. Pelkkä osoittimen päivitys `main`iin ei kaada
+  `dev`in käännöstä: 2026-09-23 kaikkien kirjojen julkaisu menee läpi, vaikka
+  `dev`-haarat ovat jäljessä.
 
 ## Päiväkirja
 
@@ -144,3 +156,6 @@ ohj2 325 läpi.
 | 2026-09-18 | mdBook pois ohj1:n kaikista haaroista (`book.toml`, `theme/`, `highlight/`, `mermaid/`, `start.sh`, VS Coden tehtävät → Zensical, devcontainerin portti 3000, Rust-pohjan .gitignore) ja jypelidocsista (.gitignore, kommentit) | ohj1 `a560b8c`, `3866ca7`, merge `6ac6f69`; jypelidocs `49bec2c` |
 | 2026-09-20 | ohj2 `main` Zensicalille, mdBook pois viimeisestäkin kirjasta | ohj2 `0c9d8de` |
 | 2026-09-20 | README:hen ominaisuusluettelo; tämä tiedosto suljettu | `c92f4be` |
+| 2026-09-20 | ohj2:een ei tule sivustovalikkoa (päätös) | `f63fd1f` |
+| 2026-09-21 | kirjakohtaiset poikkeukset pois: mdBookin navigointiosio poistettu lähteistä (`DROP_SECTIONS` pois), tentti/ ja git/ alasivuineen omiin hakemistoihinsa lähteessä (`NEST_UNDER` pois) | `a794ce3`, `4cbc116`; ohj1 `96ce764`, `53025a5`; ohj2 `b40f12a`, `7bc0212`, `e4c5225`; jypelidocs `52b474b` |
+| 2026-09-23 | tila tarkistettu: kirjojen `main` osoittimessa `ac32f1e`, `dev`-haarat jäljessä, julkaisut läpi; `dev`-haarat pidetään (päätös) | – |
