@@ -11,40 +11,7 @@ Kopiot (tilanne 2026-09-18): **o1r** = ohj1 `rakenne-2027`, **o1d** = ohj1
 `dev` = `main` (tuotanto), **o2** = ohj2 `dev` (2026-09-20 alkaen myös
 `main`, tuotanto), **jy** = jypelidocs `main` (= `dev`).
 
-Merkit: ✔ on, ✘ puuttuu, – ei koske.
-
-## Vaihe 1 — erot umpeen käsin: VALMIS 2026-09-18
-
-| # | Asia | o1r | o1d | o2 | jy |
-|---|---|---|---|---|---|
-| 1 | Testaa tietosi -visa (`convert_quizzes`, visa.css/js) | ✔ | ✔ | ✔ | ✔ |
-| 2 | Oppaiden merkinnät (Kokeile, Ei toimi vielä, Kysymys) | ✔ | ✔ | ✔ | ✔ |
-| 3 | Vaiheittainen ohje, animaatiot, puhe.py | ✔ | ✔ | ✔ | ✔ |
-| 4 | `convert.py --strict`, `FAILED.add("plantuml")`, pages.yml | ✔ | ✔ | ✔ | ✔ |
-| 5 | `svgbob_fit_text`, `svgbob_problems` | ✔ | ✔ | ✔ | ✔ |
-| 6 | Valikoiden välkyntä pois (fontmenu, sitemenu, layout) | ✔ | ✔ | ✔ | ✔ |
-| 7 | Hakuikkunan tyyli (search.css/js, test_search.py) | ✔ | ✔ | ✔ | ✔ |
-| 8 | Sivustovalikon koodi (sitemenu.css/js, header.html) | ✔ | ✔ | ✔ | ✔ |
-| 9 | Luvun avausnuoli alas/ylös kaikilla leveyksillä (layout.css) | ✔ | ✔ | ✔ | ✔ |
-| 10 | Taulukon teksti leipätekstin kokoiseksi (tables.css) | ✔ | ✔ | ✔ | ✔ |
-| 11 | Ajonappi: C#, `feature-`-määre, kuvatuloste (playground.js/css) | ✔ | ✔ | ✔ | ✔ |
-| 12 | Kielilistat ja `ICON_MAP` ylijoukoksi, kommentit samoiksi | ✔ | ✔ | ✔ | ✔ |
-
-`diff -rq` kopioiden välillä (2026-09-18) näyttää enää nämä:
-
-- convert.py: `NEST_UNDER` ja `DROP_SECTIONS` (molemmat poistettu 21.9.2026),
-  `NOT_PAGES`, `PLANTUML_AGENT`
-- puhe.py: User-Agent; run.sh: esimerkkisivun nimi kommentissa
-- mkdocs.yml: `site_name`, `site_url`, `copyright`, `repo_url`, `extra.sites`
-  (ohj2:ssa ei listaa, joten valikkoa ei näy; nimi on linkki etusivulle)
-- testit, jotka riippuvat edellisistä: test_convert.py (fixture o2:ssa ja
-  jy:ssä), test_book.py, test_sitemenu.py (puuttuu o2:sta)
-- ohj2:n `assets/plantuml/` (kirjan sisältöä)
-- dokumentit: README, PERUSTELUT, KAYTTOONOTTO, PURKUSUUNNITELMA, tämä tiedosto
-
-o1r ja o1d ovat työkaluiltaan tavulleen samat (ero vain tämä tiedosto).
-
-## Vaiheet 2–3 — työkalut irti kirjasta: VALMIS 2026-09-18
+## Vaiheet 1–2 — työkalut irti kirjasta: VALMIS 2026-09-18
 
 Tehty kerran tässä repossa (päätös 2026-09-18), puhdas aloituscommit o1r:n
 työkaluista, historia jäi ohj1:een.
@@ -73,7 +40,7 @@ Merkkileveyden korjauksen jälkeen ero on vain muutaman bob-kaavion leveys
 (esim. 133 → 128 px); selaimessa tarkistettu, että kaikkien 24 kaavion teksti
 mahtuu kuvaan.
 
-## Vaihe 4 — kirjat submoduleen (`zensical/tyokalut/`): VALMIS 2026-09-18
+## Vaihe 3 — kirjat submoduleen (`zensical/tyokalut/`): VALMIS 2026-09-18
 
 - [x] jypelidocs `main` ja `dev` (`d4ae629`), julkaisu onnistui
 - [x] ohj1 `rakenne-2027` (`7f5d7ca`)
