@@ -7,7 +7,8 @@
  * role="listbox" kuten <select>: nuolet liikkuvat, Enter valitsee, Esc sulkee.
  * Myös hiiri siirtää kohdistusta, joten korostettuna on aina yksi kohta.
  * Painikkeessa on vain kuvake, joten valinta kerrotaan sen title- ja
- * aria-label-attribuuteissa (kohdan data-short). */
+ * aria-label-attribuuteissa (kohdan data-short). Title näkyy teeman vihjeenä
+ * (content.tooltips), ks. hint. */
 
 (() => {
   "use strict";
@@ -39,6 +40,38 @@
     }
   };
 
+  /* Teeman vihje on auki, kun painikkeella on osoitin tai kohdistus. Auetessaan
+   * se ottaa title-attribuutin talteen ja sulkeutuessaan palauttaa sen. Jos
+   * valinta tehdään vihjeen ollessa auki (esim. osoitin jää painikkeelle ja
+   * valitaan nuolilla), vihjeeseen jäisi vanha nimi ja se palautuisi myös
+   * attribuuttiin. Siksi auki olevan vihjeen teksti vaihdetaan ja palautettu
+   * vanha nimi korjataan. Listan ollessa auki vihje piilotetaan (cover), koska
+   * se tulisi painikkeen alle listan päälle. Vihjeen id on aria-describedbyssä
+   * vain vihjeen ollessa auki, joten se otetaan talteen. */
+  let name = "";
+  let tip = "";
+  const hint = (text) => {
+    name = text;
+    if (button.hasAttribute("title")) {
+      button.title = text;
+      return;
+    }
+    const inner = document.getElementById(tip)?.firstElementChild;
+    if (inner) {
+      inner.textContent = text;
+      inner.parentElement.style.setProperty("--md-tooltip-width", `${inner.offsetWidth}px`);
+    }
+  };
+  const cover = () => {
+    const element = document.getElementById(tip);
+    if (element) element.hidden = !list.hidden;
+  };
+  new MutationObserver(() => {
+    tip = button.getAttribute("aria-describedby") || tip;
+    if (button.hasAttribute("title") && button.title !== name) button.title = name;
+    cover();
+  }).observe(button, { attributeFilter: ["title", "aria-describedby"] });
+
   const apply = (id) => {
     const item = items.find((candidate) => candidate.dataset.font === id) || items[0];
     const chosen = item.dataset.font;
@@ -47,9 +80,9 @@
     for (const candidate of items) {
       candidate.setAttribute("aria-selected", String(candidate === item));
     }
-    const name = "Leipätekstin kirjasin: " + (item.dataset.short || item.querySelector(".jyu-font__name").textContent);
-    button.title = name;
-    button.setAttribute("aria-label", name);
+    const text = "Leipätekstin kirjasin: " + (item.dataset.short || item.querySelector(".jyu-font__name").textContent);
+    hint(text);
+    button.setAttribute("aria-label", text);
   };
 
   /* Kohtien nimet näkyvät omilla kirjasimillaan, ja selain lataa kirjasimen
@@ -70,6 +103,7 @@
 
   const open = () => {
     list.hidden = false;
+    cover();
     button.setAttribute("aria-expanded", "true");
     selected().focus();
   };
@@ -77,17 +111,29 @@
   const close = (refocus) => {
     if (list.hidden) return;
     list.hidden = true;
+    cover();
     button.setAttribute("aria-expanded", "false");
     if (refocus) button.focus();
   };
 
-  const choose = (item) => {
+  /* Ensin suljetaan, jotta vihje on taas näkyvissä ja hint voi mitata sen. */
+  const choose = (item, refocus) => {
+    close(refocus);
     store(item.dataset.font);
     apply(item.dataset.font);
-    close(true);
   };
 
-  button.addEventListener("click", () => (list.hidden ? open() : close(false)));
+  /* Hiirellä kohdistus ei jää painikkeeseen eikä piilotettuun kohtaan, koska
+   * teeman vihje pysyisi silloin auki osoittimen lähdettyä. Näppäimistöllä
+   * (click-tapahtuman detail 0) kohdistus jää painikkeeseen tai palaa siihen. */
+  button.addEventListener("click", (event) => {
+    if (list.hidden) {
+      open();
+    } else {
+      close(false);
+      if (event.detail) button.blur();
+    }
+  });
 
   button.addEventListener("keydown", (event) => {
     if (event.key === "ArrowDown" || event.key === "ArrowUp") {
@@ -98,7 +144,9 @@
 
   list.addEventListener("click", (event) => {
     const item = event.target.closest(".jyu-font__item");
-    if (item) choose(item);
+    if (!item) return;
+    item.blur();
+    choose(item, false);
   });
 
   /* Hiiren alla oleva kohta saa kohdistuksen (ulkoasu: :focus). Erillinen
@@ -122,7 +170,7 @@
       case "Enter":
       case " ":
         event.preventDefault();
-        if (index >= 0) choose(items[index]);
+        if (index >= 0) choose(items[index], true);
         break;
       case "Escape":
         event.preventDefault();

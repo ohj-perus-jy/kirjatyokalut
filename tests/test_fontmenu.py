@@ -37,7 +37,13 @@ def content_font(page) -> str:
 
 
 def label(page) -> str:
-    """Painikkeen vihje, jossa nykyinen valinta kerrotaan."""
+    """Painikkeen nimi, jossa nykyinen valinta kerrotaan. Sama nimi on
+    title-attribuutissa, mutta teeman vihje pitää sitä hallussaan auki
+    ollessaan (ks. hints)."""
+    return page.get_attribute(".jyu-font__button", "aria-label")
+
+
+def title(page) -> str | None:
     return page.get_attribute(".jyu-font__button", "title")
 
 
@@ -148,6 +154,70 @@ def test_the_menu_works_from_the_keyboard(browser, base_url):
     assert page.is_hidden(".jyu-font__list")
     assert body_font(page) == "atkinson"
     assert page.evaluate("document.activeElement.id") == "jyu-font-button"
+    assert errors == []
+
+
+def hints(page) -> list[str]:
+    """Näkyvien teeman vihjeiden (content.tooltips) tekstit. Teema lisää
+    vihjeen bodyyn, kun painikkeella on osoitin tai kohdistus, ja poistaa sen
+    250 ms niiden lähdettyä."""
+    page.wait_for_timeout(500)
+    return page.locator(".md-tooltip2:visible").all_inner_texts()
+
+
+def test_the_hint_does_not_stay_open_after_the_mouse(browser, base_url):
+    """Hiirellä valittaessa tai suljettaessa kohdistus ei jää painikkeeseen,
+    koska teeman vihje pysyisi silloin auki osoittimen lähdettyä."""
+    page, errors = open_page(browser, base_url)
+    page.click(".jyu-font__button")
+    page.click(".jyu-font__item[data-font=atkinson]")
+    page.mouse.move(10, 400)
+    assert hints(page) == []
+    assert title(page) == "Leipätekstin kirjasin: Atkinson"
+
+    page.click(".jyu-font__button")
+    page.click(".jyu-font__button")
+    assert page.is_hidden(".jyu-font__list")
+    page.mouse.move(10, 400)
+    assert hints(page) == []
+    assert errors == []
+
+
+def test_the_hint_does_not_cover_the_list(browser, base_url):
+    """Vihje tulisi painikkeen alle listan päälle, joten se on piilossa listan
+    ollessa auki. Listan sulkeuduttua se palaa, kertoo uuden valinnan ja on
+    tekstinsä levyinen, jotta se asettuu painikkeen keskelle."""
+    page, errors = open_page(browser, base_url)
+    page.hover(".jyu-font__button")
+    assert hints(page) == ["Leipätekstin kirjasin: Serif"]
+    page.click(".jyu-font__button")
+    assert page.is_visible(".jyu-font__list")
+    assert hints(page) == []
+    page.keyboard.press("ArrowDown")
+    page.keyboard.press("Enter")
+    assert hints(page) == ["Leipätekstin kirjasin: Atkinson"]
+    assert page.evaluate(
+        "(tip => tip.firstElementChild.offsetWidth"
+        " === parseFloat(tip.style.getPropertyValue('--md-tooltip-width')))"
+        "(document.querySelector('.md-tooltip2'))")
+    assert errors == []
+
+
+def test_the_hint_names_the_new_choice(browser, base_url):
+    """Näppäimistöllä kohdistus palaa painikkeeseen, ja vihje kertoo uuden
+    valinnan, vaikka valinta tehtäisiin ennen kuin edellinen vihje ehtii
+    sulkeutua. Sulkeutuessaan teema palauttaa titleen avautumishetken nimen,
+    joka korjataan."""
+    page, errors = open_page(browser, base_url)
+    page.focus(".jyu-font__button")
+    assert hints(page) == ["Leipätekstin kirjasin: Serif"]
+    page.keyboard.press("ArrowDown")
+    page.keyboard.press("ArrowDown")
+    page.keyboard.press("Enter")
+    assert hints(page) == ["Leipätekstin kirjasin: Atkinson"]
+    page.keyboard.press("Tab")
+    assert hints(page) == []
+    assert title(page) == label(page) == "Leipätekstin kirjasin: Atkinson"
     assert errors == []
 
 
