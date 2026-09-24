@@ -74,6 +74,26 @@ def test_chapter_arrow_points_where_the_list_moves(browser, chapter_url, width):
     context.close()
 
 
+@pytest.mark.parametrize("width, rail", [(1179, None), (1180, 260), (1219, 260), (1220, 300)])
+def test_rail_fits_an_11_inch_ipad_in_landscape(browser, chapter_url, width, rail):
+    """Kisko näkyy 1180 px:stä (11 tuuman iPad vaakatasossa) alkaen, alle
+    teeman oman 1220 px:n rajan kapeampana (13rem); sitä kapeammalla laatikko."""
+    context = browser.new_context(viewport={"width": width, "height": 700})
+    page = context.new_page()
+    page.goto(chapter_url, wait_until="load")
+    menu = page.locator(".md-header__button[for=__drawer]")
+    box = page.locator(".md-sidebar--primary").bounding_box()
+    if rail is None:
+        assert menu.is_visible()
+        assert box["x"] + box["width"] <= 0
+    else:
+        assert not menu.is_visible()
+        assert (box["x"], box["width"]) == (0, rail)
+        content = page.locator(".md-content__inner").bounding_box()
+        assert content["x"] > rail
+    context.close()
+
+
 def test_drawer_scrollbar_stays_between_the_rounded_corners(browser, chapter_url):
     """Kapean näytön laatikon vierityspalkin raita alkaa ja päättyy kulmien
     pyöristyksen sisäpuolella, mutta vieritysalue on yhä koko laatikon korkuinen."""

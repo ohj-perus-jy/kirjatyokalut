@@ -2,9 +2,10 @@
  * mdBookissa. Zensicalin oletusvalikko on position: sticky, joten se liikkuu
  * sisällön mukana ensimmäiset vierityspikselit ja pysähtyy nytkähtäen, ja
  * katkeaa terävästi sumennettuun yläpalkkiin; kiskossa ei ole mitään, mikä
- * liikkuisi tai katkeaisi. Vain työpöydällä: kapeilla näytöillä valikko on
- * Zensicalin oma laatikko (drawer), josta muutetaan vain avausnuolen suunta
- * ja vierityspalkin pituus (ks. alempana). */
+ * liikkuisi tai katkeaisi. Vain työpöydällä eli 1180 px:stä (73,75em) alkaen,
+ * jotta 11 tuuman iPad vaakatasossa mahtuu; teeman oma raja on 1220 px.
+ * Kapeammilla näytöillä valikko on Zensicalin oma laatikko (drawer), josta
+ * muutetaan vain avausnuolen suunta ja vierityspalkin pituus (ks. alempana). */
 
 :root {
   /* Rako kiskon ja sisällön väliin: sama kuin sisällysluettelon tekstin
@@ -102,7 +103,7 @@
  * Viive on teeman oman opacity-siirtymän kesto. Sama sivustovalikon
  * painikkeelle ja linkeille. Työpöydällä vaihtoa ei tehdä (alempana), joten
  * sääntö on rajattu sen ulkopuolelle eikä jätä sinne omaa transitioniaan. */
-@media screen and (max-width: 76.2344em) {
+@media screen and (max-width: 73.7344em) {
   .md-header__title--active .md-header__topic :is(a, button) {
     visibility: hidden;
     transition: visibility 0s 0.15s;
@@ -185,7 +186,7 @@
  * säteen verran. Onnistuu vain webkit-palkilla, jonka Chromium piirtää vasta,
  * kun teeman scrollbar-width ja -color on palautettu; Firefoxiin ei vaikuta.
  * Vain hiirellä: kosketusnäytöllä webkit-palkki jäisi pysyvästi näkyviin. */
-@media screen and (max-width: 76.2344em) and (hover: hover) {
+@media screen and (max-width: 73.7344em) and (hover: hover) {
   @supports selector(::-webkit-scrollbar) {
     .md-sidebar--primary .md-sidebar__scrollwrap {
       scrollbar-width: auto;
@@ -214,7 +215,7 @@
   }
 }
 
-@media screen and (min-width: 76.25em) {
+@media screen and (min-width: 73.75em) {
 
   /* 1. Kisko: kiinteä, koko korkeus, oma tausta ja erotinviiva. Yläosaan jää
    *    yläpalkin korkeuden verran tilaa kurssin nimelle. !important, koska
@@ -369,5 +370,50 @@
     backdrop-filter: blur(0.4rem);
     -webkit-backdrop-filter: blur(0.4rem);
     content: "";
+  }
+}
+
+/* Teema pitää valikon laatikkona 1220 px:iin asti, joten välillä 1180–1219 px
+ * sen laatikkosäännöt kumotaan ja sen työpöytäsäännöt tuodaan tänne. Kopioita
+ * teeman säännöistä: päivitä, jos teema muuttaa niitä. Kisko on kapeampi,
+ * jotta sisällysluettelon viereen jää ~65 merkin tekstipalsta. */
+@media screen and (min-width: 73.75em) and (max-width: 76.2344em) {
+  :root {
+    --jyu-rail: 13rem;
+  }
+
+  .md-header__button[for=__drawer],
+  .md-nav .md-nav__title[for=__drawer],
+  .md-overlay {
+    display: none;
+  }
+
+  .md-header__button.md-logo {
+    display: inline-block;
+  }
+
+  .md-nav--primary {
+    margin: 0.1rem 0;
+  }
+
+  [dir=ltr] .md-sidebar--primary {
+    left: 0;
+  }
+
+  .md-sidebar--primary {
+    border-radius: 0;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    transform: none;
+    transition: none;
+  }
+
+  .md-sidebar--primary .md-sidebar__scrollwrap {
+    position: static;
+  }
+
+  [dir=ltr] .md-sidebar--primary:not([hidden]) ~ .md-content > .md-content__inner {
+    margin-left: 1.2rem;
   }
 }
