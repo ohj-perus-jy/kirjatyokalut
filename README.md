@@ -66,7 +66,7 @@ Kielet: `csharp`, `java`, `javascript` (korostetut rivit: `csharp`, `java`).
 | Sivustovalikko kurssin nimen vieressä (`extra.sites`) | header.html, sitemenu.js/css |
 | Leipätekstin kirjasinvalikko: Source Serif 4, Atkinson Hyperlegible Next, Literata | header.html, fontmenu.js/css, typography.css |
 | Vaalea ja tumma teema käyttöjärjestelmän mukaan, vaihdin yläpalkissa | mkdocs-pohja.yml |
-| Haku; hakuikkunan teksti leipätekstin portaissa | search.js/css |
+| Haku; hakuikkunan teksti leipätekstin portaissa, kentän paikkamerkki "Hae" | search.js/css |
 | Tulosta: koko kirja yhdeksi PDF:ksi | `build_print_page`, print.js/css |
 | Alatunniste: edellinen/seuraava, tekijät ja lisenssi, "Muokkaa", "Muutoshistoria", "Ilmoita ongelma" | copyright.html |
 | Alaviitteet ja `title`-attribuutit tooltipeinä | mkdocs-pohja.yml |

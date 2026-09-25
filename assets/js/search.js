@@ -6,7 +6,10 @@
  * Lisäksi hiiren korostus pois nuolinäppäimillä liikuttaessa (data-jyu-keys,
  * sääntö search.css:ssä). Zensical korostaa samalla tavalla sekä valitun että
  * hiiren alla olevan tuloksen ja vierittää valitun keskelle: paikallaan olevan
- * hiiren alla korostus hyppisi vierityksen mukana riviltä toiselle. */
+ * hiiren alla korostus hyppisi vierityksen mukana riviltä toiselle.
+ *
+ * Myös hakukentän paikkamerkki suomeksi: bundle.js:ssä se on kiinteästi
+ * "Search" eikä tule teeman käännöksistä (language: fi). */
 
 (() => {
   "use strict";
@@ -33,12 +36,29 @@
     }, true);
   };
 
+  /* Kenttä on olemassa ennen ikkunan avaamista ja säilyy sulkemisen yli, eikä
+   * Zensical kirjoita muuttumatonta paikkamerkkiä uudelleen, joten kerta
+   * riittää; MutationObserver on varalla, jos kenttää ei vielä ole. */
+  const translate = (root) => {
+    const rename = () => {
+      const input = root.querySelector('input[placeholder="Search"]');
+      if (input) input.placeholder = "Hae";
+      return !!input;
+    };
+    if (rename()) return;
+    const observer = new MutationObserver(() => {
+      if (rename()) observer.disconnect();
+    });
+    observer.observe(root, { childList: true, subtree: true });
+  };
+
   const attach = () => {
     const host = [...document.body.children].find((el) => el.shadowRoot);
     if (!host) return false;
     if (!host.shadowRoot.querySelector('link[href*="assets/css/search.css"]'))
       host.shadowRoot.append(link.cloneNode());
     followKeys(host);
+    translate(host.shadowRoot);
     return true;
   };
 

@@ -81,6 +81,22 @@ def test_the_filter_panel_and_its_button_are_gone(browser, base_url):
     page.close()
 
 
+def test_the_field_placeholder_is_finnish(browser, base_url):
+    """Zensicalin kentässä lukee kiinteästi "Search"; search.js vaihtaa sen.
+    Vaihto pysyy, kun ikkuna piirretään tuloksineen uudelleen ja kun se
+    suljetaan ja avataan uudestaan."""
+    page, errors = open_search(browser, base_url, "maailma")
+    placeholder = f"{SHADOW}.querySelector('.s input').placeholder"
+    assert page.evaluate(placeholder) == "Hae"
+
+    page.keyboard.press("Escape")
+    page.click(".md-search__button")
+    page.wait_for_function(f"{SHADOW}.activeElement?.tagName === 'INPUT'")
+    assert page.evaluate(placeholder) == "Hae"
+    assert errors == []
+    page.close()
+
+
 def test_the_rules_do_not_leak_into_the_page(browser, base_url):
     """Sama tiedosto on ladattu sivulle, mutta :host-alkuiset säännöt eivät
     osu sivun elementteihin: yksikirjaimiset luokat ovat vapaita."""
