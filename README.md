@@ -108,7 +108,7 @@ ylähakemisto) ja lukee materiaalin sen viereisestä `src/`:stä.
 | `mkdocs-pohja.yml` | kirjojen yhteiset Zensical-asetukset: teema, tyylit, skriptit |
 | `assets/`, `overrides/`, `icons/` | tyylit ja skriptit, teeman mallit, kuvakkeiden glyfit |
 | `puhe.py` | vaiheittaisen ohjeen äänet (Azure Speech) |
-| `run.sh`, `setup.sh` | ajo ja asennus kirjan hakemistosta käsin |
+| `run.sh`, `setup.sh` | ajo ja asennus kirjan hakemistosta käsin; `vaihe.sh` näyttää asennuksen etenemisen |
 | `requirements.txt` | kiinnitetty Zensical-versio; `requirements-dev.txt` lisää testien riippuvuudet |
 | `tests/` | testit ja koekirja (`tests/book/`) |
 | `linkit/` | ulkoisten linkkien tarkistus (GitHub Action, lychee) |
@@ -183,7 +183,9 @@ git submodule update --init                     # (kirjan run.sh tekee tämän i
 ```
 
 Ensimmäinen ajo asentaa `.venv`:n kirjan hakemistoon (`setup.sh`), ja `run.sh`
-päivittää sen, kun `requirements.txt`:n Zensical-versio vaihtuu.
+päivittää sen, kun `requirements.txt`:n Zensical-versio vaihtuu. Windowsissa
+kloonaa kirja WSL:n levylle, ei Windowsin kansioon: Windowsin kansiosta
+(9p-liitos) asennus kestää lähes 8 minuuttia, WSL:n levyllä noin 12 sekuntia.
 **Muokattava puu on `src/`, ei `docs/`**: `docs/` on kertakäyttöinen kopio.
 
 `git pull` ei päivitä submodulea itsestään. Kertaalleen kloonissa:

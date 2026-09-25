@@ -14,6 +14,7 @@ TOOL=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 BOOK=$(dirname "$TOOL")
 [[ -f $BOOK/kirja.toml ]] || BOOK=$TOOL
 cd "$BOOK"
+source "$TOOL/vaihe.sh"
 
 # Asenna, jos .venv puuttuu tai sen Zensical ei ole requirements.txt:n versio.
 pin=$(sed -n 's/^zensical==//p' "$TOOL/requirements.txt")
@@ -34,7 +35,8 @@ fi
 if [[ ${1:-} == test ]]; then
     shift
     if ! .venv/bin/python -c "import pytest, playwright" 2>/dev/null; then
-        .venv/bin/pip install --quiet -r "$TOOL/requirements-dev.txt"
+        vaihe "Asennetaan testien riippuvuudet" \
+            .venv/bin/pip install -r "$TOOL/requirements-dev.txt"
     fi
     browser=$(.venv/bin/python -c 'from playwright.sync_api import sync_playwright
 with sync_playwright() as play:
