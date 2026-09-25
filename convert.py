@@ -130,10 +130,6 @@ TAB_HEADING_RE = re.compile(
     r"^#{1,6}\s+\[(?P<label>[^\]]+)\]\(#tab/(?P<id>[^)]+)\)\s*$")
 TAB_END = "***"
 
-# mdBookin "ei vielä valintaa" -välilehti. Zensicalissa yksi välilehti on aina
-# valittuna, joten tälle ei ole paikkaa; ks. PERUSTELUT.md.
-TAB_PLACEHOLDER = "default"
-
 # mdBookin monitiedostolohkot (preprocessor.codeblock-tabs). Merkinnät ovat
 # lähteessä epätarkkoja ("//FILE:", välilyöntejä lopussa, FILE_END puuttuu tai
 # on liikaa) ja mdBook sietää sen, joten sama sietokyky tässä.
@@ -1965,17 +1961,17 @@ def convert_files(text: str) -> tuple[str, int, int, int, int]:
     return "\n".join(out), blocks, files, hidden_files, marked_files
 
 
-def convert_tabs(text: str) -> tuple[str, int, int, set[str]]:
-    """mdBookin #tab/-lohkot -> pymdownx.tabbed. -> (teksti, joukkoja, poistettuja, otsikot).
+def convert_tabs(text: str) -> tuple[str, int, set[str]]:
+    """mdBookin #tab/-lohkot -> pymdownx.tabbed. -> (teksti, joukkoja, otsikot).
 
-    #tab/default jää pois (TAB_PLACEHOLDER). Saman tunnuksen välilehdet saavat
-    saman otsikon ensimmäisen esiintymän mukaan, koska Material yhdistää
-    sivun välilehtijoukot otsikkotekstistä, mdBook tunnuksesta.
+    Saman tunnuksen välilehdet saavat saman otsikon ensimmäisen esiintymän
+    mukaan, koska Material yhdistää sivun välilehtijoukot otsikkotekstistä,
+    mdBook tunnuksesta.
     """
     lines = text.split("\n")
     labels: dict[str, str] = {}
     out: list[str] = []
-    sets = placeholders = 0
+    sets = 0
     index = 0
     while index < len(lines):
         if not TAB_HEADING_RE.match(lines[index]):
@@ -1983,22 +1979,16 @@ def convert_tabs(text: str) -> tuple[str, int, int, set[str]]:
             index += 1
             continue
         sections, index = read_tab_set(lines, index)
-        placeholders += sum(1 for tab_id, _, _ in sections
-                            if tab_id == TAB_PLACEHOLDER)
-        sections = [s for s in sections if s[0] != TAB_PLACEHOLDER]
-        # Tyhjä rivi myös kun koko joukko jäi pois: read_tab_set söi joukon
-        # jälkeiset tyhjät rivit, ja kappaleet liimautuisivat yhteen.
+        # Tyhjä rivi joukon eteen, jottei edellinen kappale liimaudu siihen.
         if out and out[-1].strip():
             out.append("")
-        if not sections:
-            continue
         sets += 1
         for tab_id, label, body in sections:
             out.append(f'=== "{labels.setdefault(tab_id, label)}"')
             out.append("")
             out.extend(indent_block(body))
             out.append("")
-    return "\n".join(out), sets, placeholders, set(labels.values())
+    return "\n".join(out), sets, set(labels.values())
 
 
 def sync_docs() -> set[Path]:
@@ -2126,7 +2116,7 @@ def main(strict: bool = False) -> int:
         converted, _ = convert_walkthroughs(converted, source_path, audio)
         converted, _ = convert_bonus_marks(converted)
         converted, _, _, page_unknown_icons = convert_icons(converted)
-        converted, _, _, page_labels = convert_tabs(converted)
+        converted, _, page_labels = convert_tabs(converted)
         # Animaatiot välilehtien jälkeen, ks. convert_animations.
         converted, _ = convert_animations(converted, source_path)
         write_if_changed(page, converted)

@@ -1342,33 +1342,22 @@ def test_convert_quizzes_warns_about_a_question_without_one_answer(capsys, quest
 
 # --- Käyttöjärjestelmävälilehdet (README kohta 23) ---------------------------
 
-def test_convert_tabs_drops_placeholder():
-    """#tab/default jää pois: Zensicalissa yksi välilehti on aina valittuna."""
-    text = ("### [Windows](#tab/win)\n\nW\n\n***\n\n"
-            "### [Valitse](#tab/default)\n\nvalitse\n\n***\n")
-    converted, sets, placeholders, labels = convert.convert_tabs(text)
-    assert (sets, placeholders) == (1, 1)
-    assert labels == {"Windows"}
-    assert "valitse" not in converted
-    assert '=== "Windows"' in converted
-
-
 def test_convert_tabs_first_label_wins_per_id():
     """Saman tunnuksen välilehdet saavat saman otsikon: Material yhdistää
     joukot otsikkotekstistä, mdBook yhdisti tunnuksesta."""
     text = ("### [GitLab (JY)](#tab/gitlab)\n\na\n\n***\n\n"
             "#### [GitLab (JYU)](#tab/gitlab)\n\nb\n\n***\n")
-    converted, _, _, labels = convert.convert_tabs(text)
+    converted, _, labels = convert.convert_tabs(text)
     assert labels == {"GitLab (JY)"}
     assert converted.count('=== "GitLab (JY)"') == 2
 
 
 def test_convert_tabs_keeps_paragraphs_apart():
-    """Tyhjä rivi joukon eteen myös silloin kun koko joukko jäi pois."""
-    text = ("edellinen\n### [Valitse](#tab/default)\n\nx\n\n***\nseuraava\n")
-    converted, sets, placeholders, _ = convert.convert_tabs(text)
-    assert (sets, placeholders) == (0, 1)
-    assert converted == "edellinen\n\nseuraava\n"
+    """Tyhjä rivi joukon eteen, jottei edellinen kappale liimaudu siihen."""
+    text = ("edellinen\n### [Windows](#tab/win)\n\nW\n\n***\nseuraava\n")
+    converted, sets, labels = convert.convert_tabs(text)
+    assert (sets, labels) == (1, {"Windows"})
+    assert converted.startswith('edellinen\n\n=== "Windows"\n')
 
 
 # --- Tiedostot, jotka eivät ole sivuja ---------------------------------------

@@ -62,12 +62,6 @@ macOS-ohje.
 
 ***
 
-### [Valitse](#tab/default)
-
-Tämä lohko jää pois: Zensicalissa yksi välilehti on aina valittuna.
-
-***
-
 ## Terminaalinauhoitus
 
 Nauhoitus (README.md kohta 16) on raakaa HTML:ää lähteessä, ja sen osoite on
