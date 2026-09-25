@@ -54,7 +54,9 @@
     </a>
   {% endif %}
   {#- Ongelmailmoitus: sama issue-lomake kuin mdBookissa, url-kenttään sivun
-      polku. Joka sivulla, myös ilman lähdetiedostoa; silloin polku on docs/:n
+      polku. Polku eikä page.canonical_url: polku nimeää korjattavan
+      tiedoston, ja /dev/-esikatselussa canonical osoittaisi tuotantosivuun.
+      Joka sivulla, myös ilman lähdetiedostoa; silloin polku on docs/:n
       oma. -#}
   <a href="{{ config.repo_url }}/issues/new?template=ilmoita-ongelmasta.yml&amp;url={{ (source or path) | urlencode }}" class="md-copyright md-copyright--link" title="Avaa issue GitHubissa">
     {% include ".icons/material/flag-outline.svg" %}

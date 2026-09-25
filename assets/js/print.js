@@ -6,7 +6,10 @@
  * luvun oman sivun ja poimii siitä artikkelin.
  *
  * Sivun rungon (linkkilistan) kirjoittaa convert.py; ilman JavaScriptiä
- * sivu on kirjan sisällysluettelo. */
+ * sivu on kirjan sisällysluettelo.
+ *
+ * Tunnettu puute: mermaid-kaaviot eivät piirry, koska teema piirtää ne sivun
+ * latautuessa, ennen kuin luvut on liitetty. */
 
 (() => {
   "use strict";

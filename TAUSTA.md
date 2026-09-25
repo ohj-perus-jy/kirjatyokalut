@@ -5,7 +5,9 @@ siirrettiin tähän repoon (ohj1 `rakenne-2027`, 39316cf). Se kertoo, mitä
 mdBookin ominaisuuksia varten mikin osa on tehty (tarkistuslista), mitä ohj1
 toi ohj2:n alkuperäiseen koeputkeen ja miksi. Polut, käynnistysohjeet ja luvut
 ovat siirtoa edeltävältä ajalta: **ajan tasalla oleva ohje on
-[README.md](README.md)**, perustelut [PERUSTELUT.md](PERUSTELUT.md).
+[README.md](README.md)**, perustelut [PERUSTELUT.md](PERUSTELUT.md). Tämän
+tekstin viittaukset PERUSTELUT.md:n kohtiin osoittavat sen pitkään versioon
+(`git show d5c7f42:PERUSTELUT.md`).
 KAYTTOONOTTO.md ja PURKUSUUNNITELMA.md, joihin teksti viittaa, ovat kirjojen
 omissa repoissa.
 

@@ -2,7 +2,6 @@
 
 Sivusto käännetään oikeasti (convert.py + zensical build): tulostussivu
 kootaan valmiista HTML:stä, joten testattava syntyy vasta käännöksessä.
-Tiedostojako: PERUSTELUT.md, "Testien rakenne".
 """
 
 import functools
