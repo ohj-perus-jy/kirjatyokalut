@@ -249,7 +249,7 @@ Julkaisu (`.github/workflows/pages.yml`): checkoutiin `submodules: true`,
 ja käännös kirjan hakemistossa:
 
 ```yaml
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: true
       # ...
@@ -274,7 +274,7 @@ kutsuu actionia, joten tarkistus päivittyy osoittimen mukana. Malliksi käy
 ohj1:n `links.yml`; olennaiset askeleet:
 
 ```yaml
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: true
       - uses: ./zensical/tyokalut/linkit
