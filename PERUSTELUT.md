@@ -555,8 +555,8 @@ voi käyttää, koska se on jo vieressä muokkauslinkissä.
 osoitetta tai polkua", ja kirja esitäyttää siihen `{{path}}`:n eli
 lähdetiedoston polun `src`:ssä. Sama arvo on täällä jo laskettuna
 muokkauslinkkiä varten (`extra.edit_source`-kartan läpi käännetty polku),
-joten se kelpaa sellaisenaan — eikä valmiiksi osoitteeksi olisi mitään
-otettavaakaan: `site_url`:ää ei ole asetettu, joten `page.canonical_url` on
+joten se kelpaa sellaisenaan — eikä valmiiksi osoitteeksi ollut mitään
+otettavaakaan, koska `site_url` puuttui ja `page.canonical_url` oli siksi
 tyhjä. Poikkeus on `tulosta/`, jolla ei ole lähdetiedostoa: kartta antaa
 tyhjän, ja esitäyttöön menee `docs/`:n oma polku (`tulosta.md`). Linkki itse
 on silti joka sivulla — ongelmasta pitää voida ilmoittaa myös sivulta, jota
@@ -568,6 +568,11 @@ sivulla, esitäytetty polku on 189:llä sama tiedosto kuin muokkauslinkin kohde
 
 Myöhemmin (23.9.2026) teksti lyhennettiin muotoon "Ilmoita ongelma", ks.
 *Muutoshistoria alatunnisteeseen*.
+
+Myöhemmin (25.9.2026) `site_url` asetettiin viimeiseenkin kirjaan (ohj2),
+joten `page.canonical_url` olisi saatavilla. Esitäyttö pysyi polkuna:
+polku nimeää korjattavan tiedoston suoraan, ja `/dev/`-esikatselussa
+canonical-osoite osoittaa tuotantosivuun eikä sivuun, jolta ilmoitus tehtiin.
 
 ### Muutoshistoria alatunnisteeseen (`overrides/partials/copyright.html`)
 
