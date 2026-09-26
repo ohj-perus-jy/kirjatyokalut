@@ -1,14 +1,22 @@
-/* Kopiointinapin kuittaus nappirivissä napin vasemmalla puolella; toiminta:
+/* Kopiointinapin kuittaus nappirivin vasemmalla puolella; toiminta:
  * assets/js/copy.js. Ulkoasu on teeman oman ilmoituksen (.md-dialog):
  * aksenttivärinen pilleri, mutta napin korkuinen ja leipätekstin kirjasimella,
  * koska rivi on koodilohkossa, jonka kirjasin on koodin. */
 
+/* Rivin ulkopuolella nappien vasemmalla: piilotettunakin kuittaus veisi rivissä
+ * tilaa, ja rivin alle piirretty pinta (codebuttons.css) levenisi pysyvästi.
+ * Ylä- ja alareuna ovat rivin reunuksen päässä, joten automaattiset marginaalit
+ * keskittävät kuittauksen nappien korkeudelle. */
 .jyu-copied {
+  position: absolute;
+  top: 0.2rem;
+  right: 100%;
+  bottom: 0.2rem;
   display: flex;
   align-items: center;
   height: 1.75em;
   padding: 0 0.6rem;
-  margin-right: 0.2rem;
+  margin: auto 0.2rem auto 0;
   font-family: var(--md-text-font-family);
   font-size: 0.64rem;
   line-height: 1;

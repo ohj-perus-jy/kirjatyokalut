@@ -28,13 +28,14 @@
  * sisennyksen (1.25em) verran reunasta reunaan. Leveys on lisä: <code>
  * vierittää itse, joten lohkotason lapsi jäisi näkyvän leveyden mittaiseksi
  * ja pitkän rivin korostus katkeaisi. min-widthissä on rivin oma sisennys
- * mukana, koska laatikkomalli on border-box. */
+ * mukana, koska laatikkomalli on border-box. Oikea reunus on nappirivin
+ * lohkossa leveämpi (codebuttons.css). */
 .md-typeset .highlight .hl-line {
   display: block;
   width: max-content;
-  min-width: calc(100% + 2.5em);
-  padding: 0 1.25em;
-  margin: 0 -1.25em;
+  min-width: calc(100% + 1.25em + var(--jyu-code-padding-right, 1.25em));
+  padding: 0 var(--jyu-code-padding-right, 1.25em) 0 1.25em;
+  margin: 0 calc(-1 * var(--jyu-code-padding-right, 1.25em)) 0 -1.25em;
 }
 
 .md-typeset .highlight .hl-green {
@@ -50,6 +51,25 @@
 .md-typeset .highlight .hl-red {
   background-color: var(--jyu-hl-red);
   box-shadow: inset 2px 0 0 var(--jyu-hl-red-edge);
+}
+
+/* Nappirivin alla oleva pinta (codebuttons.css) peittää ensimmäisen näkyvän
+ * rivin lopun; korostetulla rivillä pinta on korostuksen värinen, ettei
+ * korostus katkea nappien kohdalla. Ensimmäinen näkyvä rivi on piilorivien
+ * ollessa piilossa ensimmäinen piilottamaton. */
+.md-typeset pre:has(> code.hide-boring > :nth-child(1 of :not(.boring)).hl-green),
+.md-typeset pre:has(> code:not(.hide-boring) > :first-child.hl-green) {
+  --jyu-code-panel-color: var(--jyu-hl-green);
+}
+
+.md-typeset pre:has(> code.hide-boring > :nth-child(1 of :not(.boring)).hl-yellow),
+.md-typeset pre:has(> code:not(.hide-boring) > :first-child.hl-yellow) {
+  --jyu-code-panel-color: var(--jyu-hl-yellow);
+}
+
+.md-typeset pre:has(> code.hide-boring > :nth-child(1 of :not(.boring)).hl-red),
+.md-typeset pre:has(> code:not(.hide-boring) > :first-child.hl-red) {
+  --jyu-code-panel-color: var(--jyu-hl-red);
 }
 
 /* Kopioitaessa teema piilottaa rivien rakenteen (data-md-copying), jottei

@@ -3,9 +3,8 @@
  * on niin kaukana napista, ettei lukija huomaa sitä. Tässä nappi otetaan
  * teemalta: sen data-clipboard-target poistetaan, jolloin teeman ClipboardJS
  * ei tartu painallukseen, ja kopiointi ja kuittaus tehdään itse. Kuittaus
- * tulee nappirivin alkuun eli napin vasemmalle puolelle; rivi on kiinni
- * lohkon oikeassa reunassa, joten se kasvaa vasemmalle eikä siirrä nappeja.
- * Ulkoasu: assets/css/copy.css. */
+ * on nappirivin elementti, mutta tyyli sijoittaa sen rivin vasemmalle
+ * puolelle, joten se ei siirrä nappeja. Ulkoasu: assets/css/copy.css. */
 
 (() => {
   "use strict";
