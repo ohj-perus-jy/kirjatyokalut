@@ -424,6 +424,27 @@ def test_closing_stops_the_reading(player):
     assert page.locator(".jyu-puhe-bar").is_hidden()
 
 
+def test_the_speaker_tooltip_closes_after_a_click(player):
+    """Teeman vihje on auki myös kohdistuksen ajan: hiiren painallus ei jätä
+    sitä auki, eikä nimi vaihdu (tila on aria-pressedissä)."""
+    page, _ = player()
+    button = page.locator(".jyu-puhe-button")
+    button.hover()
+    page.wait_for_selector(".md-tooltip2--active")
+    button.click()
+    page.mouse.move(600, 500)
+    page.wait_for_selector(".md-tooltip2--active", state="detached")
+    # Vihje palauttaa title-attribuutin vasta poistuessaan.
+    page.wait_for_selector(".jyu-puhe-button[title]")
+    assert button.get_attribute("aria-pressed") == "true"
+    assert button.get_attribute("title") == "Kuuntele sivu"
+    assert button.get_attribute("aria-label") == "Kuuntele sivu"
+    button.focus()
+    page.keyboard.press("Enter")
+    assert button.get_attribute("aria-pressed") == "false"
+    assert page.evaluate("document.activeElement.classList.contains('jyu-puhe-button')")
+
+
 def test_the_speed_cycles_applies_to_the_next_clip_and_is_remembered(player):
     page, errors = player()
     speed = page.locator(".jyu-puhe-speed")

@@ -234,14 +234,14 @@
     return Math.max(index, 0);
   }
 
+  /* Kaiuttimen nimi ("Kuuntele sivu") pysyy, ja tila on aria-pressedissä:
+   * valitsimen nimi ei saa vaihtua tilan mukana, ja teeman vihje palauttaisi
+   * sulkeutuessaan nimen, joka napilla oli vihjeen auetessa. */
   function setOpen(on) {
     open = on;
     bar.hidden = !on;
     document.body.classList.toggle("jyu-puhe-auki", on);
     button.setAttribute("aria-pressed", String(on));
-    const label = on ? "Lopeta lukeminen" : "Kuuntele sivu";
-    button.title = label;
-    button.setAttribute("aria-label", label);
     if (on) {
       previous = null;
       startUnit(firstInView());
@@ -278,7 +278,13 @@
     if (open && audio.getAttribute("src")) playNext();
   });
 
-  button.addEventListener("click", () => setOpen(!open));
+  /* Teeman vihje on auki myös kohdistuksen ajan, joten osoittimen painallus
+   * vapauttaa kohdistuksen, jotta vihje sulkeutuu osoittimen lähtiessä (kuten
+   * teeman koodinapeissa). Näppäimistöllä kohdistus jää. */
+  button.addEventListener("click", (event) => {
+    setOpen(!open);
+    if (event.detail) button.blur();
+  });
   playButton.addEventListener("click", toggle);
   $(".jyu-puhe-prev").addEventListener("click", () => step(-1));
   $(".jyu-puhe-next").addEventListener("click", () => step(1));
