@@ -17,9 +17,11 @@ BOOK=$(dirname "$TOOL")
 cd "$BOOK"
 source "$TOOL/vaihe.sh"
 
-# Asenna, jos .venv puuttuu tai sen Zensical ei ole requirements.txt:n versio.
+# Asenna, jos .venv puuttuu, sen Zensical ei ole requirements.txt:n versio tai
+# se on siirretty: skriptien #!-rivi osoittaa silloin vanhaan polkuun.
 pin=$(sed -n 's/^zensical==//p' "$TOOL/requirements.txt")
 if [[ ! -x .venv/bin/zensical ]] ||
+   [[ ! -x $(sed -n '1s/^#!//p' .venv/bin/zensical) ]] ||
    ! compgen -G ".venv/lib/python*/site-packages/zensical-$pin.dist-info" >/dev/null; then
     "$TOOL/setup.sh"
 fi

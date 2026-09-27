@@ -15,6 +15,11 @@ if ! python3 -c "import ensurepip" >/dev/null 2>&1; then
     sudo apt-get install -y -qq python3-venv python3-pip
 fi
 
+# Siirretyn .venv:n skriptien #!-rivi osoittaa vanhaan polkuun, eikä pip
+# käynnisty; luodaan se tyhjästä.
+if [[ -d .venv ]] && ! .venv/bin/pip --version >/dev/null 2>&1; then
+    vaihe "Luodaan .venv uudelleen" python3 -m venv --clear .venv
+fi
 [[ -d .venv ]] || vaihe "Luodaan .venv" python3 -m venv .venv
 vaihe "Päivitetään pip" .venv/bin/pip install --upgrade pip
 vaihe "Asennetaan Zensical" .venv/bin/pip install -r "$TOOL/requirements.txt"
