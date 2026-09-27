@@ -53,3 +53,21 @@ Hello from Docker!
 # kommentti
 print("hei")  # rivin lopussa
 ```
+
+Alpinen komentotulkin kehote on hakemisto ja `#`.
+
+```console
+/ # ps
+PID   USER     TIME  COMMAND
+    1 root      0:00 sh
+/app # exit
+```
+
+Hiirellä maalattuun tekstiin ei tule kehotetta (copy.js: markPrompts).
+
+```console
+$ docker run hello-world
+root@kontti:/app# uname -r
+```
+
+Kappale lohkon jälkeen.

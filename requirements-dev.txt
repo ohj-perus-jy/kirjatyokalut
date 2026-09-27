@@ -3,6 +3,9 @@
 #
 # playwright tarvitsee lisäksi selaimen (run.sh test asentaa sen):
 #   .venv/bin/playwright install chromium
+# Hiirellä maalaamisen testit (tests/test_copy.py) ajetaan myös Firefoxissa ja
+# WebKitissä, jos ne on asennettu; muuten ne ohitetaan:
+#   .venv/bin/playwright install --with-deps firefox webkit
 -r requirements.txt
 pytest
 playwright

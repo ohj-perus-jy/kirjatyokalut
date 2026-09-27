@@ -173,13 +173,20 @@ def serve():
 
 
 @pytest.fixture(scope="session")
-def browser():
+def playwright_api():
+    """Yksi Playwright koko ajolle: sync_playwright ei käynnisty toista kertaa
+    samassa säikeessä, joten muut selaimet (test_copy.py) käynnistetään tästä."""
     from playwright.sync_api import sync_playwright
 
     with sync_playwright() as playwright:
-        instance = playwright.chromium.launch()
-        yield instance
-        instance.close()
+        yield playwright
+
+
+@pytest.fixture(scope="session")
+def browser(playwright_api):
+    instance = playwright_api.chromium.launch()
+    yield instance
+    instance.close()
 
 
 @dataclass

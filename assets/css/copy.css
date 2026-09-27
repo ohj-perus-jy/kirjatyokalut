@@ -45,3 +45,15 @@
 [data-md-color-scheme="slate"] .jyu-copied {
   color: #fff;
 }
+
+/* Komentorivilohkon kehote (copy.js: markPrompts) ei tartu hiirellä
+ * maalattuun tekstiin. Pelkällä user-selectillä Chromium ja Firefox eivät
+ * aloita maalausta lainkaan, jos hiiren painaa kehotteen päällä eli rivin
+ * alussa; pointer-events: none päästää painalluksen riville, ja maalaus
+ * alkaa komennon alusta. Testattu Chromiumissa, Firefoxissa ja WebKitissä
+ * (tests/test_copy.py). */
+.jyu-prompt {
+  -webkit-user-select: none;
+  user-select: none;
+  pointer-events: none;
+}
