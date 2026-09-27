@@ -74,6 +74,14 @@
   background-color: var(--md-accent-fg-color);
 }
 
+/* Nopeus tekstinä ("1,25×"); kiinteä leveys, jottei palkki hypi. */
+.jyu-puhe-bar .jyu-puhe-speed {
+  width: 3rem;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  border-radius: 1.1rem;
+}
+
 .jyu-puhe-count,
 .jyu-puhe-status {
   padding: 0 0.4rem;

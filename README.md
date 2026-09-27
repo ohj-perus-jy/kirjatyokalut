@@ -70,7 +70,7 @@ Kielet: `csharp`, `java`, `javascript` (korostetut rivit: `csharp`, `java`).
 | Tulosta: koko kirja yhdeksi PDF:ksi | `build_print_page`, print.js/css |
 | Alatunniste: edellinen/seuraava, tekijät ja lisenssi, "Muokkaa", "Muutoshistoria", "Ilmoita ongelma" | copyright.html |
 | Alaviitteet ja `title`-attribuutit tooltipeinä | mkdocs-pohja.yml |
-| Koko sivun ääneenluku (`kirja.toml`: `[puhe] sivut`): kaiutin yläpalkissa, soitinpalkki, luettava kappale korostettuna; koodista, taulukosta ja kaaviosta vain ilmoitus, välilehdistä lukijan valitsema | `speech_units`, `mark_speech`, puhe.js/css, header.html, `puhe.py` |
+| Koko sivun ääneenluku (`kirja.toml`: `[puhe] sivut`): kaiutin yläpalkissa, soitinpalkki (nopeus 1–2×, jää muistiin), luettava kappale korostettuna; koodista, taulukosta ja kaaviosta vain ilmoitus, välilehdistä lukijan valitsema | `speech_units`, `mark_speech`, puhe.js/css, header.html, `puhe.py` |
 | Taulukoiden, koodin ja nappirivin tyyli | tables.css, code.css, codebuttons.css |
 
 ### Ylläpito

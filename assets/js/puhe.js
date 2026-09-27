@@ -10,7 +10,8 @@
  * Yläpalkin kaiutin (overrides/partials/header.html) on piilossa, kunnes
  * sivulta löytyy merkki. Painallus avaa alareunaan soitinpalkin ja aloittaa
  * lukemisen ensimmäisestä ruudulla näkyvästä lohkosta; uusi painallus tai
- * palkin rasti lopettaa. Palkissa on edellinen, toista/tauko ja seuraava.
+ * palkin rasti lopettaa. Palkissa on edellinen, toista/tauko, seuraava ja
+ * nopeus, joka vaihtuu painalluksella seuraavaan (SPEEDS) ja jää muistiin.
  * Kun palkki on auki, lohkon klikkaus lukee siitä. Luettava lohko korostetaan
  * ja pidetään näkyvissä, ellei lukija ole juuri itse vierittänyt.
  *
@@ -39,6 +40,10 @@
 
   /* Lukijan oma vieritys keskeyttää seuraamisen näin pitkäksi aikaa. */
   const USER_SCROLL_MS = 4000;
+
+  /* Nopeusnapin kierto; valinta talteen localStorageen. */
+  const SPEEDS = [1, 1.1, 1.25, 1.5, 1.75, 2];
+  const SPEED_KEY = "jyu-puhe-nopeus";
 
   const ICONS = {
     prev: '<path d="M19 20 9 12l10-8zM5 19V5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
@@ -125,12 +130,14 @@
     + `<button type="button" class="jyu-puhe-prev" title="Edellinen kappale" aria-label="Edellinen kappale">${icon("prev")}</button>`
     + `<button type="button" class="jyu-puhe-play" title="Tauko" aria-label="Tauko">${icon("pause")}</button>`
     + `<button type="button" class="jyu-puhe-next" title="Seuraava kappale" aria-label="Seuraava kappale">${icon("next")}</button>`
+    + '<button type="button" class="jyu-puhe-speed" title="Lukunopeus"></button>'
     + '<span class="jyu-puhe-count"></span>'
     + '<span class="jyu-puhe-status" role="status"></span>'
     + `<button type="button" class="jyu-puhe-close" title="Lopeta lukeminen" aria-label="Lopeta lukeminen">${icon("close")}</button>`;
   document.body.append(bar);
   const $ = (selector) => bar.querySelector(selector);
   const playButton = $(".jyu-puhe-play");
+  const speedButton = $(".jyu-puhe-speed");
   const count = $(".jyu-puhe-count");
   const status = $(".jyu-puhe-status");
 
@@ -143,6 +150,17 @@
   let highlighted = null;
   let open = false;
   let userScrolledAt = 0;
+  let speed = 1;
+
+  /* Uusi src palauttaa playbackRaten defaultPlaybackRateen, joten asetetaan
+   * molemmat. */
+  function setSpeed(value) {
+    speed = SPEEDS.includes(value) ? value : 1;
+    audio.defaultPlaybackRate = audio.playbackRate = speed;
+    const shown = `${String(speed).replace(".", ",")}×`;
+    speedButton.textContent = shown;
+    speedButton.setAttribute("aria-label", `Lukunopeus ${shown}`);
+  }
 
   function setPlaying(playing) {
     const label = playing ? "Tauko" : "Toista";
@@ -264,6 +282,15 @@
   playButton.addEventListener("click", toggle);
   $(".jyu-puhe-prev").addEventListener("click", () => step(-1));
   $(".jyu-puhe-next").addEventListener("click", () => step(1));
+  /* localStorage voi puuttua (yksityinen tila); silloin nopeus koskee vain tätä sivua. */
+  speedButton.addEventListener("click", () => {
+    setSpeed(SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length]);
+    try {
+      localStorage.setItem(SPEED_KEY, String(speed));
+    } catch {
+      /* ei tallennusta */
+    }
+  });
   $(".jyu-puhe-close").addEventListener("click", () => setOpen(false));
 
   /* Lohkon klikkaus lukee siitä; linkit, napit, koodi ja valinta eivät. */
@@ -301,5 +328,10 @@
     navigator.mediaSession.setActionHandler("nexttrack", () => { if (open) step(1); });
   }
 
+  try {
+    setSpeed(Number(localStorage.getItem(SPEED_KEY)));
+  } catch {
+    setSpeed(1);
+  }
   button.hidden = false;
 })();

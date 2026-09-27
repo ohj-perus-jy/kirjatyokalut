@@ -422,3 +422,25 @@ def test_closing_stops_the_reading(player):
     page.locator(".jyu-puhe-button").click()
     page.locator(".jyu-puhe-button").click()
     assert page.locator(".jyu-puhe-bar").is_hidden()
+
+
+def test_the_speed_cycles_applies_to_the_next_clip_and_is_remembered(player):
+    page, errors = player()
+    speed = page.locator(".jyu-puhe-speed")
+    page.locator(".jyu-puhe-button").click()
+    assert speed.text_content() == "1×"
+    shown = []
+    for _ in range(6):
+        speed.click()
+        shown.append(speed.text_content())
+    assert shown == ["1,1×", "1,25×", "1,5×", "1,75×", "2×", "1×"]
+    speed.click()
+    speed.click()
+    assert speed.get_attribute("aria-label") == "Lukunopeus 1,25×"
+    page.locator(".jyu-puhe-next").click()
+    assert page.evaluate("window.__current.playbackRate") == 1.25
+    page.reload()
+    page.locator(".jyu-puhe-button").click()
+    assert speed.text_content() == "1,25×"
+    assert page.evaluate("window.__current.playbackRate") == 1.25
+    assert errors == []
