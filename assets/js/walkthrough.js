@@ -596,6 +596,9 @@
     const fullButton = $(".jw-full");
     const speakButton = $(".jw-speak");
     const voice = new Audio();
+    document.addEventListener("jyu-aani", (event) => {
+      if (event.detail !== "walk") voice.pause();
+    });
     const notice = $(".jw-notice");
     const ticks = [...shell.querySelectorAll(".jw-tick")];
     const chapterButtons = [...shell.querySelectorAll("[data-chapter]")];
@@ -710,6 +713,8 @@
       const url = new URL(src, document.baseURI).href;
       if (voice.src === url) voice.currentTime = 0;
       else voice.src = url;
+      /* Sivun ääneenluku (puhe.js) vaikenee, kun vaihe puhuu, ja päinvastoin. */
+      document.dispatchEvent(new CustomEvent("jyu-aani", { detail: "walk" }));
       voice.play().catch(() => {});
     }
 

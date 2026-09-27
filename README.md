@@ -70,6 +70,7 @@ Kielet: `csharp`, `java`, `javascript` (korostetut rivit: `csharp`, `java`).
 | Tulosta: koko kirja yhdeksi PDF:ksi | `build_print_page`, print.js/css |
 | Alatunniste: edellinen/seuraava, tekijät ja lisenssi, "Muokkaa", "Muutoshistoria", "Ilmoita ongelma" | copyright.html |
 | Alaviitteet ja `title`-attribuutit tooltipeinä | mkdocs-pohja.yml |
+| Koko sivun ääneenluku (`kirja.toml`: `[puhe] sivut`): kaiutin yläpalkissa, soitinpalkki, luettava kappale korostettuna; koodista, taulukosta ja kaaviosta vain ilmoitus, välilehdistä lukijan valitsema | `speech_units`, `mark_speech`, puhe.js/css, header.html, `puhe.py` |
 | Taulukoiden, koodin ja nappirivin tyyli | tables.css, code.css, codebuttons.css |
 
 ### Ylläpito
@@ -77,8 +78,8 @@ Kielet: `csharp`, `java`, `javascript` (korostetut rivit: `csharp`, `java`).
 | Ominaisuus | Toteutus |
 | --- | --- |
 | `./zensical/run.sh`: vahti, joka muuntaa tallennetun sivun ja päivittää selaimen | `convert.py --watch` |
-| `--strict`: julkaisu kaatuu puuttuvaan kaavioon | `convert.py`, kirjan pages.yml |
-| Varoitukset: puuttuva `{{#include}}`-kohde, virheellinen visa, tuntematon korostusväri, väärin piirtyvä bob-kaavio, vanhentunut ääni | `convert.py` |
+| `--strict`: julkaisu kaatuu puuttuvaan kaavioon tai äänivarastoon | `convert.py`, kirjan pages.yml |
+| Varoitukset: puuttuva `{{#include}}`-kohde, virheellinen visa, tuntematon korostusväri, väärin piirtyvä bob-kaavio, vanhentunut tai puuttuva ääni | `convert.py` |
 | Sivu toisen alasivuksi, tiedostoja pois sivuista, osioita pois | `kirja.toml` |
 | Ulkoisten linkkien ja ankkurien tarkistus, myös kurssin TIM-sivuilta | `linkit/` |
 | Testit koekirjalla ja kirjan omalla materiaalilla | `tests/`, `./zensical/run.sh test` |
@@ -94,6 +95,7 @@ kirja/                     kirjan repo
     run.sh                 kääre: tyokalut/run.sh
     cache/svgbob/          kirjan bob-kaaviot (versionhallinnassa)
     cache/plantuml/        kirjan luokkakaaviot (versionhallinnassa)
+    puhe/                  ääneenluvun leikkeet: erillisen repon klooni (puhe.py)
     tyokalut/              TÄMÄ REPO submodulena
     docs/ site/ nav.yml .venv/   generoitua, ei versionhallinnassa
 ```
@@ -107,7 +109,7 @@ ylähakemisto) ja lukee materiaalin sen viereisestä `src/`:stä.
 | `convert.py` | `../src` → `docs/` ja `nav.yml`; `--watch` vahtii, `--strict` kaatuu puuttuvaan kaavioon (julkaisu) |
 | `mkdocs-pohja.yml` | kirjojen yhteiset Zensical-asetukset: teema, tyylit, skriptit |
 | `assets/`, `overrides/`, `icons/` | tyylit ja skriptit, teeman mallit, kuvakkeiden glyfit |
-| `puhe.py` | vaiheittaisen ohjeen äänet (Azure Speech) |
+| `puhe.py` | ääneenluvun leikkeet (Azure Speech) äänivarastoon ja vaiheittaisen ohjeen äänet; `--teksti` näyttää luettavan ja hinta-arvion |
 | `run.sh`, `setup.sh` | ajo ja asennus kirjan hakemistosta käsin; `vaihe.sh` näyttää asennuksen etenemisen |
 | `requirements.txt` | kiinnitetty Zensical-versio; `requirements-dev.txt` lisää testien riippuvuudet |
 | `tests/` | testit ja koekirja (`tests/book/`) |
@@ -126,6 +128,10 @@ siitä kirjan hakemisto tunnistetaan.
 | `[testit] rikkinaiset_kuvat` | kuvat, joiden tiedetään puuttuvan (test_book.py sallii ne) | – |
 | `[linkit] tim_kansiot` | TIM-kansiot, joiden julkisten sivujen linkit tarkistetaan (ks. Linkkitarkistus) | – |
 | `[linkit] tim_pois` | tarkistuksesta pois jätettävät TIM-dokumentit (polku kuten kansioissa) | – |
+| `[puhe] sivut` | fnmatch-kuviot lähdepuun sivuille, jotka luetaan ääneen (koko sivu) | `SPEECH_PAGES` |
+| `[puhe] repo` | äänivaraston repo, jonka `puhe.py` kloonaa ja johon se pushaa leikkeet | `SPEECH_REPO` |
+| `[puhe] varasto` | varaston klooni kirjan hakemistosta (oletus `puhe`, ei kirjan versionhallintaan) | `SPEECH_STORE` |
+| `[puhe] aani` | Azuren ääni (oletus `fi-FI-HarriNeural`); vaihto tekee kaikki leikkeet uudelleen | `SPEECH_VOICE` |
 
 Esimerkki (ohj1):
 
@@ -136,6 +142,10 @@ ei_sivuja = ["exercises/*/starter/*.md"]
 [linkit]
 tim_kansiot = ["kurssit/tie/itkp102"]
 tim_pois = ["kurssit/tie/itkp102/materiaali/moniste"]
+
+[puhe]
+sivut = ["tyokalut.md", "osa1/*.md"]
+repo = "https://github.com/ohj-perus-jy/ohj1-puhe.git"
 ```
 
 Asetukset luetaan käynnistyessä: muutoksen jälkeen `run.sh` käynnistetään
@@ -179,8 +189,17 @@ git submodule update --init                     # (kirjan run.sh tekee tämän i
 ./zensical/run.sh 8003         # eri portti
 ./zensical/run.sh build        # pelkkä rakennus site/-hakemistoon
 ./zensical/run.sh test         # testit: koekirja ja tämä kirja
-./zensical/run.sh puhe ../src/sivu.md   # vaiheittaisen ohjeen äänet
+./zensical/run.sh puhe         # ääneenluvun puuttuvat leikkeet varastoon ja pushaus
+./zensical/run.sh puhe ../src/sivu.md   # vain annettu sivu (myös vaiheittainen ohje)
+./zensical/run.sh puhe --teksti         # luettavat tekstit ja hinta-arvio, ei ääniä
 ```
+
+Ääneenluku tarvitsee Azure Speech -resurssin avaimen ja alueen
+ympäristömuuttujissa `AZURE_SPEECH_KEY` ja `AZURE_SPEECH_REGION`. Leikkeet
+ovat erillisessä repossa (`[puhe] repo`), koska kirjan historia kasvaisi
+jokaisesta korjauksesta; julkaisu (pages.yml) hakee sen kansioon
+`zensical/puhe/`. Korjauksen jälkeen `puhe` tekee vain muuttuneiden
+kappaleiden leikkeet, ja käännös varoittaa, jos jokin puuttuu.
 
 Ensimmäinen ajo asentaa `.venv`:n kirjan hakemistoon (`setup.sh`), ja `run.sh`
 päivittää sen, kun `requirements.txt`:n Zensical-versio vaihtuu. Windowsissa

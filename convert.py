@@ -41,6 +41,7 @@ import urllib.request
 import zlib
 from html import escape, unescape
 from pathlib import Path
+from typing import NamedTuple
 
 TOOL = Path(__file__).resolve().parent
 CONFIG_NAME = "kirja.toml"
@@ -83,6 +84,17 @@ SUMMARY_LINK_RE = re.compile(
 # #lisaa_osoite on paikkamerkki ja siksi aina rikki. Ks. is_page.
 # kirja.toml: ei_sivuja = ["exercises/*/starter/*.md"].
 NOT_PAGES: tuple[str, ...] = tuple(CONFIG.get("ei_sivuja", ()))
+
+# Koko sivun ääneenluku (ks. speech_units), kirja.toml:n [puhe]-taulukko:
+# sivut (fnmatch lähdepuun polusta, ks. is_speech_page), varasto (leikkeiden
+# kansio kirjan hakemistosta, erillisen repon klooni, ks. puhe.py), repo
+# (varaston osoite puhe.py:lle) ja aani (Azuren ääni).
+SPEECH_CONFIG: dict = CONFIG.get("puhe", {})
+SPEECH_PAGES: tuple[str, ...] = tuple(SPEECH_CONFIG.get("sivut", ()))
+SPEECH_STORE = BOOK / SPEECH_CONFIG.get("varasto", "puhe")
+SPEECH_REPO: str | None = SPEECH_CONFIG.get("repo")
+SPEECH_DEFAULT_VOICE = "fi-FI-HarriNeural"
+SPEECH_VOICE: str = SPEECH_CONFIG.get("aani", SPEECH_DEFAULT_VOICE)
 
 # Otsikko, jonka edessä on 1-3 välilyöntiä: CommonMark (mdBook) sallii sen,
 # Python-Markdown ei, vaan jättää risuaidat näkyviin. Ks. dedent_headings.
@@ -406,6 +418,11 @@ def is_page(source_path: str) -> bool:
     """
     return source_path != "SUMMARY.md" and not any(
         fnmatch.fnmatchcase(source_path, pattern) for pattern in NOT_PAGES)
+
+
+def is_speech_page(source_path: str) -> bool:
+    """Luetaanko sivu (polku lähdepuusta) ääneen, ks. SPEECH_PAGES."""
+    return any(fnmatch.fnmatchcase(source_path, pattern) for pattern in SPEECH_PAGES)
 
 
 def prune_diagrams(folder: Path, used: set[str], complete: bool = True) -> int:
@@ -1751,7 +1768,11 @@ def speech_inline(text: str) -> str:
     text = re.sub(r"`([^`]*)`", lambda m: speech_code(m[1]), text)
     text = re.sub(r"!\[[^\]]*\]\([^)]*\)", "", text)
     text = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", text)
+    # Alaviiteviittaukset ja attr_list-attribuutit ({: .luokka }, { #tunnus }).
+    text = re.sub(r"\[\^[^\]]+\]", "", text)
+    text = re.sub(r"\{:?\s*[#.][^}]*\}|\{:[^}]*\}", "", text)
     text = re.sub(r"<[^>]+>", "", text)
+    text = unescape(text)
     text = re.sub(r"\b[a-z]+://\S+", "", text)
     text = text.replace("*", "").replace("_", " ")
     text = text.replace("›", ",").replace("→", " ").replace("▶", "kolmio").replace("×", "kertaa")
@@ -1763,6 +1784,15 @@ def speech_inline(text: str) -> str:
     return re.sub(r"\(\s+", "(", text).strip()
 
 
+def speech_line(text: str) -> str:
+    """Kappaleen tai otsikon Markdown yhdeksi luettavaksi riviksi, lopussa
+    välimerkki (tauko). Tyhjä, jos luettavaa ei jää."""
+    text = speech_inline(text)
+    if not text or text[-1] in ".!?:;":
+        return text
+    return f"{text}."
+
+
 def speech_text(block: str) -> str:
     """Vaiheen Markdown ääneen luettavaksi: kappale, otsikko, luettelon kohta
     ja alertin otsikko kukin omalle rivilleen (puhe.py: tauko); koodilohkot pois."""
@@ -1771,10 +1801,10 @@ def speech_text(block: str) -> str:
     fence: str | None = None
 
     def flush() -> None:
-        text = speech_inline(" ".join(paragraph))
+        text = speech_line(" ".join(paragraph))
         paragraph.clear()
         if text:
-            lines.append(text if text[-1] in ".!?:;" else f"{text}.")
+            lines.append(text)
 
     for raw in block.split("\n"):
         line = re.sub(r"^\s*>\s?", "", raw).strip()
@@ -1875,6 +1905,654 @@ def walkthrough_audio(text: str, source_path: str,
         else:
             silent.append(scene)
     return urls, silent
+
+
+# --- Koko sivun ääneenluku ----------------------------------------------------
+#
+# Sivun lopullinen Markdown (convert_page) paloitellaan lohkoiksi, joista
+# kukin luetaan omana leikkeenään (speech_units), ja luettavaan lohkoon tulee
+# näkymätön merkki, jonka arvo on leikkeen tunniste (mark_speech).
+# assets/js/puhe.js soittaa merkityt lohkot järjestyksessä. Leikkeet tekee
+# puhe.py äänivarastoon (SPEECH_STORE), josta main kopioi sivuston käyttämät
+# docs/:iin. Paloittelu jäljittelee Python-Markdownin lohkojäsennystä vain sen
+# verran, että merkki osuu oikeaan lohkoon; tests/test_puhe.py tarkistaa
+# oikealla jäsentimellä, ettei merkki muuta sivua.
+
+# Azuren äänimuoto: puhe on kapeakaistaista, 48 kbit/s mono on noin 6 kt
+# sekunnissa. Leikkeen tunnisteessa, joten vaihto tekee kaikki uudelleen.
+SPEECH_FORMAT = "audio-24khz-48kbitrate-mono-mp3"
+
+# Leikkeiden paikka docs/:ssa ja sivustolla sekä luettelo sivuston käyttämistä
+# leikkeistä (tunniste riveittäin), jotta varaston siivous tietää, mitä
+# julkaistut sivustot tarvitsevat.
+SPEECH_ASSETS = "assets/puhe"
+SPEECH_INDEX = "leikkeet.txt"
+
+# Lohkot, joita ei lueta: niiden kohdalla sanotaan, mikä jäi lukematta.
+SPEECH_NOTICES = {
+    "koodi": "Koodilohko, jota ei lueta ääneen.",
+    "taulukko": "Taulukko, jota ei lueta ääneen.",
+    "kaavio": "Kaavio, jota ei lueta ääneen.",
+    "video": "Video, jota ei lueta ääneen.",
+    "nauhoitus": "Terminaalinauhoitus, jota ei lueta ääneen.",
+    "visa": "Testaa tietosi -kysymyksiä, joita ei lueta ääneen.",
+    "ohje": "Vaiheittainen ohje, jota ei lueta ääneen.",
+}
+
+# Merkki kappaleen, luettelon kohdan, laatikon otsikon ja taulukon alkuun.
+# Attribuutit ilman lainausmerkkejä, koska laatikon otsikko on itse
+# lainausmerkeissä (!!! note "...").
+SPEECH_SPAN = "<span class=jyu-puhe data-puhe={clip}></span>"
+
+# Python-Markdownin lohkotason tagit (md.block_level_elements): rivin alussa
+# ne aloittavat raa'an HTML-lohkon, muut tagit ovat kappaleen tekstiä.
+SPEECH_BLOCK_TAGS = frozenset((
+    "address article aside blockquote body canvas center colgroup dd details "
+    "div dl dt fieldset figcaption figure footer form group h1 h2 h3 h4 h5 h6 "
+    "header hgroup hr html iframe legend li main map math menu nav noscript "
+    "object ol option output p pre progress script section style summary "
+    "table tbody td textarea tfoot th thead tr ul video").split())
+
+# Aidat, joiden muotoilija ei kirjoita attribuutteja (Zensicalin custom_fences).
+SPEECH_CUSTOM_FENCES = ("mermaid", "math")
+
+# Lohkojen alut Python-Markdownin säännöin (markdown.blockprocessors ja
+# laajennukset admonition, pymdownx.tabbed, tables, footnotes, abbr).
+SPEECH_ATX_RE = re.compile(r"^#{1,6}")
+SPEECH_SETEXT_RE = re.compile(r"^[=-]+ *$")
+SPEECH_HR_RE = re.compile(
+    r"^ {0,3}(?:(?:-+ {0,2}){3,}|(?:_+ {0,2}){3,}|(?:\*+ {0,2}){3,}) *$")
+SPEECH_LIST_RE = re.compile(r"^ {0,3}(?:\d+\.|[*+-]) +(?P<text>.*)$")
+SPEECH_NESTED_RE = re.compile(r"^ {4,7}(?:\d+\.|[*+-]) +")
+SPEECH_TASK_RE = re.compile(r"^\[[ xX]\]\s+")
+SPEECH_QUOTE_RE = re.compile(r"^ {0,3}> ?")
+SPEECH_BOX_RE = re.compile(
+    r'^(?P<kind>!!!|\?\?\?\+?) ?[\w-]+(?: +[\w-]+)*(?: +"(?P<title>.*?)")? *$')
+SPEECH_TAB_RE = re.compile(r'^={3}(?P<mode>\+|\+!|!\+|!)? +"(?P<label>.*?)" *$')
+SPEECH_DEFINITION_RE = re.compile(
+    r"^(?:(?P<note>\[\^[^\]]+\]:)| {0,3}\[[^\]]+\]: *\S|\*\[[^\]]+\]:)")
+SPEECH_TABLE_SEPARATOR_RE = re.compile(r"^[|:\- ]*-[|:\- ]*$")
+SPEECH_TAG_RE = re.compile(
+    r"^ {0,3}<(?P<close>/?)(?P<tag>[A-Za-z][A-Za-z0-9-]*)(?=[\s/>]|$)")
+SPEECH_COMMENT_RE = re.compile(r"^ {0,3}<!--")
+SPEECH_MARKDOWN_ATTR_RE = re.compile(r'\bmarkdown(?:=["\']?(?P<mode>\w+))?')
+SPEECH_CLASS_RE = re.compile(r'\bclass="(?P<names>[^"]*)"')
+SPEECH_IMAGE_RE = re.compile(
+    r"\[?!\[(?P<alt>[^\]]*)\]\([^)]*\)(?:\]\([^)]*\))?(?:\{[^}]*\})?"
+    r"|<img\b(?P<attrs>[^>]*)>")
+SPEECH_ALT_RE = re.compile(r'\balt="(?P<alt>[^"]*)"')
+SPEECH_ASCIINEMA_RE = re.compile(r"^<asciinema\b[^>]*>\s*(?:</asciinema>)?$")
+SPEECH_POINTS_RE = re.compile(r"^(?P<number>\d+(?:[,.]\d+)?)\s*p\.?$")
+
+
+class SpeechUnit(NamedTuple):
+    """Ääneen luettava lohko. line ja column: merkin paikka sivun
+    lopullisessa Markdownissa (sarkaimet laajennettuina, ks. speech_units);
+    marker: merkin muoto (SPEECH_MARKERS); kind: lohkon laji; text: luettava
+    teksti, josta leike tehdään."""
+    line: int
+    column: int
+    marker: str
+    kind: str
+    text: str
+
+
+class SpeechLine(NamedTuple):
+    """Säiliön (luettelon kohta, laatikko, välilehti, lainaus) rivi ilman
+    säiliön sisennystä: number on sivun rivi, offset sarake, josta text alkaa."""
+    number: int
+    offset: int
+    text: str
+
+
+def _indent(text: str) -> int:
+    return len(text) - len(text.lstrip(" "))
+
+
+def _dedent(line: SpeechLine, width: int = 4) -> SpeechLine:
+    """Säiliön sisennys pois: enintään width välilyöntiä."""
+    cut = min(width, _indent(line.text))
+    return SpeechLine(line.number, line.offset + cut, line.text[cut:])
+
+
+def _next_filled(lines: list[SpeechLine], index: int) -> int | None:
+    """Ensimmäinen ei-tyhjä rivi indexistä alkaen."""
+    while index < len(lines):
+        if lines[index].text.strip():
+            return index
+        index += 1
+    return None
+
+
+def _fence_end(lines: list[SpeechLine], index: int, opening: re.Match) -> int | None:
+    """Riviltä index alkavan aidan sulkeva rivi; None, jos aita jää auki."""
+    fence = opening["fence"]
+    for end in range(index + 1, len(lines)):
+        closing = CODE_FENCE_RE.match(lines[end].text)
+        if (closing and not closing["info"].strip() and closing["fence"][0] == fence[0]
+                and len(closing["fence"]) >= len(fence)):
+            return end
+    return None
+
+
+def _fence_markable(info: str) -> bool:
+    """Saako aidan otsikkoon attribuutin (_mark_fence)? Tuntemattomat muodot
+    ja muotoilijat, jotka eivät kirjoita attribuutteja, jäävät merkitsemättä."""
+    info = info.strip()
+    if info.lstrip(".") in SPEECH_CUSTOM_FENCES:
+        return False
+    return (not info or re.fullmatch(r"\.?[\w#.+-]+", info) is not None
+            or (info.endswith("}") and "{" in info))
+
+
+def _html_end(lines: list[SpeechLine], index: int, tag: str, markdown: bool) -> int:
+    """Riviltä index alkavan HTML-elementin viimeinen rivi (sisäkkäiset
+    samannimiset lasketaan). Markdown-sisällön aidat ohitetaan, koska niissä
+    voi olla HTML-esimerkkejä. Sulkematon jatkuu loppuun."""
+    opening = re.compile(rf"<{tag}(?=[\s>/])[^>]*?(?<!/)>", re.IGNORECASE)
+    closing = re.compile(rf"</{tag}\s*>", re.IGNORECASE)
+    depth = 0
+    skip = index
+    for number in range(index, len(lines)):
+        text = lines[number].text
+        if number < skip:
+            continue
+        if markdown and number > index and (fence := CODE_FENCE_RE.match(text)):
+            end = _fence_end(lines, number, fence)
+            if end is not None:
+                skip = end + 1
+                continue
+        depth += len(opening.findall(text)) - len(closing.findall(text))
+        if depth <= 0:
+            return number
+    return len(lines) - 1
+
+
+def _strip_tags(text: str) -> str:
+    return re.sub(r"<[^>]+>", "", text)
+
+
+def _heading_body(text: str) -> tuple[str, int]:
+    """ATX-otsikon teksti ja merkin sarake: sulkevat risuaidat pois kuten
+    Python-Markdownissa, ja merkki niiden eteen."""
+    hashes = len(text) - len(text.lstrip("#"))
+    body = re.match(r"^(?P<text>.*?)#*\s*$", text[hashes:])
+    return body["text"], hashes + body.end("text")
+
+
+def _starts_block(text: str) -> bool:
+    """Alkaako luettelon kohdan teksti omalla lohkollaan (otsikko, lainaus,
+    aita, sisäluettelo...)? Silloin merkki ei voi mennä tekstin eteen."""
+    text = text.lstrip()
+    tag = SPEECH_TAG_RE.match(text)
+    return (text.startswith(("#", ">", "!!!", "???", "===", "$$", "|"))
+            or CODE_FENCE_RE.match(text) is not None
+            or SPEECH_LIST_RE.match(text) is not None
+            or (tag is not None and tag["tag"].lower() in SPEECH_BLOCK_TAGS))
+
+
+def _paragraph_speech(text: str) -> tuple[str, str]:
+    """Kappaleen laji ja luettava teksti: pelkistä kuvista niiden
+    vaihtoehtoiset tekstit, pelkästä nauhoituksesta ilmoitus."""
+    text = text.strip()
+    if SPEECH_ASCIINEMA_RE.match(text):
+        return "nauhoitus", SPEECH_NOTICES["nauhoitus"]
+    if text and not SPEECH_IMAGE_RE.sub("", text).strip():
+        alts = []
+        for image in SPEECH_IMAGE_RE.finditer(text):
+            alt = image["alt"]
+            if image["attrs"] is not None:
+                found = SPEECH_ALT_RE.search(image["attrs"])
+                alt = unescape(found["alt"]) if found else ""
+            if alt.strip():
+                alts.append(speech_line(f"Kuva: {alt.strip()}"))
+        return "kuva", " ".join(alts)
+    return "kappale", speech_line(text)
+
+
+def _task_speech(head: str) -> str:
+    """Tehtäväkortin tunnusrivi (task_head) luettavaksi."""
+    parts = {name: _strip_tags(value).strip() for name, value in re.findall(
+        r'<span class="task-(num|name|points)">(.*)?</span>', re.sub(
+            r'(</span>)(?=<span class="task-)', r"\1\n", head))}
+    text = f"Tehtävä {parts.get('num', '')}: {parts.get('name', '')}"
+    if points := SPEECH_POINTS_RE.match(parts.get("points", "")):
+        number = points["number"]
+        text += f", {number} {'piste' if number == '1' else 'pistettä'}"
+    return speech_line(text)
+
+
+def tab_set_speech(labels: list[str]) -> tuple[str, dict[str, str]]:
+    """Välilehtijoukon ilmoitus ja valinnan ilmoitus kullekin otsikolle.
+    Otsikot perusmuodossa, jottei niitä tarvitse taivuttaa."""
+    names = [speech_inline(label) for label in labels]
+    listed = ", ".join(names[:-1]) + f" ja {names[-1]}" if len(names) > 1 else names[0]
+    announcement = speech_line(f"{len(names)} välilehteä otsikoilla {listed}")
+    return announcement, {label: speech_line(f"Luetaan välilehti {name}, mutta ei muita")
+                          for label, name in zip(labels, names)}
+
+
+class _SpeechScan:
+    """speech_unitsin työtila: yksiköt ja proosavälilehtien otsikot
+    järjestyksessä. top: ollaanko sivun tai md_in_html-lohkon ylätasolla,
+    jossa rivin aloittava lohkotason tagi aloittaa HTML-lohkon (säiliöiden
+    sisällä Python-Markdown ei tunnista sitä, koska rivi on sisennetty)."""
+
+    def __init__(self) -> None:
+        self.units: list[SpeechUnit] = []
+        self.tab_sets: list[list[str]] = []
+
+    def add(self, line: SpeechLine, column: int, marker: str, kind: str, text: str) -> None:
+        """Yksikkö, jos luettavaa jää. column: sarake line.textissä."""
+        if text:
+            self.units.append(SpeechUnit(line.number, line.offset + column, marker, kind, text))
+
+    def blocks(self, lines: list[SpeechLine], top: bool) -> None:
+        index = 0
+        while index < len(lines):
+            index = self.block(lines, index, top)
+
+    def block(self, lines: list[SpeechLine], index: int, top: bool) -> int:
+        """Yksi lohko riviltä index. -> ensimmäinen rivi lohkon jälkeen."""
+        text = lines[index].text
+        if not text.strip():
+            return index + 1
+        if fence := CODE_FENCE_RE.match(text):
+            return self.fence(lines, index, fence)
+        if _indent(text) >= 4:
+            # Sisennetty koodi: sitä ei voi merkitä, joten ei lueta.
+            end = index
+            while end < len(lines) and (not lines[end].text.strip()
+                                        or _indent(lines[end].text) >= 4):
+                end += 1
+            return end
+        if SPEECH_COMMENT_RE.match(text):
+            end = index
+            while end < len(lines) - 1 and "-->" not in lines[end].text:
+                end += 1
+            return end + 1
+        tag = SPEECH_TAG_RE.match(text)
+        if tag and tag["tag"].lower() in SPEECH_BLOCK_TAGS:
+            if top:
+                return self.html(lines, index, tag)
+            return self.raw(lines, index)
+        if SPEECH_ATX_RE.match(text):
+            body, column = _heading_body(text)
+            self.add(lines[index], column, "otsikko", "otsikko", speech_line(body))
+            return index + 1
+        if SPEECH_HR_RE.match(text):
+            return index + 1
+        if box := SPEECH_BOX_RE.match(text):
+            return self.box(lines, index, box)
+        if SPEECH_TAB_RE.match(text):
+            return self.tabs(lines, index)
+        if SPEECH_LIST_RE.match(text):
+            return self.listing(lines, index)
+        if SPEECH_QUOTE_RE.match(text):
+            return self.quote(lines, index)
+        if definition := SPEECH_DEFINITION_RE.match(text):
+            return self.definition(lines, index, definition["note"] is not None)
+        if index + 1 < len(lines) and self.is_table(text, lines[index + 1].text):
+            return self.table(lines, index)
+        return self.paragraph(lines, index, top)
+
+    def ends_paragraph(self, text: str, top: bool) -> bool:
+        """Katkaiseeko rivi kappaleen (Python-Markdown jakaa lohkon)?"""
+        if not text.strip():
+            return True
+        tag = SPEECH_TAG_RE.match(text)
+        return (CODE_FENCE_RE.match(text) is not None or SPEECH_ATX_RE.match(text) is not None
+                or SPEECH_HR_RE.match(text) is not None or SPEECH_QUOTE_RE.match(text) is not None
+                or SPEECH_BOX_RE.match(text) is not None or SPEECH_TAB_RE.match(text) is not None
+                or (top and (SPEECH_COMMENT_RE.match(text) is not None or (
+                    tag is not None and tag["tag"].lower() in SPEECH_BLOCK_TAGS))))
+
+    def paragraph_end(self, lines: list[SpeechLine], index: int, top: bool) -> int:
+        end = index + 1
+        while end < len(lines) and not self.ends_paragraph(lines[end].text, top):
+            end += 1
+        return end
+
+    def paragraph(self, lines: list[SpeechLine], index: int, top: bool) -> int:
+        first = lines[index]
+        if (index + 1 < len(lines) and SPEECH_SETEXT_RE.match(lines[index + 1].text)):
+            self.add(first, len(first.text.rstrip()), "otsikko", "otsikko",
+                     speech_line(first.text))
+            return index + 2
+        end = self.paragraph_end(lines, index, top)
+        if first.text.lstrip().startswith("$$"):
+            return end
+        kind, text = _paragraph_speech(" ".join(line.text.strip() for line in lines[index:end]))
+        self.add(first, _indent(first.text), "span", kind, text)
+        return end
+
+    def fence(self, lines: list[SpeechLine], index: int, opening: re.Match) -> int:
+        end = _fence_end(lines, index, opening)
+        if end is None:
+            # Sulkematon aita ei ole Python-Markdownille aita; ei merkitä.
+            return len(lines)
+        if _fence_markable(opening["info"]):
+            self.add(lines[index], opening.end("fence"), "aita", "koodi", SPEECH_NOTICES["koodi"])
+        return end + 1
+
+    def box(self, lines: list[SpeechLine], index: int, box: re.Match) -> int:
+        """Admonition: otsikko (vain !!!, ei avattava ???) ja sisennetty sisältö."""
+        if box["kind"] == "!!!" and box["title"]:
+            self.add(lines[index], box.start("title"), "span", "laatikko",
+                     speech_line(box["title"]))
+        end = index + 1
+        while end < len(lines) and (not lines[end].text.strip() or _indent(lines[end].text) >= 4):
+            end += 1
+        self.blocks([_dedent(line) for line in lines[index + 1:end]], top=False)
+        return end
+
+    def tabs(self, lines: list[SpeechLine], index: int) -> int:
+        """Välilehtijoukko: peräkkäiset === -lohkot sisältöineen. Monitiedosto-
+        lohkosta (convert_files) luetaan vain ilmoitus ensimmäisestä aidasta."""
+        tabs: list[tuple[str, list[SpeechLine]]] = []
+        while index < len(lines):
+            tab = SPEECH_TAB_RE.match(lines[index].text)
+            if not tab or (tabs and "!" in (tab["mode"] or "")):
+                break
+            end = index + 1
+            while end < len(lines) and (not lines[end].text.strip()
+                                        or _indent(lines[end].text) >= 4):
+                end += 1
+            tabs.append((tab["label"], [_dedent(line) for line in lines[index + 1:end]]))
+            index = end
+        bodies = [[line for line in body if line.text.strip()] for _, body in tabs]
+        if all(body and "multifile" in (CODE_FENCE_RE.match(body[0].text) or {"info": ""})["info"]
+               for body in bodies):
+            self.blocks(tabs[0][1], top=False)
+            return index
+        if len(tabs) > 1:
+            self.tab_sets.append([label for label, _ in tabs])
+        for _, body in tabs:
+            self.blocks(body, top=False)
+        return index
+
+    def listing(self, lines: list[SpeechLine], index: int) -> int:
+        """Luettelo: kohdat ja niiden sisältö Python-Markdownin säännöin
+        (ListProcessor.get_items ja ListIndentProcessor)."""
+        items: list[tuple[SpeechLine, list[SpeechLine], list[SpeechLine]]] = []
+        end = self.collect_items(lines, index, items)
+        for first, more, children in items:
+            item = SPEECH_LIST_RE.match(first.text)
+            column = item.start("text")
+            if task := SPEECH_TASK_RE.match(item["text"]):
+                column += task.end()
+            if not _starts_block(first.text[column:]):
+                kind, text = _paragraph_speech(" ".join(
+                    [first.text[column:], *(line.text.strip() for line in more)]))
+                self.add(first, column, "span", "kohta" if kind == "kappale" else kind, text)
+            self.blocks(children, top=False)
+        return end
+
+    @staticmethod
+    def collect_items(lines: list[SpeechLine], index: int,
+                      items: list[tuple[SpeechLine, list[SpeechLine], list[SpeechLine]]]) -> int:
+        """Luettelon kohdat: (ensimmäinen rivi, jatkorivit, sisältö ilman
+        sisennystä). -> ensimmäinen rivi luettelon jälkeen."""
+        while index < len(lines):
+            line = lines[index]
+            text = line.text
+            if not text.strip():
+                ahead = _next_filled(lines, index)
+                if ahead is None:
+                    return len(lines)
+                if _indent(lines[ahead].text) >= 4:
+                    end = ahead
+                    while end < len(lines) and (not lines[end].text.strip()
+                                                or _indent(lines[end].text) >= 4):
+                        end += 1
+                    items[-1][2].extend(_dedent(child) for child in lines[index:end])
+                    index = end
+                    continue
+                if (SPEECH_LIST_RE.match(lines[ahead].text)
+                        and not SPEECH_HR_RE.match(lines[ahead].text)):
+                    index = ahead
+                    continue
+                return index
+            if items and (fence := CODE_FENCE_RE.match(text)):
+                end = _fence_end(lines, index, fence)
+                stop = len(lines) if end is None else end + 1
+                items[-1][2].extend(_dedent(child) for child in lines[index:stop])
+                index = stop
+                continue
+            if SPEECH_LIST_RE.match(text) and not SPEECH_HR_RE.match(text):
+                items.append((line, [], []))
+            elif items[-1][2] or SPEECH_NESTED_RE.match(text):
+                items[-1][2].append(_dedent(line))
+            else:
+                items[-1][1].append(line)
+            index += 1
+        return index
+
+    def quote(self, lines: list[SpeechLine], index: int) -> int:
+        """Lainaus: ">" pois kultakin riviltä (laiskat jatkorivit sellaisinaan)."""
+        end = index
+        inner: list[SpeechLine] = []
+        while end < len(lines) and lines[end].text.strip():
+            line = lines[end]
+            prefix = SPEECH_QUOTE_RE.match(line.text)
+            cut = prefix.end() if prefix else 0
+            inner.append(SpeechLine(line.number, line.offset + cut, line.text[cut:]))
+            end += 1
+        self.blocks(inner, top=False)
+        return end
+
+    def definition(self, lines: list[SpeechLine], index: int, note: bool) -> int:
+        """Viite-, lyhenne- tai alaviitemäärittely: ei luettavaa. Alaviite
+        jatkuu tyhjään riviin ja sen perässä sisennettyihin lohkoihin."""
+        if not note:
+            return index + 1
+        end = index + 1
+        while end < len(lines) and (lines[end].text.strip() or (
+                (ahead := _next_filled(lines, end)) is not None
+                and _indent(lines[ahead].text) >= 4)):
+            end += 1
+        return end
+
+    @staticmethod
+    def is_table(text: str, following: str) -> bool:
+        """tables-laajennuksen ehto: otsikkorivi ja erotinrivi, jossa yhtä monta solua."""
+        def cells(row: str) -> list[str]:
+            row = row.strip()
+            row = row[1:] if row.startswith("|") else row
+            row = row[:-1] if row.endswith("|") and not row.endswith("\\|") else row
+            return re.split(r"(?<!\\)\|", row)
+        if "|" not in text or not SPEECH_TABLE_SEPARATOR_RE.match(following.strip()):
+            return False
+        header, separator = cells(text), cells(following)
+        return len(header) == len(separator) and (len(header) > 1 or "|" in following)
+
+    def table(self, lines: list[SpeechLine], index: int) -> int:
+        first = lines[index]
+        column = re.match(r"^ *\|? *", first.text).end()
+        self.add(first, column, "span", "taulukko", SPEECH_NOTICES["taulukko"])
+        end = index
+        while end < len(lines) and lines[end].text.strip():
+            end += 1
+        return end
+
+    def raw(self, lines: list[SpeechLine], index: int) -> int:
+        """Säiliön sisällä rivin aloittava lohkotason tagi: Python-Markdown
+        jättää kappaleen HTML:ksi. Siitä luetaan vain <summary>."""
+        end = self.paragraph_end(lines, index, top=False)
+        self.summary(lines[index:end])
+        return end
+
+    def summary(self, lines: list[SpeechLine]) -> int | None:
+        """<summary> riveillä: avattavan kohdan ilmoitus. -> rivi, jolla se
+        päättyy (indeksi lines-listassa), tai None."""
+        for start, line in enumerate(lines):
+            if (column := line.text.find("<summary")) < 0:
+                continue
+            end = start
+            while end < len(lines) - 1 and "</summary>" not in lines[end].text:
+                end += 1
+            inner = " ".join(item.text for item in lines[start:end + 1])
+            inner = inner[inner.find(">", column) + 1:].split("</summary>")[0]
+            title = re.sub(r"^\s*#+\s*", "", _strip_tags(inner).strip())
+            self.add(line, column + len("<summary"), "tagi", "avattava",
+                     speech_line(f"Avattava kohta: {title}") if title.strip() else "")
+            return end
+        return None
+
+    def html(self, lines: list[SpeechLine], index: int, tag: re.Match) -> int:
+        """Ylätason HTML-lohko. Kirjan omista elementeistä ilmoitus, markdown-
+        attribuutillisen (md_in_html) sisältö luetaan kuin sivu."""
+        name = tag["tag"].lower()
+        if tag["close"]:
+            return index + 1
+        text = lines[index].text
+        opening = text[tag.start():text.find(">", tag.end()) + 1 or len(text)]
+        markdown = SPEECH_MARKDOWN_ATTR_RE.search(opening)
+        mode = markdown and (markdown["mode"] or "1")
+        block = mode in ("1", "block") and name not in ("p", "summary", "li", "td", "th", "dt", "dd")
+        end = _html_end(lines, index, name, block)
+        classes = set((SPEECH_CLASS_RE.search(opening) or {"names": ""})["names"].split())
+        column = tag.end("tag")
+        kind = next((kind for kind, found in (
+            ("ohje", "jyu-walk" in classes), ("visa", "jyu-visa" in classes),
+            ("kaavio", "svgbob" in classes), ("taulukko", name == "table"),
+            ("video", name == "video")) if found), None)
+        if kind:
+            self.add(lines[index], column, "tagi", kind, SPEECH_NOTICES[kind])
+        elif "task-head" in classes:
+            self.add(lines[index], column, "tagi", "tehtava", _task_speech(text))
+        elif block and "task-link" not in classes:
+            content = lines[index + 1:end]
+            if name == "details":
+                summary = self.summary(lines[index:end])
+                if summary is not None:
+                    content = lines[index + summary + 1:end]
+            self.blocks(content, top=True)
+        return end + 1
+
+
+def speech_units(text: str) -> tuple[list[SpeechUnit], list[list[str]]]:
+    """Sivun lopullisesta Markdownista luettavat lohkot järjestyksessä ja
+    proosavälilehtijoukkojen otsikot. -> (yksiköt, joukot).
+
+    Sarkaimet laajennetaan neljään kuten Python-Markdownin
+    NormalizeWhitespace, joten rivit ja sarakkeet viittaavat laajennettuun
+    tekstiin (mark_speech kirjoittaa sen). Front matter ohitetaan.
+    """
+    lines = [SpeechLine(number, 0, line)
+             for number, line in enumerate(text.expandtabs(4).split("\n"))]
+    start = 0
+    if lines and lines[0].text.rstrip() == "---":
+        start = next((number + 1 for number, line in enumerate(lines[1:], 1)
+                      if line.text.rstrip() in ("---", "...")), 0)
+    scan = _SpeechScan()
+    scan.blocks(lines[start:], top=True)
+    return scan.units, scan.tab_sets
+
+
+def ssml(text: str, voice: str | None = None) -> str:
+    """Luettava teksti SSML:ksi: jokainen rivi omana kappaleenaan (tauko)."""
+    paragraphs = "".join(f"<p>{escape(line, quote=False)}</p>"
+                         for line in text.split("\n") if line)
+    return ('<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis"'
+            f' xml:lang="fi-FI"><voice name="{escape(voice or SPEECH_VOICE)}">'
+            f"{paragraphs}</voice></speak>")
+
+
+def speech_clip(text: str, voice: str | None = None) -> str:
+    """Leikkeen tunniste ja tiedostonimi: tiiviste siitä, mitä puhepalvelulle
+    lähetetään. Äänen, muodon tai SSML:n muutos vaihtaa tunnisteen itsestään,
+    ja sama teksti eri sivuilla on yksi leike."""
+    request = f"{SPEECH_FORMAT}\n{ssml(text, voice)}"
+    return hashlib.sha256(request.encode("utf-8")).hexdigest()[:16]
+
+
+def speech_texts(text: str) -> list[str]:
+    """Kaikki sivun lopullisen Markdownin leikkeiden tekstit (puhe.py)."""
+    units, tab_sets = speech_units(text)
+    texts = [unit.text for unit in units]
+    for labels in tab_sets:
+        announcement, choices = tab_set_speech(labels)
+        texts += [announcement, *choices.values()]
+    return texts
+
+
+def available_clips() -> set[str] | None:
+    """Äänivaraston leikkeet; None, jos varastoa ei ole."""
+    if not SPEECH_STORE.is_dir():
+        return None
+    return {clip.stem for clip in SPEECH_STORE.glob("*.mp3")}
+
+
+def _mark_span(line: str, column: int, clip: str) -> str:
+    return line[:column] + SPEECH_SPAN.format(clip=clip) + line[column:]
+
+
+def _mark_heading(line: str, column: int, clip: str) -> str:
+    """Otsikon attribuuttilistaan (attr_list), olemassa olevaan tai uuteen."""
+    head, tail = line[:column].rstrip(), line[column:]
+    if re.search(r" +\{:?[ ]*[^} \n][^\n]*\}$", head):
+        return f'{head[:-1].rstrip()} data-puhe="{clip}" }}{tail}'
+    return f'{head} {{ data-puhe="{clip}" }}{tail}'
+
+
+def _mark_fence(line: str, column: int, clip: str) -> str:
+    """Aidan otsikkoon (pymdownx.superfences), kieli luokaksi tarvittaessa."""
+    head, info = line[:column], line[column:].strip()
+    attribute = f'data-puhe="{clip}"'
+    if info.endswith("}"):
+        brace = line.rindex("}")
+        return f"{line[:brace].rstrip()} {attribute} {line[brace:]}"
+    language = f".{info.lstrip('.')} " if info else ""
+    return f"{head}{{ {language}{attribute} }}"
+
+
+def _mark_tag(line: str, column: int, clip: str) -> str:
+    return f'{line[:column]} data-puhe="{clip}"{line[column:]}'
+
+
+SPEECH_MARKERS = {"span": _mark_span, "otsikko": _mark_heading,
+                  "aita": _mark_fence, "tagi": _mark_tag}
+
+
+def mark_speech(text: str, clips: set[str]) -> tuple[str, list[str], list[str]]:
+    """Merkit lohkoihin, joiden leike on olemassa, ja välilehtijoukkojen
+    ilmoitukset sivun loppuun. -> (teksti, käytetyt leikkeet, puuttuvien tekstit).
+
+    Ilmoitusleikkeet menevät <script type="application/json" id="jyu-puhe">
+    -lohkoon: {"valilehdet": {"Windows\\nmacOS": {"joukko": leike, "valinta":
+    {"Windows": leike, ...}}}}. Avain on joukon otsikot rivinvaihdoin, jotta
+    puhe.js löytää joukon sen välilehtien otsikoista.
+    """
+    units, tab_sets = speech_units(text)
+    lines = text.expandtabs(4).split("\n")
+    marked = [(unit, speech_clip(unit.text)) for unit in units]
+    used = [clip for _, clip in marked if clip in clips]
+    missing = [unit.text for unit, clip in marked if clip not in clips]
+    # Lopusta alkuun, jotta saman rivin aiemmat sarakkeet pysyvät paikallaan.
+    for unit, clip in sorted(marked, key=lambda pair: pair[0][:2], reverse=True):
+        if clip in clips:
+            lines[unit.line] = SPEECH_MARKERS[unit.marker](lines[unit.line], unit.column, clip)
+    sets: dict[str, dict] = {}
+    for labels in tab_sets:
+        announcement, choices = tab_set_speech(labels)
+        entry: dict = {}
+        for label, spoken in [(None, announcement), *choices.items()]:
+            clip = speech_clip(spoken)
+            if clip not in clips:
+                missing.append(spoken)
+            elif label is None:
+                entry["joukko"] = clip
+            else:
+                entry.setdefault("valinta", {})[label] = clip
+            used += [clip] if clip in clips else []
+        sets["\n".join(labels)] = entry
+    if sets:
+        data = json.dumps({"valilehdet": sets}, ensure_ascii=False).replace("<", "\\u003c")
+        while lines and not lines[-1].strip():
+            lines.pop()
+        lines += ["", f'<script type="application/json" id="jyu-puhe">{data}</script>', ""]
+    return "\n".join(lines), used, missing
 
 
 def split_files(body: list[str]) -> list[tuple[str, list[str]]]:
@@ -2049,6 +2727,85 @@ def write_if_changed(path: Path, text: str) -> None:
     path.write_text(text, encoding="utf-8")
 
 
+def copy_clips(clips: set[str]) -> set[Path]:
+    """Sivuston käyttämät leikkeet varastosta docs/:iin ja niiden luettelo.
+    -> kirjoitetut polut (ne eivät ole jäänteitä, ks. sync_docs)."""
+    if not clips:
+        return set()
+    folder = DOCS / SPEECH_ASSETS
+    written = {folder / SPEECH_INDEX}
+    for clip in sorted(clips):
+        copy_if_changed(SPEECH_STORE / f"{clip}.mp3", folder / f"{clip}.mp3")
+        written.add(folder / f"{clip}.mp3")
+    write_if_changed(folder / SPEECH_INDEX, "".join(f"{clip}\n" for clip in sorted(clips)))
+    return written
+
+
+class PageResult(NamedTuple):
+    """convert_pagen tulos: sivun lopullinen Markdown ja mainin koottavat joukot."""
+    text: str
+    labels: set[str]
+    unknown_icons: set[str]
+    diagrams: set[str]
+    drawings: set[str]
+    unknown_alerts: set[str]
+
+
+def convert_page(origin: Path, source_path: str) -> PageResult:
+    """Lähdepuun sivu muunnosten läpi lopulliseksi Markdowniksi, vielä ilman
+    ääneenluvun merkkejä (mark_speech). puhe.py paloittelee saman tekstin.
+    Kaaviot haetaan ja piirretään tarvittaessa (cache/) kuten mainissa."""
+    page = DOCS / source_path
+    source = origin.read_text(encoding="utf-8")
+    # Järjestys: sisällytykset ensin, jotta muut muunnokset näkevät
+    # lopullisen tekstin (sisällytyksissä on koodiaitoja ja
+    # FILE-merkintöjä). Ankkurit ennen kuin mikään muunnos kirjoittaa
+    # omia linkkejään tai SVG-tunnuksiaan. Muunnosten laskurit jäävät
+    # käyttämättä.
+    # Sisennetyt otsikot ensin, jotta convert_anchors tunnistaa ne
+    # otsikoiksi.
+    converted, _ = dedent_headings(source)
+    converted, _ = convert_includes(converted, origin)
+    converted, _, _ = convert_anchors(converted)
+    # Visat ennen aitoja: kysymyksen tunniste lasketaan lähteen tekstistä.
+    converted, _ = convert_quizzes(converted, source_path)
+    # Monitiedostolohkot ennen convert_fencesiä: convert_fences ei koske
+    # niiden valmiisiin aitoihin. Aidat, kaaviot, alertit ja tehtäväkortit
+    # ennen convert_tabsia, koska se sisentää välilehden sisällön, eikä
+    # sisennettyä aitaa, ">":tä tai HTML-lohkoa enää tunnisteta.
+    converted, *_ = convert_files(converted)
+    converted, *_ = convert_fences(converted)
+    converted, _, page_used = convert_plantuml(converted, page)
+    converted, _, page_unknown = convert_alerts(converted)
+    # details ja drop_breaks: paikalla ei ole väliä.
+    converted, *_ = convert_details(converted)
+    converted, _ = drop_breaks(converted)
+    # Divit ennen tehtäväkortteja (näkee vain lähteen divit) ja ennen
+    # svgbobia (kääre ei saa markdown="1":tä).
+    converted, _ = convert_divs(converted)
+    converted, _, page_art = convert_svgbob(converted, source_path)
+    # Tehtäväkortit ennen bonusmerkkejä (task_head lukee kortin tagin itse)
+    # ja bonusmerkit ennen ikoneita (bi-stars ei ole ICON_MAPissa).
+    converted, _ = convert_tasks(converted)
+    # Vaiheittainen ohje ennen convert_tabsia kuten tehtäväkortit: tagit
+    # nostetaan sarakkeeseen 0, eikä sisennettyä HTML-lohkoa tunnisteta.
+    # Äänet lähteestä kuten puhe.py, ei muunnetusta tekstistä.
+    audio, silent = walkthrough_audio(source, source_path)
+    if silent:
+        names = ", ".join(silent[:5]) + (", ..." if len(silent) > 5 else "")
+        print(f"varoitus: {source_path}: {len(silent)} vaiheen ääni puuttuu tai on "
+              f"vanhentunut ({names}); aja ./run.sh puhe ../src/{source_path}",
+              file=sys.stderr)
+    converted, _ = convert_walkthroughs(converted, source_path, audio)
+    converted, _ = convert_bonus_marks(converted)
+    converted, _, _, page_unknown_icons = convert_icons(converted)
+    converted, _, page_labels = convert_tabs(converted)
+    # Animaatiot välilehtien jälkeen, ks. convert_animations.
+    converted, _ = convert_animations(converted, source_path)
+    return PageResult(converted, page_labels, page_unknown_icons, page_used, page_art,
+                      page_unknown)
+
+
 def main(strict: bool = False) -> int:
     global STRICT
     STRICT = strict
@@ -2066,65 +2823,28 @@ def main(strict: bool = False) -> int:
     tab_labels: set[str] = set()
     unknown_alerts: set[str] = set()
     unknown_icons: set[str] = set()
+    clips = available_clips()
+    used_clips: set[str] = set()
+    silent: dict[str, int] = {}
     # Silmukka käy lähdepuun eikä docs/:n, jottei sivua tarvitse ensin kopioida
     # raakana paikalleen (turha kirjoitus on vahdille tapahtuma).
     for origin in sorted(SRC.rglob("*.md")):
         source_path = origin.relative_to(SRC).as_posix()
         if not is_page(source_path):
             continue
-        page = DOCS / source_path
-        source = origin.read_text(encoding="utf-8")
-        # Järjestys: sisällytykset ensin, jotta muut muunnokset näkevät
-        # lopullisen tekstin (sisällytyksissä on koodiaitoja ja
-        # FILE-merkintöjä). Ankkurit ennen kuin mikään muunnos kirjoittaa
-        # omia linkkejään tai SVG-tunnuksiaan. Muunnosten laskurit jäävät
-        # käyttämättä.
-        # Sisennetyt otsikot ensin, jotta convert_anchors tunnistaa ne
-        # otsikoiksi.
-        converted, _ = dedent_headings(source)
-        converted, _ = convert_includes(converted, origin)
-        converted, _, _ = convert_anchors(converted)
-        # Visat ennen aitoja: kysymyksen tunniste lasketaan lähteen tekstistä.
-        converted, _ = convert_quizzes(converted, source_path)
-        # Monitiedostolohkot ennen convert_fencesiä: convert_fences ei koske
-        # niiden valmiisiin aitoihin. Aidat, kaaviot, alertit ja tehtäväkortit
-        # ennen convert_tabsia, koska se sisentää välilehden sisällön, eikä
-        # sisennettyä aitaa, ">":tä tai HTML-lohkoa enää tunnisteta.
-        converted, *_ = convert_files(converted)
-        converted, *_ = convert_fences(converted)
-        converted, _, page_used = convert_plantuml(converted, page)
-        converted, _, page_unknown = convert_alerts(converted)
-        # details ja drop_breaks: paikalla ei ole väliä.
-        converted, *_ = convert_details(converted)
-        converted, _ = drop_breaks(converted)
-        # Divit ennen tehtäväkortteja (näkee vain lähteen divit) ja ennen
-        # svgbobia (kääre ei saa markdown="1":tä).
-        converted, _ = convert_divs(converted)
-        converted, _, page_art = convert_svgbob(converted, source_path)
-        # Tehtäväkortit ennen bonusmerkkejä (task_head lukee kortin tagin itse)
-        # ja bonusmerkit ennen ikoneita (bi-stars ei ole ICON_MAPissa).
-        converted, _ = convert_tasks(converted)
-        # Vaiheittainen ohje ennen convert_tabsia kuten tehtäväkortit: tagit
-        # nostetaan sarakkeeseen 0, eikä sisennettyä HTML-lohkoa tunnisteta.
-        # Äänet lähteestä kuten puhe.py, ei muunnetusta tekstistä.
-        audio, silent = walkthrough_audio(source, source_path)
-        if silent:
-            names = ", ".join(silent[:5]) + (", ..." if len(silent) > 5 else "")
-            print(f"varoitus: {source_path}: {len(silent)} vaiheen ääni puuttuu tai on "
-                  f"vanhentunut ({names}); aja ./run.sh puhe ../src/{source_path}",
-                  file=sys.stderr)
-        converted, _ = convert_walkthroughs(converted, source_path, audio)
-        converted, _ = convert_bonus_marks(converted)
-        converted, _, _, page_unknown_icons = convert_icons(converted)
-        converted, _, page_labels = convert_tabs(converted)
-        # Animaatiot välilehtien jälkeen, ks. convert_animations.
-        converted, _ = convert_animations(converted, source_path)
-        write_if_changed(page, converted)
-        tab_labels |= page_labels
-        unknown_icons |= page_unknown_icons
-        used_diagrams |= page_used
-        used_drawings |= page_art
-        unknown_alerts |= page_unknown
+        page = convert_page(origin, source_path)
+        converted = page.text
+        if is_speech_page(source_path):
+            converted, page_clips, missing = mark_speech(converted, clips or set())
+            used_clips.update(page_clips)
+            if missing:
+                silent[source_path] = len(missing)
+        write_if_changed(DOCS / source_path, converted)
+        tab_labels |= page.labels
+        unknown_icons |= page.unknown_icons
+        used_diagrams |= page.diagrams
+        used_drawings |= page.drawings
+        unknown_alerts |= page.unknown_alerts
     for asset in ASSETS.rglob("*"):
         if asset.is_file():
             copy_if_changed(asset, DOCS / "assets" / asset.relative_to(ASSETS))
@@ -2138,6 +2858,7 @@ def main(strict: bool = False) -> int:
     write_if_changed(DOCS / PRINT_PAGE, build_print_page(nav))
     prune_diagrams(PLANTUML_DIR, used_diagrams, "plantuml" not in FAILED)
     prune_diagrams(SVGBOB_DIR, used_drawings, "svgbob" not in FAILED)
+    stale -= copy_clips(used_clips)
     # Jäänteet viimeisenä, kun kaikki muu on jo paikallaan (ks. sync_docs).
     for file in sorted(stale):
         file.unlink()
@@ -2147,6 +2868,14 @@ def main(strict: bool = False) -> int:
     if unknown_alerts:
         print("varoitus: tuntematon alertin tunnus: "
               f"{', '.join(sorted(unknown_alerts))}", file=sys.stderr)
+    if SPEECH_PAGES and clips is None:
+        print(f"{'virhe' if strict else 'varoitus'}: äänivarasto puuttuu"
+              f" ({repo_relative(SPEECH_STORE)}), sivut ovat äänettömiä;"
+              " aja ./run.sh puhe", file=sys.stderr)
+    elif silent:
+        names = ", ".join(sorted(silent)[:5]) + (", ..." if len(silent) > 5 else "")
+        print(f"varoitus: {sum(silent.values())} kappaleen ääni puuttuu ({names});"
+              " aja ./run.sh puhe", file=sys.stderr)
     print(f"kopioitu {len(list(DOCS.rglob('*.md')))} markdown-tiedostoa -> {DOCS}"
           + (f", {len(stale)} jäänyttä tiedostoa pois" if stale else ""))
     # --strict: julkaisussa puuttuva kaavio on virhe, ei varoitus. Paikallisesti
@@ -2156,7 +2885,8 @@ def main(strict: bool = False) -> int:
               " aja muunnos paikallisesti ja committoi syntyneet kuvat",
               file=sys.stderr)
         return 1
-    return 0
+    # Myös äänivaraston puuttuminen: julkaisu kadottaisi äänet hiljaa.
+    return 1 if strict and SPEECH_PAGES and clips is None else 0
 
 
 # --- Vahti ------------------------------------------------------------------

@@ -117,6 +117,9 @@ extra_css:
   # Vaiheittainen ohje (assets/js/walkthrough.js).
   - assets/css/walkthrough.css
 
+  # Koko sivun ääneenluku (assets/js/puhe.js).
+  - assets/css/puhe.css
+
   # Testaa tietosi -visa (convert.py: convert_quizzes, assets/js/visa.js).
   # admonitions.css:n jälkeen: perustelulaatikon värit voittavat myöhempänä.
   - assets/css/visa.css
@@ -161,3 +164,8 @@ extra_javascript:
 
   # Testaa tietosi -visan napit ja vastausten muisti.
   - assets/js/visa.js
+
+  # Koko sivun ääneenluku (convert.py: mark_speech, kaiutin yläpalkissa).
+  # Viimeisenä, koska se voi kääriä irrallista tekstiä omiin elementteihinsä
+  # vasta, kun muut skriptit ovat muokanneet sisällön.
+  - assets/js/puhe.js
