@@ -45,7 +45,8 @@ def test_a_written_ending_is_kept_and_a_letter_name_takes_a_front_vowel():
         "raiderissa, Timistä ja dotnetin")
     assert convert.speech_say("macOS:ssä, macOS:lla ja macOS: Pääte") == (
         "mäk oo äsässä, mäk oo äsällä ja mäk oo äs: Pääte")
-    assert convert.speech_say("Rider IDE:nä") == "raider idenä"
+    assert convert.speech_say("Rider IDE:nä, IDE-ympäristöjä ja IDEAn") == (
+        "raider idenä, ide-ympäristöjä ja IDEAn")
     assert convert.speech_say("Timer, time, ASP.NET, ohj1ht") == "Timer, time, ASP.NET, ohj1ht"
     assert convert.speech_say("ohj1-kansio") == "oo hoo jii yksi-kansio"
 

@@ -2476,7 +2476,7 @@ SPEECH_SAYINGS = {
     "TIM": "Tim",  # sanana, ei kirjain kerrallaan
     "ohj1": "oo hoo jii yksi",
     "Ohj1": "oo hoo jii yksi",
-    "IDE:nä": "idenä",
+    "IDE": "ide",  # sanana: kirjaimina ääni sanoi "i" tai "ie"
 }
 # Kaksoispisteellä taivutetun vartalo, jos se ei ole sanottu + i kuten
 # lainasanoissa (C#:n -> see sharpin): kirjaimen nimeen tulee ä (äsässä).
