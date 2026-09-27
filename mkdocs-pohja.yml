@@ -42,7 +42,8 @@ theme:
 
     # Kopiointinappi koodilohkoihin, kuten mdBookissa. Teema kopioi näkyvän
     # tekstin (innerText): piilorivit (hidelines.js) tulevat mukaan vain, jos
-    # lukija on ottanut ne esiin silmänapilla.
+    # lukija on ottanut ne esiin silmänapilla. console-lohkosta kopioidaan vain
+    # komennot ilman kehotetta (assets/js/copy.js).
     - content.code.copy
 
   # Teema seuraa käyttöjärjestelmää ja vaihdin ohittaa sen, kuten book.tomlin
@@ -148,7 +149,8 @@ extra_javascript:
   # Korostetut rivit; järjestyksellä ei väliä.
   - assets/js/highlights.js
 
-  # Kopiointinapin kuittaus napin viereen teeman alakulman ilmoituksen sijaan.
+  # Kopiointinapin kuittaus napin viereen teeman alakulman ilmoituksen sijaan;
+  # console-lohkosta vain komennot.
   - assets/js/copy.js
 
   # Terminaalinauhoitusten soitin; soitin ja tyyli haetaan vasta sivulla,

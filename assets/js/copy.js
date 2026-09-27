@@ -12,6 +12,52 @@
   /* Ilmoituksen kesto, kuten teeman omalla. */
   const SHOWN_MS = 2000;
 
+  /* Komentorivilohkon kehotteet: "$ " ja "root@kontti:/app# ". Pelkkä "# "
+   * on rootin kehote vain lohkossa, jossa ei ole muita kehotteita; muuten se
+   * on tulosteen kommenttirivi (cat Dockerfile). "#5 [1/5] FROM …" on
+   * BuildKitin tulostetta. */
+  const PROMPT = /^(?:[\w.-]+@[\w.-]+:[^\s$#]*[$#]|\$)(?: |$)/;
+  const ROOT_PROMPT = /^#(?: |$)/;
+
+  /* Heredocin lopetussana; <<< on here-string eikä aloita heredocia. */
+  const HEREDOC = /(?<!<)<<(?!<)-?\s*(['"]?)(\w+)\1/;
+
+  /* Komentorivilohkosta (```console) vain komennot: kehote pois ja
+   * tulosterivit pois, koska terminaaliin liitettyinä ne ajettaisiin
+   * komentoina. Komento jatkuu \-rivinvaihdon yli ja heredocin loppuun
+   * asti, joten heredocin rivit (myös #-kommentit) tulevat sellaisinaan.
+   * Kehote tunnistetaan tekstistä eikä Pygmentsin luokista (.gp, .go):
+   * Pygments pitää BuildKitin tulosterivejä kehotteina ja venyttää
+   * kehotteen rivin seuraavaan $- tai %-merkkiin (echo $?, kill %1).
+   * Lohko ilman yhtään kehotetta kopioidaan sellaisenaan. */
+  const commands = (text) => {
+    const lines = text.split("\n");
+    const prompt = lines.some((line) => PROMPT.test(line)) ? PROMPT
+      : lines.some((line) => ROOT_PROMPT.test(line)) ? ROOT_PROMPT : null;
+    if (!prompt) return text;
+    const kept = [];
+    let heredoc = null;
+    let continued = false;
+    for (const line of lines) {
+      if (heredoc) {
+        kept.push(line);
+        if (line.trim() === heredoc) heredoc = null;
+        continue;
+      }
+      let command = line;
+      if (!continued) {
+        const match = line.match(prompt);
+        if (!match) continue;
+        command = line.slice(match[0].length);
+        if (!command.trim()) continue;
+      }
+      kept.push(command);
+      continued = command.endsWith("\\");
+      heredoc = command.match(HEREDOC)?.[2] ?? null;
+    }
+    return kept.join("\n");
+  };
+
   /* Sama teksti kuin teeman: näkyvä koodi (innerText). Attribuutti kertoo
    * tyyleille kopioinnin olevan käynnissä (highlights.css, hidelines.css,
    * teeman rivinumerot ja huomautukset). */
@@ -19,7 +65,8 @@
     code.setAttribute("data-md-copying", "");
     const result = code.innerText;
     code.removeAttribute("data-md-copying");
-    return result.trimEnd();
+    return code.closest(".language-console")
+      ? commands(result.trimEnd()) : result.trimEnd();
   };
 
   const notify = (nav, message) => {
