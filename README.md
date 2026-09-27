@@ -69,7 +69,7 @@ Kielet: `csharp`, `java`, `javascript` (korostetut rivit: `csharp`, `java`).
 | Haku; hakuikkunan teksti leipätekstin portaissa, kentän paikkamerkki "Hae" | search.js/css |
 | Tulosta: koko kirja yhdeksi PDF:ksi | `build_print_page`, print.js/css |
 | Alatunniste: edellinen/seuraava, tekijät ja lisenssi, "Muokkaa", "Muutoshistoria", "Ilmoita ongelma" | copyright.html |
-| Alaviitteet ja `title`-attribuutit tooltipeinä | mkdocs-pohja.yml |
+| Alaviitteet ja `title`-attribuutit tooltipeinä | mkdocs-pohja.yml, typography.css |
 | Taulukoiden, koodin ja nappirivin tyyli | tables.css, code.css, codebuttons.css |
 
 ### Ylläpito

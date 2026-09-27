@@ -62,3 +62,23 @@ body[data-jyu-font="literata"] .md-content__inner {
 .md-nav__item .md-nav__link--active {
   font-weight: 700;
 }
+
+/* Tooltipit lähemmäs leipätekstin kokoa (.75rem): teeman title-tooltip
+ * (role=tooltip, mm. <abbr title>) on .55rem ja alaviitteen ponnahdus
+ * (role=dialog) .64rem, mikä on selitystekstille liian pientä. */
+[role="tooltip"] > .md-tooltip2__inner,
+[role="dialog"] > .md-tooltip2__inner {
+  font-size: 0.7rem;
+}
+
+/* Tummassa teemassa tooltipin tausta on sama kuin sivun, ja varjo katoaa
+ * mustaan. Tausta koodilohkon sävyyn: muuttuja vaihdetaan .md-tooltip2:ssa,
+ * jotta sisältö, nuoli ja alaviiteikkunan liukuvärit vaihtuvat yhdessä.
+ * Reuna samalla värillä kuin teeman nuolen reunaviiva. */
+[data-md-color-scheme="slate"] .md-tooltip2 {
+  --md-default-bg-color: var(--md-code-bg-color);
+}
+
+[data-md-color-scheme="slate"] .md-tooltip2__inner {
+  border: 0.05rem solid var(--md-default-fg-color--lightest);
+}
