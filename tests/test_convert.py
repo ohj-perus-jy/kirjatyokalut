@@ -535,6 +535,14 @@ def test_convert_details_ignores_details_inside_code():
     assert convert.convert_details(text) == (text, 0, 0)
 
 
+def test_convert_details_ignores_a_tag_in_inline_code():
+    """Rivinsisäisessä koodissa tagi on tekstiä, joka näkyy sivulla."""
+    text = "Kirjoita `<summary>`-tagien väliin selvitys.\n\nSeuraava kappale.\n"
+    assert convert.convert_details(text) == (text, 0, 0)
+    converted, _, _ = convert.convert_details("`<details>` ja <details>\n")
+    assert converted == '`<details>` ja <details markdown="1">\n'
+
+
 def test_convert_details_marks_a_summary_that_is_its_own_block():
     """Monirivinen yhteenveto tarvitsee markdown="block": "1" jäsentäisi
     <summary>-tagin sisällön vain rivinsisäisesti."""
@@ -1118,17 +1126,15 @@ def test_convert_walkthroughs_ignores_tags_inside_code():
 
 
 def test_convert_walkthroughs_gives_the_steps_their_audio():
-    """audio="kansio" ei muuta ohjeen HTML:ää; vaihe, jolla on ajantasainen
-    ääni (walkthrough_audio), saa sen data-audiona."""
-    text = WALK.replace('scenes="images/vaiheet.js"',
-                        'scenes="images/vaiheet.js" audio="images/puhe"')
-    converted, count = convert.convert_walkthroughs(
-        text, "osa1/vaiheet.md", {"alku": "../images/puhe/alku.mp3"})
+    """audio ei muuta ohjeen HTML:ää; vaihe, jonka leike on varastossa
+    (walkthrough_audio), saa sen osoitteen data-audiona."""
+    text = WALK.replace('scenes="images/vaiheet.js"', 'scenes="images/vaiheet.js" audio')
+    converted, count = convert.convert_walkthroughs(text, "osa1/vaiheet.md", {"alku": "abc123"})
     assert count == 1
     assert converted.startswith(
         '<script src="images/vaiheet.js"></script>\n\n<div class="jyu-walk" markdown="1">\n')
-    assert ('<section class="jyu-step" data-scene="alku" data-audio="../images/puhe/alku.mp3"'
-            ' markdown="1">') in converted
+    assert ('<section class="jyu-step" data-scene="alku"'
+            ' data-audio="../../assets/puhe/abc123.mp3" markdown="1">') in converted
 
 
 def test_convert_animations_turns_the_tag_into_a_div_and_loads_the_scenes_at_the_end():
@@ -1194,7 +1200,7 @@ def test_walkthrough_speech_reads_the_text_without_addresses_or_code():
     linkeistä teksti, osoitteet ja koodilohkot pois; polun erottimet,
     näppäimet ja valikkopolku sanoina; tiedostonimen piste säilyy."""
     source = (
-        '<walkthrough scenes="images/vaiheet.js" audio="images/puhe">\n\n'
+        '<walkthrough scenes="images/vaiheet.js" audio>\n\n'
         '<step scene="alku">\n\n'
         "### Avaa sivu\n\n"
         "Mene osoitteeseen <https://gitlab.jyu.fi> ja lue [ohje\n"
@@ -1204,7 +1210,7 @@ def test_walkthrough_speech_reads_the_text_without_addresses_or_code():
         "  `C:\\Users\\olli\\ohj1` (Git Bashissa `/c/Users/olli/ohj1/`).\n\n"
         "> [!VAROITUS]\n> Älä anna `git add --all` -komentoa vain `.gitignore`-tiedostolle.\n\n"
         "</step>\n\n</walkthrough>\n")
-    assert convert.walkthrough_speech(source) == ("images/puhe", {"alku": (
+    assert convert.walkthrough_speech(source) == (True, {"alku": (
         "Avaa sivu.\n"
         "Mene osoitteeseen ja lue ohje tästä. Paina Access, Personal access tokens.\n"
         "Windows: paina Control plus V kansiossa C-asema kenoviiva Users kenoviiva olli"
@@ -1214,23 +1220,26 @@ def test_walkthrough_speech_reads_the_text_without_addresses_or_code():
         "Älä anna git add all -komentoa vain .gitignore-tiedostolle.")})
 
 
-def test_walkthrough_audio_uses_only_audio_made_from_the_current_text(tmp_path):
-    """Ääni kelpaa vain nykyisestä tekstistä tehtynä (puhe.json:n tiiviste);
-    vanhentunut ja puuttuva jäävät pois ja listataan. Osoitteessa on
-    hakemisto-osoitteen askel, koska Zensical ei korjaa data-attribuutteja."""
-    source = ('<walkthrough scenes="../images/git-ht-ohje/scenes.js" audio="../images/git-ht-ohje/puhe">\n'
+def test_walkthrough_audio_uses_the_clips_of_the_current_text():
+    """Vaiheen leike on sen nykyisen tekstin leike (speech_clip): vanhan
+    tekstin leike ei kelpaa, ja vaiheet, joiden leike puuttuu, listataan.
+    Ilman audiota ohjetta ei lueta."""
+    source = ('<walkthrough scenes="../images/git-ht-ohje/scenes.js" audio>\n'
               '<step scene="a">\nEka.\n</step>\n<step scene="b">\nToka.\n</step>\n'
               '<step scene="c">\nKolmas.\n</step>\n</walkthrough>\n')
-    folder = tmp_path / "images" / "git-ht-ohje" / "puhe"
-    folder.mkdir(parents=True)
-    (tmp_path / "git").mkdir()
-    for scene in "abc":
-        (folder / f"{scene}.mp3").write_bytes(b"")
-    (folder / "puhe.json").write_text(json.dumps({"voice": "fi-FI-NooraNeural", "steps": {
-        "a": convert.speech_hash("Eka."), "b": convert.speech_hash("Vanha.")}}))
-    assert convert.walkthrough_audio(source, "git/git-ht-ohje.md", tmp_path) == (
-        {"a": "../../images/git-ht-ohje/puhe/a.mp3"}, ["b", "c"])
-    assert convert.walkthrough_audio(WALK, "osa1/vaiheet.md", tmp_path) == ({}, [])
+    clips = {convert.speech_clip("Eka."), convert.speech_clip("Vanha.")}
+    assert convert.walkthrough_audio(source, clips) == (
+        {"a": convert.speech_clip("Eka.")}, ["b", "c"])
+    assert convert.walkthrough_audio(WALK, clips) == ({}, [])
+
+
+def test_clip_url_climbs_to_the_site_root_from_the_page_address():
+    """Osoitteessa on hakemisto-osoitteen askel (sivu.md -> sivu/), koska
+    Zensical ei korjaa data-attribuutteja; index.md:n osoite on sen kansio."""
+    assert convert.clip_url("abc", "git/git-ht-ohje.md") == "../../assets/puhe/abc.mp3"
+    assert convert.clip_url("abc", "git/index.md") == "../assets/puhe/abc.mp3"
+    assert convert.clip_url("abc", "index.md") == "assets/puhe/abc.mp3"
+    assert convert.clip_url("abc", "sivu.md") == "../assets/puhe/abc.mp3"
 
 
 # --- Koko sivun ääneenluku (speech_units, mark_speech) -------------------------
@@ -1435,6 +1444,17 @@ def test_speech_line_drops_footnotes_attributes_and_entities():
     """Alaviiteviittaus ja attr_list-attribuutit pois, HTML-entiteetit
     merkeiksi, loppuun välimerkki."""
     assert convert.speech_line("Teksti[^1] &ndash; toinen {: .luokka }") == "Teksti – toinen."
+
+
+def test_speech_line_reads_what_is_inside_angle_brackets_in_code():
+    """Koodin kulmasulut eivät ole tageja: paikkamerkki ja tyyppiparametri
+    luetaan, vertailu jää."""
+    assert convert.speech_line(r"Kansio `C:\Users\<käyttäjänimi>\ohj1`") == (
+        "Kansio C-asema kenoviiva Users kenoviiva käyttäjänimi kenoviiva ohj1.")
+    assert convert.speech_line("Kirjoita `<summary>`- ja `</summary>`-tagien väliin") == (
+        "Kirjoita summary- ja summary-tagien väliin.")
+    assert convert.speech_line("Lista `List<T>`, ehto `a < b` ja `x -> y`") == (
+        "Lista List T, ehto a < b ja x -> y.")
 
 
 # --- Testaa tietosi -visa (assets/js/visa.js) --------------------------------

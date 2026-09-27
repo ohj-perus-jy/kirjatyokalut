@@ -14,11 +14,10 @@ erillisen repon (kirja.toml: [puhe] repo) klooni, koska äänet kasvattaisivat
 kirjan repoa; ajo kloonaa sen tarvittaessa, ja uudet leikkeet committoidaan
 ja pushataan sinne heti, jotta seuraava julkaisu (pages.yml) saa ne.
 
-Vaiheittainen ohje: sivun <walkthrough scenes="..." audio="kansio"> kertoo
-kansion (lähteen sivun hakemistosta). Jokaisesta vaiheesta tulee sinne
-<kohtaus>.mp3, ja puhe.json muistaa, millä äänellä ja mistä tekstistä
-(tiiviste) kukin on tehty. Luettava teksti on convert.py:n walkthrough_speech:
-sama, josta käännös tarkistaa, onko ääni ajan tasalla.
+Vaiheittainen ohje: jos sivun <walkthrough>-tagissa on audio, jokaisesta
+vaiheesta tulee samanlainen leike samaan varastoon. Luettava teksti on
+convert.py:n walkthrough_speech: sama, josta käännös laskee vaiheen leikkeen
+(walkthrough_audio).
 
 Avain ja alue ympäristömuuttujista AZURE_SPEECH_KEY ja AZURE_SPEECH_REGION
 (Azure-portaalissa Speech-resurssin Keys and Endpoint -sivulta). Avainta ei
@@ -26,18 +25,16 @@ tallenneta mihinkään.
 """
 
 import argparse
-import json
 import os
 import subprocess
 import sys
 import urllib.error
 import urllib.request
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from pathlib import Path
 
 import convert
 
-VOICE = convert.SPEECH_VOICE
 FORMAT = convert.SPEECH_FORMAT
 ssml = convert.ssml
 
@@ -98,13 +95,28 @@ def refresh_clips(texts: list[str], synthesize: Callable[[str], bytes] = azure,
     return done
 
 
-def show_texts(pages: list[str], log: Callable[[str], None] = print) -> tuple[int, int]:
-    """--teksti: sivujen yksiköt ja yhteenveto. -> (uniikit merkit, puuttuvat merkit).
+def step_texts(source_path: str) -> dict[str, str]:
+    """Vaiheittaisen ohjeen vaiheiden luettavat tekstit (kohtaus -> teksti)."""
+    return convert.walkthrough_speech((convert.SRC / source_path).read_text(encoding="utf-8"))[1]
+
+
+def show_texts(pages: Sequence[str], walkthroughs: Sequence[str] = (),
+               log: Callable[[str], None] = print) -> tuple[int, int]:
+    """--teksti: sivujen yksiköt, ohjeiden vaiheet ja yhteenveto. -> (uniikit
+    merkit, puuttuvat merkit).
 
     Puuttuva leike merkitään tähdellä.
     """
     clips = convert.available_clips() or set()
     seen: dict[str, bool] = {}
+
+    def show(source_path: str, rows: list[tuple[str, str]]) -> None:
+        log(f"== {source_path}")
+        for kind, spoken in rows:
+            missing = convert.speech_clip(spoken) not in clips
+            seen[spoken] = missing
+            log(f"{'*' if missing else ' '} [{kind}] {spoken}")
+
     for source_path in pages:
         text = page_text(source_path)
         units, tab_sets = convert.speech_units(text)
@@ -112,11 +124,10 @@ def show_texts(pages: list[str], log: Callable[[str], None] = print) -> tuple[in
         for labels in tab_sets:
             announcement, choices = convert.tab_set_speech(labels)
             rows += [("välilehdet", announcement)] + [("valinta", t) for t in choices.values()]
-        log(f"== {source_path}")
-        for kind, spoken in rows:
-            missing = convert.speech_clip(spoken) not in clips
-            seen[spoken] = missing
-            log(f"{'*' if missing else ' '} [{kind}] {spoken}")
+        show(source_path, rows)
+    for source_path in walkthroughs:
+        show(source_path, [(f"vaihe {scene}", spoken)
+                           for scene, spoken in step_texts(source_path).items()])
     total = sum(len(spoken) for spoken in seen)
     missing = sum(len(spoken) for spoken, absent in seen.items() if absent)
     log(f"\n{len(seen)} leikettä, {total} merkkiä; puuttuu {sum(seen.values())} leikettä, "
@@ -186,53 +197,6 @@ def publish(git: Callable[..., subprocess.CompletedProcess] = run_git,
     return False
 
 
-# --- Vaiheittainen ohje --------------------------------------------------------
-
-def refresh(page: Path, synthesize: Callable[[str], bytes] = azure, voice: str = VOICE,
-            log: Callable[[str], None] = print) -> list[str]:
-    """Tee vaiheittaisen ohjeen puuttuvat ja vanhentuneet äänet. -> tehtyjen
-    vaiheiden kohtaukset.
-
-    Luettelo kirjoitetaan jokaisen äänen jälkeen, jotta keskeytynyt ajo ei tee
-    valmiita uudelleen. Poistuneiden vaiheiden äänet poistetaan. Äänen vaihto
-    tekee kaikki uudelleen.
-    """
-    audio, speech = convert.walkthrough_speech(page.read_text(encoding="utf-8"))
-    if audio is None:
-        raise SystemExit(f"{page}: <walkthrough>-tagissa ei ole audio-attribuuttia")
-    folder = page.parent / audio
-    manifest = folder / convert.SPEECH_MANIFEST
-    try:
-        previous = json.loads(manifest.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        previous = {}
-    made = previous.get("steps", {}) if previous.get("voice") == voice else {}
-    current = {scene: digest for scene, digest in made.items() if scene in speech}
-    folder.mkdir(parents=True, exist_ok=True)
-
-    def save() -> None:
-        manifest.write_text(json.dumps({"voice": voice, "steps": dict(sorted(current.items()))},
-                                       ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
-
-    done: list[str] = []
-    for scene, text in speech.items():
-        digest = convert.speech_hash(text)
-        file = folder / f"{scene}.mp3"
-        if current.get(scene) == digest and file.is_file():
-            continue
-        log(f"{scene}: {len(text)} merkkiä")
-        file.write_bytes(synthesize(ssml(text, voice)))
-        current[scene] = digest
-        done.append(scene)
-        save()
-    for file in folder.glob("*.mp3"):
-        if file.stem not in speech:
-            file.unlink()
-            log(f"{file.stem}: vaihe poistunut, ääni poistettu")
-    save()
-    return done
-
-
 # --- Komento -------------------------------------------------------------------
 
 def source_path(page: Path) -> str:
@@ -254,7 +218,7 @@ def all_pages() -> tuple[list[str], list[str]]:
         if convert.is_speech_page(path):
             pages.append(path)
         text = origin.read_text(encoding="utf-8")
-        if "<walkthrough" in text and convert.walkthrough_speech(text)[0] is not None:
+        if "<walkthrough" in text and convert.walkthrough_speech(text)[0]:
             walkthroughs.append(path)
     return pages, walkthroughs
 
@@ -279,21 +243,15 @@ def main() -> int:
         pages = [path for path in pages if path in chosen]
         walkthroughs = [path for path in walkthroughs if path in chosen]
     if args.teksti:
-        if pages:
-            show_texts(pages)
-        for path in walkthroughs:
-            _, speech = convert.walkthrough_speech((convert.SRC / path).read_text(encoding="utf-8"))
-            for scene, text in speech.items():
-                print(f"[{path}: {scene}]\n{text}\n")
+        show_texts(pages, walkthroughs)
         return 0
-    repo = ensure_store() if pages else False
+    repo = ensure_store() if pages or walkthroughs else False
     status = 0
     done: list[str] = []
     try:
         texts = [text for path in pages for text in convert.speech_texts(page_text(path))]
+        texts += [text for path in walkthroughs for text in step_texts(path).values()]
         done = refresh_clips(texts)
-        for path in walkthroughs:
-            refresh(convert.SRC / path)
     except urllib.error.HTTPError as error:
         print(f"puhepalvelu vastasi {error.code}: {error.read().decode(errors='replace')}",
               file=sys.stderr)

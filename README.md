@@ -36,7 +36,7 @@ kirjoittamalla merkinnän `src/`:ään. Toteutus-sarakkeen funktiot ovat
 | `<div class="ht-reqs">` | harjoitustyön vaatimuslohko, numerointi 1.1, 1.2, … | `convert_divs`, requirements.css |
 | `<visa>`, `<vaittama vastaus>`, `<kysymys>`, `<perustelu>` | Testaa tietosi -visa: valinta paljastaa vastauksen ja perustelun, vastaukset muistetaan selaimessa | `convert_quizzes`, visa.js/css |
 | `### [Windows](#tab/win)` | käyttöjärjestelmävälilehdet; valinta pätee koko sivustolla ja muistetaan | `convert_tabs` |
-| `<walkthrough scenes>`, `<step scene>` | vaiheittainen ohje: animoitu kohtaus askel kerrallaan, halutessa ääneen luettuna (`puhe.py`) | `convert_walkthroughs`, walkthrough.js/css |
+| `<walkthrough scenes>`, `<step scene>` | vaiheittainen ohje: animoitu kohtaus askel kerrallaan, halutessa ääneen luettuna (`<walkthrough scenes audio>`, leikkeet äänivarastossa, `puhe.py`) | `convert_walkthroughs`, walkthrough.js/css |
 | `<animation scenes scene>` | yksittäinen animaatio tavallisella sivulla; tahti `data-wait`, `data-type` | `convert_animations` |
 | `<asciinema>` | terminaalinauhoitus soittimessa; soitin ladataan vain sivuille, joilla on nauhoitus | asciinema.js |
 | ` ```plantuml `, ` ```bob `, ` ```mermaid ` | luokkakaavio kuvana, ascii-kaavio upotettuna SVG:nä, mermaid sellaisenaan; kaaviot kirjan `cache/`:ssa | `convert_plantuml`, `convert_svgbob`, diagrams.css |
@@ -109,7 +109,7 @@ ylähakemisto) ja lukee materiaalin sen viereisestä `src/`:stä.
 | `convert.py` | `../src` → `docs/` ja `nav.yml`; `--watch` vahtii, `--strict` kaatuu puuttuvaan kaavioon (julkaisu) |
 | `mkdocs-pohja.yml` | kirjojen yhteiset Zensical-asetukset: teema, tyylit, skriptit |
 | `assets/`, `overrides/`, `icons/` | tyylit ja skriptit, teeman mallit, kuvakkeiden glyfit |
-| `puhe.py` | ääneenluvun leikkeet (Azure Speech) äänivarastoon ja vaiheittaisen ohjeen äänet; `--teksti` näyttää luettavan ja hinta-arvion |
+| `puhe.py` | ääneenluvun leikkeet (Azure Speech) äänivarastoon, myös vaiheittaisen ohjeen vaiheiden; `--teksti` näyttää luettavan ja hinta-arvion |
 | `run.sh`, `setup.sh` | ajo ja asennus kirjan hakemistosta käsin; `vaihe.sh` näyttää asennuksen etenemisen |
 | `requirements.txt` | kiinnitetty Zensical-versio; `requirements-dev.txt` lisää testien riippuvuudet |
 | `tests/` | testit ja koekirja (`tests/book/`) |
@@ -195,11 +195,13 @@ git submodule update --init                     # (kirjan run.sh tekee tämän i
 ```
 
 Ääneenluku tarvitsee Azure Speech -resurssin avaimen ja alueen
-ympäristömuuttujissa `AZURE_SPEECH_KEY` ja `AZURE_SPEECH_REGION`. Leikkeet
-ovat erillisessä repossa (`[puhe] repo`), koska kirjan historia kasvaisi
-jokaisesta korjauksesta; julkaisu (pages.yml) hakee sen kansioon
-`zensical/puhe/`. Korjauksen jälkeen `puhe` tekee vain muuttuneiden
-kappaleiden leikkeet, ja käännös varoittaa, jos jokin puuttuu.
+ympäristömuuttujissa `AZURE_SPEECH_KEY` ja `AZURE_SPEECH_REGION`. Leikkeet,
+myös vaiheittaisten ohjeiden, ovat erillisessä repossa (`[puhe] repo`),
+koska kirjan historia kasvaisi jokaisesta korjauksesta; julkaisu (pages.yml)
+hakee sen kansioon `zensical/puhe/`. Korjauksen jälkeen `puhe` tekee vain muuttuneiden
+kappaleiden leikkeet, ja käännös varoittaa, jos jokin puuttuu. Sanan, jonka
+ääni sanoo väärin (C# "see risuaita"), korjaus tulee `convert.py`:n
+`SPEECH_SAYINGS`iin; se tekee uudelleen vain ne leikkeet, joissa sana on.
 
 Ensimmäinen ajo asentaa `.venv`:n kirjan hakemistoon (`setup.sh`), ja `run.sh`
 päivittää sen, kun `requirements.txt`:n Zensical-versio vaihtuu. Windowsissa

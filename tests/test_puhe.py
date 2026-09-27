@@ -17,9 +17,9 @@ import pytest
 
 import convert
 import puhe
-from conftest import MISSING_SPEECH, copy_book
+from conftest import MISSING_SPEECH, MISSING_STEP, copy_book
 
-PAGE = ('<walkthrough scenes="images/k.js" audio="images/puhe">\n\n'
+PAGE = ('<walkthrough scenes="images/k.js" audio>\n\n'
         '<step scene="a">\n\nEka.\n\n</step>\n\n'
         '<step scene="b">\n\nToka.\n\n</step>\n\n'
         "</walkthrough>\n")
@@ -31,35 +31,26 @@ def test_ssml_escapes_the_text_and_keeps_the_lines_as_paragraphs():
         '<voice name="fi-FI-NooraNeural"><p>A &amp; B.</p><p>C &lt;D&gt;.</p></voice></speak>')
 
 
-def test_refresh_makes_only_missing_and_changed_audio(tmp_path):
-    """Ensimmäinen ajo tekee kaikki, toinen ei mitään. Muuttunut vaihe tehdään
-    uudelleen ja poistuneen ääni poistetaan; käännös hyväksyy tuloksen.
-    Äänen vaihto tekee kaikki uudelleen."""
-    page = tmp_path / "sivu.md"
-    page.write_text(PAGE, encoding="utf-8")
-    requests: list[str] = []
-
-    def synthesize(document: str) -> bytes:
-        requests.append(document)
-        return b"mp3"
-
-    def refresh(**options) -> list[str]:
-        return puhe.refresh(page, synthesize, log=lambda _: None, **options)
-
-    assert refresh() == ["a", "b"]
-    assert "<p>Eka.</p>" in requests[0] and puhe.VOICE in requests[0]
-    assert refresh() == []
-    page.write_text(PAGE.replace('<step scene="a">\n\nEka.\n\n</step>\n\n', "")
-                    .replace("Toka.", "Toinen."), encoding="utf-8")
-    assert refresh() == ["b"]
-    folder = tmp_path / "images" / "puhe"
-    assert sorted(file.name for file in folder.iterdir()) == ["b.mp3", "puhe.json"]
-    assert convert.walkthrough_audio(page.read_text(encoding="utf-8"), "sivu.md", tmp_path) == (
-        {"b": "../images/puhe/b.mp3"}, [])
-    assert refresh(voice="fi-FI-NooraNeural") == ["b"]
+def test_the_voice_says_the_words_it_would_misread():
+    assert convert.speech_say("Kielet C#, Java ja C++.") == "Kielet see sharp, Java ja C++."
+    assert convert.speech_say("C#-kielessä") == "see sharp-kielessä"
+    assert convert.speech_say("C#:n, C#:ssa, C#:ia, C#:iin") == (
+        "see sharpin, see sharpissa, see sharpia, see sharpiin")
+    assert convert.speech_say("ABC# C#x") == "ABC# C#x"
+    assert "<p>see sharp.</p>" in puhe.ssml("C#.")
 
 
-# --- Koko sivun leikkeet ja varasto --------------------------------------------
+def test_a_written_ending_is_kept_and_a_letter_name_takes_a_front_vowel():
+    assert convert.speech_say("Riderissa, TIMistä ja .NETin") == (
+        "raiderissa, Timistä ja dotnetin")
+    assert convert.speech_say("macOS:ssä, macOS:lla ja macOS: Pääte") == (
+        "mäk oo äsässä, mäk oo äsällä ja mäk oo äs: Pääte")
+    assert convert.speech_say("Rider IDE:nä") == "raider idenä"
+    assert convert.speech_say("Timer, time, ASP.NET, ohj1ht") == "Timer, time, ASP.NET, ohj1ht"
+    assert convert.speech_say("ohj1-kansio") == "oo hoo jii yksi-kansio"
+
+
+# --- Leikkeet ja varasto ----------------------------------------------------------
 
 @pytest.fixture
 def store(tmp_path, monkeypatch):
@@ -90,6 +81,25 @@ def test_refresh_clips_makes_each_missing_text_once(store):
     assert refresh(["Toka.", "Eka."]) == []
     assert sorted(file.name for file in store.iterdir()) == sorted(
         f"{convert.speech_clip(text)}.mp3" for text in ("Eka.", "Toka."))
+
+
+def test_walkthrough_steps_are_clips_in_the_same_store(store, tmp_path, monkeypatch):
+    """Vaiheittaisen ohjeen vaihe on leike kuten sivun kappale: ajo löytää
+    ohjeen, jonka tagissa on audio, ja käännös vaiheen leikkeen varastosta.
+    Muuttunut vaihe jää äänettömäksi, kunnes sen leike tehdään."""
+    src = tmp_path / "src"
+    (src / "osa1").mkdir(parents=True)
+    (src / "osa1" / "ohje.md").write_text(PAGE, encoding="utf-8")
+    (src / "osa1" / "hiljainen.md").write_text(PAGE.replace(" audio>", ">"), encoding="utf-8")
+    monkeypatch.setattr(convert, "SRC", src)
+    monkeypatch.setattr(convert, "SPEECH_PAGES", ())
+    assert puhe.all_pages() == ([], ["osa1/ohje.md"])
+    texts = list(puhe.step_texts("osa1/ohje.md").values())
+    assert puhe.refresh_clips(texts, lambda _: b"mp3", log=lambda _: None) == [
+        convert.speech_clip("Eka."), convert.speech_clip("Toka.")]
+    assert convert.walkthrough_audio(PAGE.replace("Toka.", "Toinen."),
+                                     convert.available_clips()) == (
+        {"a": convert.speech_clip("Eka.")}, ["b"])
 
 
 def git(*arguments, cwd) -> str:
@@ -125,16 +135,18 @@ def test_publish_pushes_new_clips_and_survives_a_concurrent_push(store, tmp_path
 
 
 def test_show_texts_lists_the_units_and_estimates_the_cost(store, monkeypatch):
-    """--teksti: jokainen yksikkö lajeineen, puuttuvat tähdellä, ja yhteenveto
-    uniikeista merkeistä. Leike, joka on jo varastossa, ei maksa."""
+    """--teksti: jokainen yksikkö ja ohjeen vaihe lajeineen, puuttuvat
+    tähdellä, ja yhteenveto uniikeista merkeistä. Leike, joka on jo
+    varastossa, ei maksa."""
     monkeypatch.setattr(convert, "SRC", convert.TOOL / "tests" / "book" / "src")
     store.mkdir()
     (store / f"{convert.speech_clip('Viimeinen kappale.')}.mp3").write_bytes(b"")
     lines: list[str] = []
-    total, missing = puhe.show_texts(["osa1/puhe.md"], log=lines.append)
+    total, missing = puhe.show_texts(["osa1/puhe.md"], ["osa1/vaiheet.md"], log=lines.append)
     assert "* [koodi] Koodilohko, jota ei lueta ääneen." in lines
     assert "  [kappale] Viimeinen kappale." in lines
     assert "* [välilehdet] 2 välilehteä otsikoilla Windows ja macOS." in lines
+    assert f"* [vaihe komento] {MISSING_STEP}" in lines
     assert total - missing == len("Viimeinen kappale.")
     assert lines[-1].startswith("\n") and f"{total} merkkiä" in lines[-1]
 
@@ -258,6 +270,29 @@ def test_the_built_page_links_only_the_clips_that_exist(book):
     assert all((folder / f"{clip}.mp3").is_file() for clip in listed)
     assert "data-puhe" not in (book.site / "osa1" / "01-hei" / "index.html").read_text(
         encoding="utf-8")
+
+
+def test_the_built_walkthrough_plays_clips_from_the_store(book):
+    """Vaiheittaisen ohjeen vaihe soittaa varaston leikettä sivuston
+    assets/puhe/:sta, ja leike on luettelossa; vaihe, jonka leike puuttuu
+    (MISSING_STEP), on äänetön."""
+    page = book.site / "osa1" / "vaiheet"
+    html = (page / "index.html").read_text(encoding="utf-8")
+    # Renderöinti järjestää attribuutit, joten ne luetaan järjestyksestä riippumatta.
+    sections = [dict(re.findall(r'(data-\w+)="([^"]*)"', attributes))
+                for attributes in re.findall(r'<section class="jyu-step"([^>]*)>', html)]
+    audio = {section["data-scene"]: section["data-audio"]
+             for section in sections if "data-audio" in section}
+    source = (book.src / "osa1" / "vaiheet.md").read_text(encoding="utf-8")
+    steps = convert.walkthrough_speech(source)[1]
+    assert steps["komento"] == MISSING_STEP
+    assert audio == {scene: f"../../assets/puhe/{clip}.mp3"
+                     for scene, clip in zip(steps, clips(list(steps.values())))
+                     if scene != "komento"}
+    listed = (book.site / "assets" / "puhe" / convert.SPEECH_INDEX).read_text(encoding="utf-8")
+    for url in audio.values():
+        assert (page / url).resolve().is_file()
+        assert url.removeprefix("../../assets/puhe/").removesuffix(".mp3") in listed.split()
 
 
 # --- Soitin selaimessa ----------------------------------------------------------

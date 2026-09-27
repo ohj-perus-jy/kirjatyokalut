@@ -317,11 +317,14 @@ def test_full_screen_puts_the_text_beside_the_scene(opened):
 
 
 # Ääni kirjataan eikä soiteta: play ja pause korvataan ennen sivun skriptejä.
+# Kirjaan tulee vaiheen kohtaus, koska leikkeen nimi on tiiviste.
 RECORD_AUDIO = """
 window.played = [];
 window.paused = 0;
 HTMLMediaElement.prototype.play = function () {
-  window.played.push(this.src.split('/').pop());
+  const file = this.src.split('/').pop();
+  const step = document.querySelector(`.jyu-step[data-audio$="/${file}"]`);
+  window.played.push(step ? step.dataset.scene : file);
   return Promise.resolve();
 };
 HTMLMediaElement.prototype.pause = function () { window.paused += 1; };
@@ -330,8 +333,8 @@ HTMLMediaElement.prototype.pause = function () { window.paused += 1; };
 
 def test_speaker_reads_each_step_aloud(opened):
     """Kaiutin päälle: vaihe alkaa alusta kuten Toista-napista, ja sen oma ääni
-    soi heti ja jokaisessa vaiheessa, johon siirrytään. Vanhasta tekstistä
-    tehty ääni ei soi (koekirjan komento). Pois päältä ääni pysähtyy, mutta
+    soi heti ja jokaisessa vaiheessa, johon siirrytään. Vaihe, jonka
+    leike puuttuu, ei soi (koekirjan komento). Pois päältä ääni pysähtyy, mutta
     vaihe ei ala alusta. Valinta muistetaan, mutta sivun avautuessa (osoitteen
     vaiheeseen) ääni alkaa vasta toistonapista. Tekstinä kaiutinta ei ole."""
     page, errors = opened(init=RECORD_AUDIO)
@@ -342,15 +345,15 @@ def test_speaker_reads_each_step_aloud(opened):
     assert page.evaluate("played") == []
     page.click(".jw-speak")
     assert page.get_attribute(".jw-speak", "aria-pressed") == "true"
-    assert page.evaluate("played") == ["selain.mp3"]
+    assert page.evaluate("played") == ["selain"]
     assert page.evaluate(typed) == ""
     page.click(".jw-next")
-    assert page.evaluate("played") == ["selain.mp3"]
+    assert page.evaluate("played") == ["selain"]
     page.click(".jw-next")
     page.click(".jw-replay")
-    assert page.evaluate("played") == ["selain.mp3", "piilotus.mp3", "piilotus.mp3"]
+    assert page.evaluate("played") == ["selain", "piilotus", "piilotus"]
     page.click(".jw-tick >> nth=2")
-    assert page.evaluate("played") == ["selain.mp3", "piilotus.mp3", "piilotus.mp3", "piilotus.mp3"]
+    assert page.evaluate("played") == ["selain", "piilotus", "piilotus", "piilotus"]
     page.wait_for_function("!document.querySelector('.koe-lopuksi.jw-hidden')")
     paused = page.evaluate("paused")
     page.click(".jw-speak")
@@ -364,7 +367,7 @@ def test_speaker_reads_each_step_aloud(opened):
     assert page.get_attribute(".jw-speak", "aria-pressed") == "true"
     assert page.evaluate("played") == []
     page.click(".jw-play")
-    assert page.evaluate("played") == ["piilotus.mp3"]
+    assert page.evaluate("played") == ["piilotus"]
     page.click(".jw-mode")
     assert not page.is_visible(".jw-speak")
     assert errors == []
@@ -379,7 +382,7 @@ HTMLMediaElement.prototype.play = function () { window.voice = this; return play
 
 def test_replay_starts_the_audio_from_the_beginning(opened):
     """Toista aloittaa myös äänen alusta, vaikka tiedosto on sama. Oikea
-    toisto: koekirjan selain.mp3 on 3 sekuntia hiljaisuutta."""
+    toisto: koekirjan leikkeet ovat 3 sekuntia hiljaisuutta (conftest.py)."""
     page, errors = opened(init=KEEP_AUDIO)
     page.click(".jw-speak")
     page.wait_for_function("window.voice && voice.currentTime > 1")

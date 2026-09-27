@@ -89,6 +89,9 @@ merkitsee, `puhe.py` tekee leikkeet, `puhe.js` soittaa, ja kirjan
 - **Leikkeet ovat erillisessä repossa (`[puhe] repo`).** Koko kirja on
   arviolta 100 Mt, ja jokainen korjaus jättäisi kirjan historiaan vanhan
   version. Saman repon orpo haara tulisi silti jokaiseen `git clone`en.
+  Myös vaiheittaisen ohjeen vaiheet ovat samanlaisia leikkeitä samassa
+  varastossa. Ne olivat aluksi lähdepuussa sivun vieressä, ja ohj1:n
+  historiaan oli kertynyt niitä kahdessa commitissa jo 6 Mt.
 - **Välilehti valitaan toistohetkellä.** Kaikkien välilehtien kappaleet
   syntetisoidaan, ja soitin lukee sen, jonka lukija on valinnut. Ilmoitukset
   ("N välilehteä otsikoilla …", "Luetaan välilehti X") pitävät otsikon

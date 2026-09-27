@@ -39,6 +39,7 @@ import traceback
 import urllib.error
 import urllib.request
 import zlib
+from collections.abc import Callable
 from html import escape, unescape
 from pathlib import Path
 from typing import NamedTuple
@@ -220,6 +221,8 @@ DETAILS_RE = re.compile(r"<details(?![^>]*\bmarkdown=)(?P<attrs>[^>]*)>")
 # "1" tarkoittaisi vain rivinsisäistä jäsennystä ja otsikko jäisi risuaidoiksi.
 SUMMARY_RE = re.compile(r"<summary(?![^>]*\bmarkdown=)(?P<attrs>[^>]*)>")
 SUMMARY_END = "</summary>"
+# Rivinsisäinen koodi, jossa tagi on tekstiä (Kirjoita `<summary>`-tagien väliin).
+INLINE_CODE_RE = re.compile(r"(`[^`\n]*`)")
 
 # Omaksi kappaleekseen jäänyt <br />, lähteessä väljyydeksi lohkojen väliin.
 # Python-Markdown tekee siitä <p><br /></p>, joka moninkertaistaa lohkojen välin;
@@ -1167,8 +1170,9 @@ def summary_has_blank_line(lines: list[str], number: int) -> bool:
     SUMMARY_RE. Yhden rivin yhteenveto ja sulkematta jäänyt tagi vastaavat
     molemmat ei.
     """
-    start = lines[number].find("<summary")
-    if start < 0 or SUMMARY_END in lines[number][start:]:
+    line = INLINE_CODE_RE.sub("", lines[number])
+    start = line.find("<summary")
+    if start < 0 or SUMMARY_END in line[start:]:
         return False
     for line in lines[number + 1:]:
         if SUMMARY_END in line:
@@ -1181,12 +1185,23 @@ def summary_has_blank_line(lines: list[str], number: int) -> bool:
 def convert_details(text: str) -> tuple[str, int, int]:
     """<details> ja monirivinen <summary> markdown-attribuutilla.
     -> (teksti, details-tageja, summary-tageja). Ks. DETAILS_RE ja SUMMARY_RE.
-    Koodiaidat ohitetaan, jottei aidassa näytetty HTML-esimerkki muuttuisi.
+    Koodiaidat ja rivinsisäinen koodi ohitetaan, jottei koodissa näytetty
+    HTML-esimerkki muuttuisi.
     """
     lines = text.split("\n")
     out: list[str] = []
     open_fence: str | None = None
     tags = summaries = 0
+
+    def outside_code(pattern: re.Pattern, replace: Callable[[re.Match], str],
+                     line: str) -> tuple[str, int]:
+        parts = INLINE_CODE_RE.split(line)
+        found = 0
+        for index in range(0, len(parts), 2):
+            parts[index], count = pattern.subn(replace, parts[index])
+            found += count
+        return "".join(parts), found
+
     for number, line in enumerate(lines):
         match = CODE_FENCE_RE.match(line)
         if match and open_fence is None:
@@ -1195,12 +1210,12 @@ def convert_details(text: str) -> tuple[str, int, int]:
                 and len(match["fence"]) >= len(open_fence)):
             open_fence = None
         elif open_fence is None:
-            line, found = DETAILS_RE.subn(
-                lambda m: f'<details{m["attrs"]} markdown="1">', line)
+            line, found = outside_code(
+                DETAILS_RE, lambda m: f'<details{m["attrs"]} markdown="1">', line)
             tags += found
             if summary_has_blank_line(lines, number):
-                line, found = SUMMARY_RE.subn(
-                    lambda m: f'<summary{m["attrs"]} markdown="block">', line)
+                line, found = outside_code(
+                    SUMMARY_RE, lambda m: f'<summary{m["attrs"]} markdown="block">', line)
                 summaries += found
         out.append(line)
     return "\n".join(out), tags, summaries
@@ -1588,17 +1603,17 @@ def convert_quizzes(text: str, source_path: str = "") -> tuple[str, int]:
 
 
 # Vaiheittainen ohje (assets/js/walkthrough.js): <walkthrough scenes="...">
-# (valinnaisesti audio="kansio", ks. walkthrough_audio) ja sen sisällä
-# <step scene="...">, kukin tagi omalla rivillään.
+# (valinnaisesti audio: vaiheet luetaan ääneen, ks. walkthrough_audio) ja sen
+# sisällä <step scene="...">, kukin tagi omalla rivillään.
 WALK_OPEN_RE = re.compile(r'^\s*<walkthrough\s+scenes="(?P<scenes>[^"]+)"'
-                          r'(?:\s+audio="(?P<audio>[^"]+)")?\s*>\s*$')
+                          r'(?P<audio>\s+audio)?\s*>\s*$')
 STEP_OPEN_RE = re.compile(r'^\s*<step\s+scene="(?P<scene>[^"]+)"\s*>\s*$')
 WALK_CLOSE_RE = re.compile(r"^\s*</(?P<tag>walkthrough|step)>\s*$")
 WALK_CLOSING = {"walkthrough": "</div>", "step": "</section>"}
 
 
 def walkthrough_scenes_path(scenes: str) -> str:
-    """Kohtaustiedoston tai äänikansion polku sivulta, normalisoituna, jotta
+    """Kohtaustiedoston polku sivulta, normalisoituna, jotta
     sama tiedosto eri kirjoitusasuin tulee sivulle vain kerran."""
     if re.match(r"^(?:[a-z]+:|/)", scenes):
         return scenes
@@ -1608,14 +1623,15 @@ def walkthrough_scenes_path(scenes: str) -> str:
 def walkthrough_tag(line: str, source_path: str,
                     audio: dict[str, str] | None = None) -> list[str] | None:
     """Yksi tagirivi HTML-riveiksi; None, jos rivi ei ole tagi. audio:
-    kohtaus -> äänitiedoston osoite (walkthrough_audio)."""
+    kohtaus -> leike (walkthrough_audio)."""
     if match := WALK_OPEN_RE.match(line):
         src = escape(walkthrough_scenes_path(match["scenes"]))
         return [f'<script src="{src}"></script>', "",
                 '<div class="jyu-walk" markdown="1">']
     if match := STEP_OPEN_RE.match(line):
         scene = match["scene"]
-        sound = f' data-audio="{escape(audio[scene])}"' if audio and scene in audio else ""
+        sound = (f' data-audio="{escape(clip_url(audio[scene], source_path))}"'
+                 if audio and scene in audio else "")
         return [f'<section class="jyu-step" data-scene="{escape(scene)}"{sound}'
                 ' markdown="1">']
     if match := WALK_CLOSE_RE.match(line):
@@ -1627,8 +1643,8 @@ def convert_walkthroughs(text: str, source_path: str,
                          audio: dict[str, str] | None = None) -> tuple[str, int]:
     """<walkthrough>- ja <step>-tagit HTML:ksi. -> (teksti, ohjeita).
 
-    audio: kohtaus -> äänitiedoston osoite vaiheille, joilla on ajantasainen
-    ääni (walkthrough_audio); vaihe saa sen data-audio-attribuuttina.
+    audio: kohtaus -> leike vaiheille, joiden leike on äänivarastossa
+    (walkthrough_audio); vaihe saa sen osoitteen data-audio-attribuuttina.
 
     Ohjeesta tulee div ja vaiheesta section, molemmat markdown="1", joten
     sisältö käännetään Markdownina ja ohje on ilman skriptiä tavallista tekstiä.
@@ -1737,9 +1753,8 @@ def convert_animations(text: str, source_path: str) -> tuple[str, int]:
     return "\n".join(out), animations
 
 
-# Ääneen luettava vaihe (walkthrough.js: kaiutin, äänet tekee puhe.py).
-# Äänikansion luettelo: ääni ja kunkin vaiheen luettavan tekstin tiiviste.
-SPEECH_MANIFEST = "puhe.json"
+# Ääneen luettava vaihe (walkthrough.js: kaiutin, leikkeet tekee puhe.py
+# äänivarastoon kuten koko sivun ääneenluvussa).
 SPEECH_KEYS = {"Ctrl": "Control", "Cmd": "Command"}
 SPEECH_HEADING_RE = re.compile(r"^#{1,6}\s+(?P<text>.*?)(?:\s*\{[^}]*\})?\s*$")
 SPEECH_ITEM_RE = re.compile(r"^(?:[-*+]|\d+\.)\s+(?P<text>.*)$")
@@ -1749,14 +1764,19 @@ SPEECH_ALERT_RE = re.compile(r"^\[!(?P<label>[^\]]+)\]$")
 def speech_code(code: str) -> str:
     """Koodin pätkä luettavaksi: osoite ja pelkkä ~ pois, polun erottimet ja
     asema sanoina (ohje vertaa Windowsin ja Git Bashin polkuja), valitsimen
-    viivat pois."""
+    viivat pois ja kulmasulkeista sisältö (<käyttäjänimi>, List<T>, </summary>).
+    Tulos on HTML-koodattu, jottei speech_inline poista koodin merkkejä
+    tageina; se purkaa koodauksen."""
     if "://" in code or code == "~":
         return ""
-    if re.search(r"[\\/]", code) and " " not in code:
+    if re.search(r"\\|(?<!<)/(?!>)", code) and " " not in code:
         code = re.sub(r"^([A-Za-z]):", r"\1-asema", code.rstrip("\\/"))
         code = re.sub(r"^~(?=/)", "kotikansio", code)
-        return code.replace("\\", " kenoviiva ").replace("/", " kauttaviiva ").strip()
-    return re.sub(r"(?<![\w-])--?(?=\w)", "", code)
+        code = code.replace("\\", " kenoviiva ").replace("/", " kauttaviiva ")
+    else:
+        code = re.sub(r"(?<![\w-])--?(?=\w)", "", code)
+    code = re.sub(r"</?([^<>]*?)/?>", r" \1 ", code)
+    return escape(re.sub(r"\s+", " ", code).strip(), quote=False)
 
 
 def speech_inline(text: str) -> str:
@@ -1835,19 +1855,14 @@ def speech_text(block: str) -> str:
     return "\n".join(lines)
 
 
-def speech_hash(text: str) -> str:
-    """Luettavan tekstin tiiviste: muuttunut teksti tarvitsee uuden äänen."""
-    return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
+def walkthrough_speech(text: str) -> tuple[bool, dict[str, str]]:
+    """Sivun lähteestä vaiheiden luettavat tekstit. -> (luetaanko ääneen,
+    kohtaus -> teksti).
 
-
-def walkthrough_speech(text: str) -> tuple[str | None, dict[str, str]]:
-    """Sivun lähteestä vaiheiden luettavat tekstit. -> (äänikansio, kohtaus -> teksti).
-
-    Kansio on ensimmäisestä audio-attribuutillisesta <walkthrough>-tagista
-    (None, jos sellaista ei ole). Koodiaidan sisällä tagit ohitetaan kuten
-    convert_walkthroughsissa.
+    Vaiheet luetaan ääneen, jos jossakin <walkthrough>-tagissa on audio.
+    Koodiaidan sisällä tagit ohitetaan kuten convert_walkthroughsissa.
     """
-    audio: str | None = None
+    audio = False
     speech: dict[str, str] = {}
     scene: str | None = None
     body: list[str] = []
@@ -1859,8 +1874,8 @@ def walkthrough_speech(text: str) -> tuple[str | None, dict[str, str]]:
         elif match and not match["info"].strip() and len(match["fence"]) >= len(fence):
             fence = None
         elif fence is None:
-            if (opening := WALK_OPEN_RE.match(line)) and audio is None:
-                audio = opening["audio"]
+            if opening := WALK_OPEN_RE.match(line):
+                audio = audio or opening["audio"] is not None
             if step := STEP_OPEN_RE.match(line):
                 scene, body = step["scene"], []
                 continue
@@ -1874,37 +1889,29 @@ def walkthrough_speech(text: str) -> tuple[str | None, dict[str, str]]:
     return audio, speech
 
 
-def walkthrough_audio(text: str, source_path: str,
-                      root: Path | None = None) -> tuple[dict[str, str], list[str]]:
-    """Vaiheiden äänitiedostot. -> (kohtaus -> osoite, äänettömät kohtaukset).
+def walkthrough_audio(text: str, clips: set[str]) -> tuple[dict[str, str], list[str]]:
+    """Vaiheiden leikkeet. -> (kohtaus -> leike, kohtaukset, joiden leike puuttuu).
 
-    Ääni kelpaa vain, jos se on tehty vaiheen nykyisestä tekstistä (tiiviste
-    äänikansion puhe.json:ssa): vanhaa ohjetta lukeva ääni johtaisi harhaan,
-    joten vaihe jää silloin äänettömäksi, ja main varoittaa. Osoitteessa on
-    hakemisto-osoitteen askel itse, koska Zensical ei korjaa data-attribuutteja.
-    root: lähdepuu (testeille).
+    Vaiheen leike on koko sivun ääneenluvun tapaan tiiviste luettavasta
+    tekstistä (speech_clip) äänivarastossa (clips: available_clips). Muuttunut
+    vaihe jää siis äänettömäksi, kunnes puhe.py tekee sen leikkeen, eikä
+    vanhaa ohjetta lukeva ääni johda harhaan; main varoittaa.
     """
     if "<walkthrough" not in text:
         return {}, []
     audio, speech = walkthrough_speech(text)
-    if audio is None:
+    if not audio:
         return {}, []
-    folder = (root or SRC) / Path(source_path).parent / audio
-    try:
-        made = json.loads((folder / SPEECH_MANIFEST).read_text(encoding="utf-8"))["steps"]
-    except (OSError, ValueError, KeyError):
-        made = {}
-    base = walkthrough_scenes_path(audio)
-    if Path(source_path).name != "index.md":
-        base = f"../{base}"
-    urls: dict[str, str] = {}
-    silent: list[str] = []
-    for scene, spoken in speech.items():
-        if made.get(scene) == speech_hash(spoken) and (folder / f"{scene}.mp3").is_file():
-            urls[scene] = f"{base}/{scene}.mp3"
-        else:
-            silent.append(scene)
-    return urls, silent
+    found = {scene: speech_clip(spoken) for scene, spoken in speech.items()}
+    return ({scene: clip for scene, clip in found.items() if clip in clips},
+            [scene for scene, clip in found.items() if clip not in clips])
+
+
+def clip_url(clip: str, source_path: str) -> str:
+    """Leikkeen osoite sivulta. Mukana on hakemisto-osoitteen askel (sivu.md
+    -> sivu/), koska Zensical ei korjaa data-attribuutteja."""
+    depth = source_path.count("/") + (Path(source_path).name != "index.md")
+    return "../" * depth + f"{SPEECH_ASSETS}/{clip}.mp3"
 
 
 # --- Koko sivun ääneenluku ----------------------------------------------------
@@ -2450,9 +2457,59 @@ def speech_units(text: str) -> tuple[list[SpeechUnit], list[list[str]]]:
     return scan.units, scan.tab_sets
 
 
+# Sanat, jotka puheääni sanoo väärin (C# "see risuaita"), ja miten ne
+# sanotaan. Kirjainkoko ratkaisee (TIM mutta ei Timer). Vain puhepalvelulle:
+# sivun ja --tekstin teksti pysyy ennallaan, ja leike vaihtuu vain, jos sen
+# tekstissä on jokin näistä.
+SPEECH_SAYINGS = {
+    "C#": "see sharp",
+    ".NET": "dotnet",
+    "Rider": "raider",
+    "rider": "raider",
+    "Riderin": "raiderin",
+    "riderin": "raiderin",
+    "Riderissa": "raiderissa",
+    "riderissa": "raiderissa",
+    "Riderista": "raiderista",
+    "riderista": "raiderista",
+    "macOS": "mäk oo äs",
+    "TIM": "Tim",  # sanana, ei kirjain kerrallaan
+    "ohj1": "oo hoo jii yksi",
+    "Ohj1": "oo hoo jii yksi",
+    "IDE:nä": "idenä",
+}
+# Kaksoispisteellä taivutetun vartalo, jos se ei ole sanottu + i kuten
+# lainasanoissa (C#:n -> see sharpin): kirjaimen nimeen tulee ä (äsässä).
+SPEECH_STEMS = {"macOS": "mäk oo äsä"}
+SPEECH_SAYING_RE = re.compile(
+    r"(?<!\w)(?P<word>" + "|".join(map(re.escape, sorted(SPEECH_SAYINGS, key=len, reverse=True)))
+    + r")(?::(?P<ending>\w+)|(?<=[^\W\d])(?P<attached>[a-zäö]+))?(?!\w)")
+SPEECH_BACK_VOWELS = str.maketrans("äöy", "aou")
+SPEECH_FRONT_VOWELS = str.maketrans("aou", "äöy")
+
+
+def speech_say(text: str) -> str:
+    """SPEECH_SAYINGSin sanat niin kuin ne sanotaan. Suoraan kirjoitettu pääte
+    liitetään sellaisenaan (Riderissa -> raiderissa), kaksoispisteellä
+    taivutettuun vartalo (SPEECH_STEMS) ja pääte vokaalisointuun: C#:n -> see
+    sharpin, C#:ia -> see sharpia, macOS:lla -> mäk oo äsällä."""
+    def say(match: re.Match) -> str:
+        word, ending = match["word"], match["ending"]
+        said = SPEECH_SAYINGS[word]
+        if not ending:
+            return said + (match["attached"] or "")
+        stem = SPEECH_STEMS.get(word) or (said if said[-1] in "aeiouyäö" else f"{said}i")
+        if stem.endswith("i") and ending.startswith("i"):
+            ending = ending[1:]
+        back = re.search(r"[aou]", stem.split()[-1]) is not None
+        return stem + ending.translate(SPEECH_BACK_VOWELS if back else SPEECH_FRONT_VOWELS)
+    return SPEECH_SAYING_RE.sub(say, text)
+
+
 def ssml(text: str, voice: str | None = None) -> str:
-    """Luettava teksti SSML:ksi: jokainen rivi omana kappaleenaan (tauko)."""
-    paragraphs = "".join(f"<p>{escape(line, quote=False)}</p>"
+    """Luettava teksti SSML:ksi: jokainen rivi omana kappaleenaan (tauko),
+    sanat niin kuin ne sanotaan (speech_say)."""
+    paragraphs = "".join(f"<p>{escape(speech_say(line), quote=False)}</p>"
                          for line in text.split("\n") if line)
     return ('<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis"'
             f' xml:lang="fi-FI"><voice name="{escape(voice or SPEECH_VOICE)}">'
@@ -2742,19 +2799,24 @@ def copy_clips(clips: set[str]) -> set[Path]:
 
 
 class PageResult(NamedTuple):
-    """convert_pagen tulos: sivun lopullinen Markdown ja mainin koottavat joukot."""
+    """convert_pagen tulos: sivun lopullinen Markdown ja mainin koottavat joukot.
+    clips: vaiheittaisen ohjeen käyttämät leikkeet, silent_steps: vaiheet,
+    joiden leike puuttuu."""
     text: str
     labels: set[str]
     unknown_icons: set[str]
     diagrams: set[str]
     drawings: set[str]
     unknown_alerts: set[str]
+    clips: set[str]
+    silent_steps: list[str]
 
 
-def convert_page(origin: Path, source_path: str) -> PageResult:
+def convert_page(origin: Path, source_path: str, clips: set[str] | None = None) -> PageResult:
     """Lähdepuun sivu muunnosten läpi lopulliseksi Markdowniksi, vielä ilman
     ääneenluvun merkkejä (mark_speech). puhe.py paloittelee saman tekstin.
-    Kaaviot haetaan ja piirretään tarvittaessa (cache/) kuten mainissa."""
+    Kaaviot haetaan ja piirretään tarvittaessa (cache/) kuten mainissa.
+    clips: äänivaraston leikkeet vaiheittaisen ohjeen äänille."""
     page = DOCS / source_path
     source = origin.read_text(encoding="utf-8")
     # Järjestys: sisällytykset ensin, jotta muut muunnokset näkevät
@@ -2790,12 +2852,7 @@ def convert_page(origin: Path, source_path: str) -> PageResult:
     # Vaiheittainen ohje ennen convert_tabsia kuten tehtäväkortit: tagit
     # nostetaan sarakkeeseen 0, eikä sisennettyä HTML-lohkoa tunnisteta.
     # Äänet lähteestä kuten puhe.py, ei muunnetusta tekstistä.
-    audio, silent = walkthrough_audio(source, source_path)
-    if silent:
-        names = ", ".join(silent[:5]) + (", ..." if len(silent) > 5 else "")
-        print(f"varoitus: {source_path}: {len(silent)} vaiheen ääni puuttuu tai on "
-              f"vanhentunut ({names}); aja ./run.sh puhe ../src/{source_path}",
-              file=sys.stderr)
+    audio, silent = walkthrough_audio(source, clips or set())
     converted, _ = convert_walkthroughs(converted, source_path, audio)
     converted, _ = convert_bonus_marks(converted)
     converted, _, _, page_unknown_icons = convert_icons(converted)
@@ -2803,7 +2860,7 @@ def convert_page(origin: Path, source_path: str) -> PageResult:
     # Animaatiot välilehtien jälkeen, ks. convert_animations.
     converted, _ = convert_animations(converted, source_path)
     return PageResult(converted, page_labels, page_unknown_icons, page_used, page_art,
-                      page_unknown)
+                      page_unknown, set(audio.values()), silent)
 
 
 def main(strict: bool = False) -> int:
@@ -2826,14 +2883,18 @@ def main(strict: bool = False) -> int:
     clips = available_clips()
     used_clips: set[str] = set()
     silent: dict[str, int] = {}
+    silent_steps: dict[str, list[str]] = {}
     # Silmukka käy lähdepuun eikä docs/:n, jottei sivua tarvitse ensin kopioida
     # raakana paikalleen (turha kirjoitus on vahdille tapahtuma).
     for origin in sorted(SRC.rglob("*.md")):
         source_path = origin.relative_to(SRC).as_posix()
         if not is_page(source_path):
             continue
-        page = convert_page(origin, source_path)
+        page = convert_page(origin, source_path, clips)
         converted = page.text
+        used_clips |= page.clips
+        if page.silent_steps:
+            silent_steps[source_path] = page.silent_steps
         if is_speech_page(source_path):
             converted, page_clips, missing = mark_speech(converted, clips or set())
             used_clips.update(page_clips)
@@ -2868,14 +2929,22 @@ def main(strict: bool = False) -> int:
     if unknown_alerts:
         print("varoitus: tuntematon alertin tunnus: "
               f"{', '.join(sorted(unknown_alerts))}", file=sys.stderr)
-    if SPEECH_PAGES and clips is None:
+    # Ilman varastoa jokaisen ääneen luettavan vaiheen leike puuttuu, joten
+    # silent_steps kertoo, tarvitaanko varastoa vaiheittaisille ohjeille.
+    no_store = clips is None and bool(SPEECH_PAGES or silent_steps)
+    if no_store:
         print(f"{'virhe' if strict else 'varoitus'}: äänivarasto puuttuu"
               f" ({repo_relative(SPEECH_STORE)}), sivut ovat äänettömiä;"
               " aja ./run.sh puhe", file=sys.stderr)
-    elif silent:
-        names = ", ".join(sorted(silent)[:5]) + (", ..." if len(silent) > 5 else "")
-        print(f"varoitus: {sum(silent.values())} kappaleen ääni puuttuu ({names});"
-              " aja ./run.sh puhe", file=sys.stderr)
+    else:
+        if silent:
+            names = ", ".join(sorted(silent)[:5]) + (", ..." if len(silent) > 5 else "")
+            print(f"varoitus: {sum(silent.values())} kappaleen ääni puuttuu ({names});"
+                  " aja ./run.sh puhe", file=sys.stderr)
+        for source_path, scenes in silent_steps.items():
+            names = ", ".join(scenes[:5]) + (", ..." if len(scenes) > 5 else "")
+            print(f"varoitus: {source_path}: {len(scenes)} vaiheen ääni puuttuu ({names});"
+                  f" aja ./run.sh puhe ../src/{source_path}", file=sys.stderr)
     print(f"kopioitu {len(list(DOCS.rglob('*.md')))} markdown-tiedostoa -> {DOCS}"
           + (f", {len(stale)} jäänyttä tiedostoa pois" if stale else ""))
     # --strict: julkaisussa puuttuva kaavio on virhe, ei varoitus. Paikallisesti
@@ -2886,7 +2955,7 @@ def main(strict: bool = False) -> int:
               file=sys.stderr)
         return 1
     # Myös äänivaraston puuttuminen: julkaisu kadottaisi äänet hiljaa.
-    return 1 if strict and SPEECH_PAGES and clips is None else 0
+    return 1 if strict and no_store else 0
 
 
 # --- Vahti ------------------------------------------------------------------
