@@ -291,7 +291,10 @@ exec tyokalut/run.sh "$@"
 
 Julkaisu (`.github/workflows/pages.yml`): checkoutiin `submodules: true`,
 ääneenlukua varten äänivaraston oma checkout (`[puhe] repo`; ei submodule),
-ja käännös kirjan hakemistossa:
+ja käännös kirjan hakemistossa. **Äänivaraston repon pitää olla julkinen**:
+julkaisun `GITHUB_TOKEN` näkee vain kirjan oman repon, ja yksityinen varasto
+kaatuu checkoutiin virheeseen `Not Found - …/repos#get-a-repository`. Leikkeet
+ovat joka tapauksessa julkisella sivustolla.
 
 ```yaml
       - uses: actions/checkout@v7
