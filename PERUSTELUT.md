@@ -92,6 +92,13 @@ merkitsee, `puhe.py` tekee leikkeet, `puhe.js` soittaa, ja kirjan
   Myös vaiheittaisen ohjeen vaiheet ovat samanlaisia leikkeitä samassa
   varastossa. Ne olivat aluksi lähdepuussa sivun vieressä, ja ohj1:n
   historiaan oli kertynyt niitä kahdessa commitissa jo 6 Mt.
+- **Varasto on klooni, ei submodule.** Submodule kiinnittäisi kirjaan
+  varaston tietyn version, ja jokaisen `puhe`-ajon jälkeen kirjaan pitäisi
+  committaa uusi osoitin; unohdus kaataisi julkaisun puuttuviin leikkeisiin
+  (`--strict`). Leike ei vanhene, koska sen nimi on tiiviste sisällöstä,
+  joten varaston uusin versio käy kirjan jokaiselle haaralle ja versiolle.
+  Siksi kirja ei viittaa varastoon lainkaan: se on `.gitignore`ssa, ja
+  `pages.yml` hakee sen omalla checkout-askeleellaan.
 - **Välilehti valitaan toistohetkellä.** Kaikkien välilehtien kappaleet
   syntetisoidaan, ja soitin lukee sen, jonka lukija on valinnut. Ilmoitukset
   ("N välilehteä otsikoilla …", "Luetaan välilehti X") pitävät otsikon

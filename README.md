@@ -95,7 +95,8 @@ kirja/                     kirjan repo
     run.sh                 kääre: tyokalut/run.sh
     cache/svgbob/          kirjan bob-kaaviot (versionhallinnassa)
     cache/plantuml/        kirjan luokkakaaviot (versionhallinnassa)
-    puhe/                  ääneenluvun leikkeet: erillisen repon klooni (puhe.py)
+    puhe/                  ääneenluvun leikkeet: erillisen repon klooni (puhe.py),
+                           .gitignoressa, EI submodule
     tyokalut/              TÄMÄ REPO submodulena
     docs/ site/ nav.yml .venv/   generoitua, ei versionhallinnassa
 ```
@@ -130,7 +131,7 @@ siitä kirjan hakemisto tunnistetaan.
 | `[linkit] tim_pois` | tarkistuksesta pois jätettävät TIM-dokumentit (polku kuten kansioissa) | – |
 | `[puhe] sivut` | fnmatch-kuviot lähdepuun sivuille, jotka luetaan ääneen (koko sivu) | `SPEECH_PAGES` |
 | `[puhe] repo` | äänivaraston repo, jonka `puhe.py` kloonaa ja johon se pushaa leikkeet | `SPEECH_REPO` |
-| `[puhe] varasto` | varaston klooni kirjan hakemistosta (oletus `puhe`, ei kirjan versionhallintaan) | `SPEECH_STORE` |
+| `[puhe] varasto` | varaston klooni kirjan hakemistosta (oletus `puhe`); kirjan `.gitignore`issa, ei submodule | `SPEECH_STORE` |
 | `[puhe] aani` | Azuren ääni (oletus `fi-FI-HarriNeural`); vaihto tekee kaikki leikkeet uudelleen | `SPEECH_VOICE` |
 
 Esimerkki (ohj1):
@@ -198,10 +199,28 @@ git submodule update --init                     # (kirjan run.sh tekee tämän i
 ympäristömuuttujissa `AZURE_SPEECH_KEY` ja `AZURE_SPEECH_REGION`. Leikkeet,
 myös vaiheittaisten ohjeiden, ovat erillisessä repossa (`[puhe] repo`),
 koska kirjan historia kasvaisi jokaisesta korjauksesta; julkaisu (pages.yml)
-hakee sen kansioon `zensical/puhe/`. Korjauksen jälkeen `puhe` tekee vain muuttuneiden
+hakee sen omalla checkout-askeleellaan kansioon `zensical/puhe/`. Korjauksen jälkeen `puhe` tekee vain muuttuneiden
 kappaleiden leikkeet, ja käännös varoittaa, jos jokin puuttuu. Sanan, jonka
 ääni sanoo väärin (C# "see risuaita"), korjaus tulee `convert.py`:n
 `SPEECH_SAYINGS`iin; se tekee uudelleen vain ne leikkeet, joissa sana on.
+
+**Äänivarasto ei ole submodule**, vaikka `zensical/tyokalut` on: kirja ei
+viittaa siihen mitenkään, vaan julkaisu hakee aina varaston uusimman version.
+`puhe.py` kloonaa, committaa ja pushaa varaston itse, joten kirjaan ei
+committata mitään leikkeiden takia. Älä siis aja `git add zensical/puhe`
+äläkä lisää sitä `.gitmodules`iin. Jos `git status` näyttää kansion, kirjan
+`.gitignore`sta puuttuu rivi `zensical/puhe/` (ks. Käyttöönotto). Jos kansio
+on jo vahingossa kirjan repossa, checkout kaatuu virheeseen `No url found
+for submodule path 'zensical/puhe' in .gitmodules`. Korjaus poistaa
+viittauksen mutta ei tiedostoja:
+
+```bash
+git rm --cached zensical/puhe    # pelkkä viittaus pois; leikkeet jäävät levylle
+```
+
+**Älä poista kansiota `zensical/puhe/`** ennen kuin olet varmistanut, että
+leikkeet on pushattu (`git -C zensical/puhe status -sb`): pushaamaton leike
+on maksettu Azurelle, eikä sitä ole muualla.
 
 Ensimmäinen ajo asentaa `.venv`:n kirjan hakemistoon (`setup.sh`), ja `run.sh`
 päivittää sen, kun `requirements.txt`:n Zensical-versio vaihtuu. Windowsissa
@@ -253,7 +272,9 @@ git submodule add https://github.com/ohj-perus-jy/kirjatyokalut.git zensical/tyo
 Lisäksi `zensical/kirja.toml`, `zensical/mkdocs.yml` (yllä), kirjan juuren
 `CLAUDE.md`:hen rivi `@zensical/tyokalut/CLAUDE.md`, `.gitignore`iin
 `zensical/.venv*/`, `zensical/docs/`, `zensical/site/`, `zensical/nav.yml`,
-`zensical/.cache/`, `zensical/.convert.lock`, ja kääre `zensical/run.sh`:
+`zensical/.cache/`, `zensical/.convert.lock`, ääneenlukua varten
+`zensical/puhe/` (äänivaraston klooni, ks. Käyttö kirjassa), ja kääre
+`zensical/run.sh`:
 
 ```bash
 #!/usr/bin/env bash
@@ -269,12 +290,18 @@ exec tyokalut/run.sh "$@"
 ```
 
 Julkaisu (`.github/workflows/pages.yml`): checkoutiin `submodules: true`,
+ääneenlukua varten äänivaraston oma checkout (`[puhe] repo`; ei submodule),
 ja käännös kirjan hakemistossa:
 
 ```yaml
       - uses: actions/checkout@v7
         with:
           submodules: true
+      - uses: actions/checkout@v7
+        with:
+          repository: ohj-perus-jy/ohj1-puhe
+          path: zensical/puhe
+          fetch-depth: 1
       # ...
       - run: pip install -r zensical/tyokalut/requirements.txt
       - working-directory: zensical

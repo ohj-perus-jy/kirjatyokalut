@@ -23,3 +23,15 @@ Kirjan oma `CLAUDE.md` tuo nämä ohjeet rivillä `@zensical/tyokalut/CLAUDE.md`
   oikein.
 - Luettavan tekstin voi tarkistaa komennolla `./zensical/run.sh puhe --teksti`,
   joka ei tee ääniä eikä maksa.
+
+## Äänivarasto `zensical/puhe/`
+
+- Kansio on ääneenluvun leikkeiden repon (`kirja.toml`: `[puhe] repo`)
+  klooni, **ei submodule**. Se kuuluu kirjan `.gitignore`en, ja `pages.yml`
+  hakee sen omalla checkout-askeleellaan (ks. README, Käyttöönotto).
+- Älä poista kansiota äläkä sen tiedostoja: leikkeet on maksettu Azurelle.
+  Jos kansio on vahingossa kirjan repossa gitlinkinä, korjaus on
+  `git rm --cached zensical/puhe` (poistaa vain viittauksen) ja rivi
+  `zensical/puhe/` `.gitignore`en.
+- Leikkeiden tila tarkistetaan varaston omasta reposta:
+  `git -C zensical/puhe status -sb`.
