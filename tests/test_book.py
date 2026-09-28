@@ -26,8 +26,9 @@ SUMMARY_LINK = re.compile(r"^\s*(?:[-*]\s*)?\[[^\]]*\]\((?P<href>[^)]*)\)")
 SOURCE_LINK = re.compile(r'href="[^"]*/(?P<kind>edit|commits)/main/src/(?P<path>[^"]*)"')
 
 
-def chapter_titles() -> list[str]:
-    """SUMMARY.md:n luvut kirjan järjestyksessä, otsikkona sivun oma H1."""
+def chapters() -> list[str]:
+    """SUMMARY.md:n lukujen lähdetiedostot kirjan järjestyksessä: samat luvut
+    kuin tulostussivulla."""
     order: list[str] = []
     for line in (SRC / "SUMMARY.md").read_text(encoding="utf-8").splitlines():
         match = SUMMARY_LINK.match(line)
@@ -36,10 +37,15 @@ def chapter_titles() -> list[str]:
         href = match["href"].strip().lstrip("./")
         if href.endswith(".md"):
             order.append(href)
+    return order
+
+
+def chapter_titles() -> list[str]:
+    """SUMMARY.md:n luvut kirjan järjestyksessä, otsikkona sivun oma H1."""
     return [next(line[2:].strip()
                  for line in (SRC / href).read_text(encoding="utf-8").splitlines()
                  if line.startswith("# "))
-            for href in order]
+            for href in chapters()]
 
 
 def source_uses(pattern: str) -> bool:
@@ -193,9 +199,12 @@ def test_every_marked_line_is_a_real_line(printed):
 
 def test_requirement_numbers_come_from_the_counter(printed):
     """Vaatimuskohtien numerot (1.1, 1.2, ...) tulevat CSS-laskurista: jos
-    requirements.css jää pois, kohdat numeroituisivat hiljaisesti uudelleen."""
+    requirements.css jää pois, kohdat numeroituisivat hiljaisesti uudelleen.
+    Lohkoja on tulosteessa yhtä monta kuin kirjan luvuissa."""
     if not source_uses(r"ht-reqs"):
         pytest.skip("kirjassa ei ole vaatimuslohkoja")
+    blocks = sum((SRC / href).read_text(encoding="utf-8").count('<div class="req">')
+                 for href in chapters())
     counters = printed.evaluate("""() => {
       const reqs = [...document.querySelectorAll('.ht-reqs .req')];
       return {
@@ -209,7 +218,8 @@ def test_requirement_numbers_come_from_the_counter(printed):
         }))],
       };
     }""")
-    assert counters["blocks"] == 8
+    assert blocks > 0
+    assert counters["blocks"] == blocks
     assert counters["reset"] == ["req 0"]
     assert counters["increment"] == ["req 1"]
     assert counters["marker"] == ['counter(req) "." counter(list-item) " "']
