@@ -135,6 +135,34 @@ def test_publish_pushes_new_clips_and_survives_a_concurrent_push(store, tmp_path
     assert not [line for line in logged if line.startswith("varoitus")]
 
 
+def test_clips_made_before_the_repo_are_joined_by_the_advised_commands(store, tmp_path, monkeypatch):
+    """Leikkeet tehtiin ennen kuin [puhe] repo lisättiin: ajo pysähtyy, ja
+    virheilmoituksen komennot liittävät kansion varastoon leikkeet säilyttäen."""
+    remote = tmp_path / "varasto.git"
+    git("init", "--bare", "--initial-branch=main", str(remote), cwd=tmp_path)
+    seed = tmp_path / "alku"
+    git("clone", str(remote), str(seed), cwd=tmp_path)
+    (seed / "README.md").write_text("varasto\n")
+    git("add", "README.md", cwd=seed)
+    git("commit", "-m", "alku", cwd=seed)
+    git("push", "origin", "HEAD", cwd=seed)
+    store.mkdir()
+    (store / "aaaa.mp3").write_bytes(b"1")
+    monkeypatch.setattr(convert, "SPEECH_REPO", str(remote))
+    with pytest.raises(SystemExit) as stopped:
+        puhe.ensure_store(log=lambda _: None)
+    commands = [line.strip() for line in str(stopped.value).splitlines()
+                if line.startswith("  ")]
+    for command in commands:
+        subprocess.run(command, shell=True, check=True, cwd=tmp_path, capture_output=True)
+    assert puhe.ensure_store(log=lambda _: None)
+    assert (store / "aaaa.mp3").read_bytes() == b"1"
+    assert (store / "README.md").exists()
+    assert puhe.publish(log=lambda _: None)
+    assert git("ls-tree", "--name-only", "main", cwd=remote).split() == [
+        "README.md", "aaaa.mp3"]
+
+
 def test_show_texts_lists_the_units_and_estimates_the_cost(store, monkeypatch):
     """--teksti: jokainen yksikkö ja ohjeen vaihe lajeineen, puuttuvat
     tähdellä, ja yhteenveto uniikeista merkeistä. Leike, joka on jo

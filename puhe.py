@@ -161,7 +161,18 @@ def ensure_store(git: Callable[..., subprocess.CompletedProcess] = run_git,
             f"paikallisesti kansioon {folder}")
         return False
     if folder.exists() and any(folder.iterdir()):
-        raise SystemExit(f"{folder} on olemassa mutta ei ole git-repo; siirrä se pois")
+        # Tavallisesti leikkeet tehtiin ennen kuin repo lisättiin kirja.toml:iin.
+        # Niitä ei poisteta: ne maksoivat, ja kloonin .git siirretään niiden päälle.
+        temporary = f"{folder}.klooni"
+        raise SystemExit(
+            f"Kansiossa {folder} on jo tiedostoja, mutta se ei ole äänivaraston\n"
+            f"({convert.SPEECH_REPO}) klooni, joten varastoa ei voi kloonata sinne.\n"
+            f"Leikkeet on ehkä tehty ennen kuin [puhe] repo lisättiin kirja.toml:iin.\n"
+            f"Liitä kansio varastoon leikkeitä menettämättä:\n\n"
+            f"  git clone --no-checkout {convert.SPEECH_REPO} {temporary}\n"
+            f"  mv {temporary}/.git {folder}/ && rmdir {temporary}\n"
+            f"  git -C {folder} reset --quiet && git -C {folder} checkout -- .\n\n"
+            f"Aja sitten puhe uudelleen: se tekee vain puuttuvat leikkeet ja pushaa uudet.")
     log(f"kloonataan {convert.SPEECH_REPO} -> {folder}")
     cloned = git("clone", "--depth", "1", convert.SPEECH_REPO, str(folder))
     if cloned.returncode:
