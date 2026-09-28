@@ -15,8 +15,8 @@ ei tarvita: se on poistettu kaikista kirjoista (viimeisenä ohj2:sta 2026-09-20)
 - Miksi mikin ratkaisu on tehty: [PERUSTELUT.md](PERUSTELUT.md).
 - Mitä työkalut tarjoavat: [Ominaisuudet](#ominaisuudet) alla.
 - Mistä ominaisuudet tulivat (koeputken vanha README): [TAUSTA.md](TAUSTA.md).
-- Miten työkalut yhtenäistettiin (valmis 2026-09-18) ja avoimet kysymykset:
-  [YHTENAISTYS.md](YHTENAISTYS.md).
+- Mikä mdBookin merkintä on vielä käytössä, mikä on sen Zensical-vastine ja
+  mitkä omat merkinnät jäävät; avoimet kysymykset: [YHTENAISTYS.md](YHTENAISTYS.md).
 
 ## Ominaisuudet
 
@@ -50,7 +50,7 @@ Kielet: `csharp`, `java`, `javascript` (korostetut rivit: `csharp`, `java`).
 | Merkintä | Tulos | Toteutus |
 | --- | --- | --- |
 | mikä tahansa koodilohko | kopiointinappi: näkyvä koodi leikepöydälle (piilorivit vain silmällä esiin otettuina), kuittaus napin vieressä; ` ```console `-lohkosta vain komennot ilman kehotetta (`$ `, `root@kontti:/app# `, pelkkä `# `) ja tulostetta, heredoc sellaisenaan | mkdocs-pohja.yml (`content.code.copy`), copy.js/css |
-| ` ```csharp ` | ajonappi: koodi ajetaan palvelimella, tuloste lohkon alle; Jypelin ikkuna kuvana | playground.js/css |
+| ` ```csharp ` | ajonappi: koodi ajetaan palvelimella, tuloste lohkon alle; Jypelin ikkuna kuvana. Ohjelma ei saa syötettä, joten syötettä lukeva lohko merkitään `,noplayground` | playground.js/css |
 | `,ignore`, `,noplayground` | ei ajonappia, väritys säilyy | `convert_fences` |
 | `,feature-jypeli` | ajo Jypeli-kirjaston kanssa (`csharp-jypeli`) | playground.js |
 | `,editable` | lukija voi muuttaa koodia sivulla ja ajaa sen; "Peruuta muutokset" | playground.js |
@@ -80,7 +80,7 @@ Kielet: `csharp`, `java`, `javascript` (korostetut rivit: `csharp`, `java`).
 | `./zensical/run.sh`: vahti, joka muuntaa tallennetun sivun ja päivittää selaimen | `convert.py --watch` |
 | `--strict`: julkaisu kaatuu puuttuvaan kaavioon tai äänivarastoon | `convert.py`, kirjan pages.yml |
 | Varoitukset: puuttuva `{{#include}}`-kohde, virheellinen visa, tuntematon korostusväri, väärin piirtyvä bob-kaavio, vanhentunut tai puuttuva ääni | `convert.py` |
-| Sivu toisen alasivuksi, tiedostoja pois sivuista, osioita pois | `kirja.toml` |
+| Tiedostoja pois sivuista, ääneenluku, linkkitarkistuksen TIM-kansiot | `kirja.toml` |
 | Ulkoisten linkkien ja ankkurien tarkistus, myös kurssin TIM-sivuilta | `linkit/` |
 | Testit koekirjalla ja kirjan omalla materiaalilla | `tests/`, `./zensical/run.sh test` |
 
@@ -313,6 +313,12 @@ ovat joka tapauksessa julkisella sivustolla.
           zensical build
 ```
 
+GitHubissa: *Settings* › *Pages* › *Source* on GitHub Actions (oma domain
+samassa näkymässä). Jos `dev` julkaistaan `/dev/`:iin, lisää `dev` kohtaan
+*Settings* › *Environments* › *github-pages* › *Deployment branches*:
+oletuksena vain oletushaara saa julkaista, ja `dev`-työnnön `deploy` kaatuu.
+Nämä asetukset eivät näy reposta.
+
 `convert.py` tarvitsee vain standardikirjaston (Python 3.11+, `tomllib`), ja
 kaaviot tulevat kirjan `cache/`:sta, joten julkaisu ei tarvitse svgbobia eikä
 PlantUML-palvelinta. Paikallisesti `convert.py` asentaa puuttuvan
@@ -353,7 +359,9 @@ ohitukset (regex, yksi per rivi) kirjan juuren `.lycheeignore`ssa. Ajo kaatuu
 vain 404:stä, 410:stä, aikakatkaisusta ja yhteysvirheestä; 403, 429 ja 5xx
 eivät kerro linkin kuolleen. Paikallisia linkkejä ei tarkisteta, koska
 `{{#include}}`-liitosten polut ovat suhteessa liittävään sivuun, mitä lychee ei
-tiedä.
+tiedä. Absoluuttiset linkit kirjojen omiin sivustoihin tarkistetaan tuotantoa
+vasten: sivu, joka julkaistaan samassa työnnössä, näkyy 404:nä, kunnes julkaisu
+on valmis. Aja tarkistus silloin uudelleen.
 
 ## Testit
 

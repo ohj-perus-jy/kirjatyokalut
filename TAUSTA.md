@@ -8,8 +8,8 @@ ovat siirtoa edeltävältä ajalta: **ajan tasalla oleva ohje on
 [README.md](README.md)**, perustelut [PERUSTELUT.md](PERUSTELUT.md). Tämän
 tekstin viittaukset PERUSTELUT.md:n kohtiin osoittavat sen pitkään versioon
 (`git show d5c7f42:PERUSTELUT.md`).
-KAYTTOONOTTO.md ja PURKUSUUNNITELMA.md, joihin teksti viittaa, ovat kirjojen
-omissa repoissa.
+KAYTTOONOTTO.md, johon teksti viittaa, on ohj2:n `zensical/`-hakemistossa.
+PURKUSUUNNITELMA.md on nyt osa [YHTENAISTYS.md](YHTENAISTYS.md):tä.
 
 ## Käynnistys
 
