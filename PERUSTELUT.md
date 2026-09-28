@@ -65,3 +65,40 @@ ajaa muunnoksen aina, kun lähde muuttuu.
 9p-liitoksen takaa (Windowsin levy WSL:ssä tai devcontainerissa). Jos
 tallennus ei näy selaimessa, tarkista, että repo on Linuxin
 tiedostojärjestelmässä.
+
+## Ääneenluku
+
+Koko sivun ääneenluku jakautuu neljään tiedostoon: `convert.py` paloittelee ja
+merkitsee, `puhe.py` tekee leikkeet, `puhe.js` soittaa, ja kirjan
+`pages.yml` hakee leikkeet julkaisuun.
+
+- **Merkit ovat Markdownissa.** `convert.py` paloittelee sivun lopullisen
+  Markdownin ja kirjoittaa jokaiseen lohkoon näkymättömän merkin. Paloittelu
+  jäljittelee Python-Markdownin lohkojäsennystä vain sen verran, että merkki
+  osuu oikeaan lohkoon. `tests/test_puhe.py` renderöi siksi jokaisen sivun
+  oikealla jäsentimellä merkeillä ja ilman niitä ja vaatii tuloksilta samaa
+  HTML:ää ja sisällysluetteloa. Hylätyt vaihtoehdot:
+  - Paloittelu selaimessa: sama tekstin muokkaus olisi pitänyt kirjoittaa
+    kahdesti.
+  - Rakennuksen jälkeinen HTML-ajo: se ei toimisi `zensical serve`n kanssa.
+  - Python-Markdown-laajennus: `convert.py` ajetaan ilman `.venv`:iä.
+- **Leike on kappale, ja sen nimi on tiiviste lähetettävästä pyynnöstä**
+  (`speech_clip`). Korjaus syntetisoi uudelleen vain muuttuneen kappaleen, ja
+  sama teksti eri sivuilla on yksi tiedosto. Äänen tai muodon vaihto vaihtaa
+  nimet itsestään, joten luetteloa ei tarvita: leike on olemassa tai ei.
+- **Leikkeet ovat erillisessä repossa (`[puhe] repo`).** Koko kirja on
+  arviolta 100 Mt, ja jokainen korjaus jättäisi kirjan historiaan vanhan
+  version. Saman repon orpo haara tulisi silti jokaiseen `git clone`en.
+  Myös vaiheittaisen ohjeen vaiheet ovat samanlaisia leikkeitä samassa
+  varastossa. Ne olivat aluksi lähdepuussa sivun vieressä, ja ohj1:n
+  historiaan oli kertynyt niitä kahdessa commitissa jo 6 Mt.
+- **Välilehti valitaan toistohetkellä.** Kaikkien välilehtien kappaleet
+  syntetisoidaan, ja soitin lukee sen, jonka lukija on valinnut. Ilmoitukset
+  ("N välilehteä otsikoilla …", "Luetaan välilehti X") pitävät otsikon
+  perusmuodossa, jottei mielivaltaisia otsikoita tarvitse taivuttaa.
+- **Koodia, taulukoita ja kaavioita ei lueta, vaan niistä ilmoitetaan.**
+  Suomenkielinen ääni lukee C#:ta huonosti, eikä taulukko aukea kuulijalle
+  riveittäin.
+- **Merkki tulee vain lohkoon, jonka leike on varastossa.** Sivu toimii
+  ilman ääniä, ja käännös varoittaa puuttuvista. `--strict` kaatuu vain, jos
+  koko varasto puuttuu.

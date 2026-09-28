@@ -98,9 +98,37 @@ def real_site(request) -> Path:
     return build(BOOK, TOOL) if is_stale(site) else site
 
 
-# Työkalujen palat, jotka käännös tarvitsee.
-TOOL_FILES = ("convert.py", "mkdocs-pohja.yml")
+# Työkalujen palat, jotka käännös tarvitsee (puhe.py äänivaraston täyttöön).
+TOOL_FILES = ("convert.py", "puhe.py", "mkdocs-pohja.yml")
 TOOL_DIRS = ("assets", "overrides", "icons")
+
+# Koekirjan ääneenluvun leike, joka jätetään varastosta pois (tests/test_puhe.py).
+MISSING_SPEECH = "Tämän kappaleen ääni puuttuu."
+
+# Koekirjan vaiheittaisen ohjeen vaihe (osa1/vaiheet.md: komento), jonka leike
+# jätetään varastosta pois (tests/test_walkthrough.py).
+MISSING_STEP = "Anna komento."
+
+# Hiljainen MP3: MPEG-1 Layer III -kehyksiä (128 kbit/s, 44,1 kHz, mono)
+# nollasisällöllä, noin kolme sekuntia (test_walkthrough.py soittaa sitä
+# oikeasti). Kelpaa selaimelle oikeana äänenä.
+SILENT_MP3 = (b"\xff\xfb\x90\xc0" + bytes(413)) * 115
+
+# Koekirjan äänivaraston täyttö kirjan omassa prosessissa, jotta convert.py:n
+# polut (BOOK, SRC, SPEECH_STORE) ovat koekirjan: sivujen ja vaiheittaisten
+# ohjeiden kaikki leikkeet valeäänellä (stdin) paitsi argumenttien tekstit.
+FILL_STORE = """
+import sys
+sys.path.insert(0, "tyokalut")
+import convert, puhe
+missing = {convert.speech_clip(text) for text in sys.argv[1:]}
+sound = sys.stdin.buffer.read()
+pages, walkthroughs = puhe.all_pages()
+texts = [text for page in pages for text in convert.speech_texts(puhe.page_text(page))]
+texts += [text for page in walkthroughs for text in puhe.step_texts(page).values()]
+puhe.refresh_clips([text for text in texts if convert.speech_clip(text) not in missing],
+                   synthesize=lambda _: sound, log=lambda _: None)
+"""
 
 
 def copy_book(target: Path) -> Path:
@@ -108,7 +136,8 @@ def copy_book(target: Path) -> Path:
 
     Sama rakenne kuin kirjan repossa: src/ ja zensical/ sisaruksina, työkalut
     submodulen paikalla zensical/tyokalut/:ssa. Työkalut kopioidaan, koska
-    testit muuttavat niitäkin (test_change.py).
+    testit muuttavat niitäkin (test_change.py). Äänivarasto zensical/puhe/
+    täytetään valeäänillä (FILL_STORE).
     """
     shutil.copytree(TOOL / "tests" / "book" / "src", target / "src")
     zensical = target / "zensical"
@@ -119,6 +148,8 @@ def copy_book(target: Path) -> Path:
         shutil.copy(TOOL / name, tool / name)
     for name in TOOL_DIRS:
         shutil.copytree(TOOL / name, tool / name)
+    subprocess.run([sys.executable, "-c", FILL_STORE, MISSING_SPEECH, MISSING_STEP],
+                   input=SILENT_MP3, cwd=zensical, check=True, capture_output=True)
     return zensical
 
 

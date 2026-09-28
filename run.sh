@@ -5,8 +5,9 @@
 #   ./run.sh 8003         -> sama, eri portissa
 #   ./run.sh build        -> pelkkä rakennus site/-hakemistoon
 #   ./run.sh test         -> testit
-#   ./run.sh puhe SIVU    -> vaiheittaisen ohjeen äänet, esim.
-#                            ./run.sh puhe ../src/sivu.md (puhe.py)
+#   ./run.sh puhe         -> ääneenluvun leikkeet ja vaiheittaisen ohjeen äänet
+#                            (puhe.py); ./run.sh puhe ../src/sivu.md vain sivulle,
+#                            ./run.sh puhe --teksti näyttää luettavan
 # Kirjan hakemisto (kirja.toml, mkdocs.yml, .venv, docs/) on tämän hakemiston
 # ylähakemisto. Ilman kirjaa (työkalurepo yksinään) toimii vain test.
 set -euo pipefail
@@ -16,9 +17,11 @@ BOOK=$(dirname "$TOOL")
 cd "$BOOK"
 source "$TOOL/vaihe.sh"
 
-# Asenna, jos .venv puuttuu tai sen Zensical ei ole requirements.txt:n versio.
+# Asenna, jos .venv puuttuu, sen Zensical ei ole requirements.txt:n versio tai
+# se on siirretty: skriptien #!-rivi osoittaa silloin vanhaan polkuun.
 pin=$(sed -n 's/^zensical==//p' "$TOOL/requirements.txt")
 if [[ ! -x .venv/bin/zensical ]] ||
+   [[ ! -x $(sed -n '1s/^#!//p' .venv/bin/zensical) ]] ||
    ! compgen -G ".venv/lib/python*/site-packages/zensical-$pin.dist-info" >/dev/null; then
     "$TOOL/setup.sh"
 fi

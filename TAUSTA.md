@@ -279,10 +279,12 @@ ohj2:een (KAYTTOONOTTO.md: "korjaukset viedään käsin molempiin").
   `assets/js/walkthrough.js` ja `assets/css/walkthrough.css`; `NEST_UNDER`:
   `git-ht-ohje.md` → `git.md`. Koesivu `tests/book/src/osa1/vaiheet.md`
   SUMMARY.md:n ulkopuolella, testit `tests/test_walkthrough.py`. Ääneen
-  lukeminen: `<walkthrough audio="kansio">`, äänet tekee `puhe.py` (Azure
-  Speech, `./run.sh puhe ../src/sivu.md`), ja `walkthrough_audio` jättää
-  vanhasta tekstistä tehdyn äänen pois ja varoittaa; testit
-  `tests/test_puhe.py`. Yksittäinen animaatio tavalliselle sivulle:
+  lukeminen: `<walkthrough scenes audio>`; vaiheen ääni on leike
+  äänivarastossa kuten koko sivun ääneenluvussa (`walkthrough_audio`,
+  `speech_clip`), ja sen tekee `puhe.py` (Azure Speech, `./run.sh puhe
+  ../src/sivu.md`). Muuttuneen vaiheen leike puuttuu, ja käännös varoittaa;
+  testit `tests/test_puhe.py`. Äänet olivat aluksi sivun vieressä
+  lähdepuussa (`audio="kansio"` ja luettelo `puhe.json`), ks. PERUSTELUT.md. Yksittäinen animaatio tavalliselle sivulle:
   `<animation scenes scene>` (`convert_animations` convert_tabsin jälkeen,
   tagin sisältö varalla ilman skriptiä ja tulosteessa), git.md ja tyokalut.md
   käyttävät git-ht-ohjeen `avaa-windows`-kohtausta; koesivun lopussa

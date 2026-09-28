@@ -1,6 +1,6 @@
 {#-
   Kopio teeman partials/header.html:stä (zensical 0.0.59), johon on lisätty
-  kotilinkki kurssin nimeen, sivustovalikko, tulostuspainike ja leipätekstin
+  kotilinkki kurssin nimeen, sivustovalikko, ääneenluvun kaiutin, tulostuspainike ja leipätekstin
   kirjasinvalikko (merkityt kohdat alempana). Yläpalkkiin ei ole laajennuspistettä, joten
   lisäykset vaativat kopion; jos Zensical muuttaa yläpalkkiaan, tämä on
   päivitettävä käsin.
@@ -72,6 +72,13 @@
     {% if not config.theme.palette is mapping %}
       {% include "partials/javascripts/palette.html" %}
     {% endif %}
+    {#- Koko sivun ääneenluku (assets/js/puhe.js): piilossa, kunnes skripti
+        löytää sivulta luettavia lohkoja (convert.py: mark_speech). Toisin kuin
+        tulostuspainike, näkyy myös puhelimessa. -#}
+    <button type="button" class="md-header__button md-icon jyu-puhe-button" hidden
+            title="Kuuntele sivu" aria-label="Kuuntele sivu" aria-pressed="false">
+      {% include ".icons/lucide/volume-2.svg" %}
+    </button>
     {#- Tulostuspainike: koko kirja yhdelle sivulle (convert.py,
         assets/js/print.js). Teemanvaihtimen vieressä kuten mdBookissa;
         puhelimessa piilossa (assets/css/print.css). -#}

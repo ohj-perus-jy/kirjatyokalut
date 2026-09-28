@@ -11,3 +11,15 @@ Kirjan oma `CLAUDE.md` tuo nämä ohjeet rivillä `@zensical/tyokalut/CLAUDE.md`
 - Rajakohtailmaukset, kuten lukuvälit kirjoitetaan pitkällä viivalla, ei yhdysviivalla. Esim. "1–3" eikä "1-3".
 - Valikkopolut kirjoitetaan kursiivilla. Kohtien väliin tulee välilyönti ja
   chevron, esimerkiksi *File* › *New* › *Project*.
+
+## Ääneenluku
+
+- Sivut, jotka luetaan ääneen, ovat kirjan `zensical/kirja.toml`:ssa
+  (`[puhe] sivut`). Niillä kuvaan kirjoitetaan kuvaava vaihtoehtoinen teksti
+  (`![Rider, jossa Run-nappi korostettuna](...)`), koska se luetaan
+  ("Kuva: …").
+- Koodilohkon ympärille tulee tyhjä rivi. Muuten Python-Markdown liimaa
+  aidan jälkeisen tekstin edelliseen kappaleeseen, eikä korostus osu siihen
+  oikein.
+- Luettavan tekstin voi tarkistaa komennolla `./zensical/run.sh puhe --teksti`,
+  joka ei tee ääniä eikä maksa.
