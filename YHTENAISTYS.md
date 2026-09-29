@@ -49,7 +49,8 @@ uusiksi. Kun rivillä ei ole lukuja, sen muunnoksen voi poistaa. Poistettu
   Lukujen numerot kirjoitetaan otsikoihin tai jäävät koodiksi.
 - **`{{#include}}`:** `pymdownx.snippets` ei ole oletuslistalla, ja oma
   `markdown_extensions` korvaa koko listan (PERUSTELUT.md, Ansat). Polut
-  ratkeavat `base_path`ista eivätkä sivusta. Kokeilematta.
+  ratkeavat `base_path`ista eivätkä sivusta. Rivivalinnat (ohj2
+  `suorittaminen.md`, 6 kpl) → `--8<-- "takarajat.md:1:1"`. Kokeilematta.
 
 ## Omat merkinnät, jotka jäävät
 
