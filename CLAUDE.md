@@ -28,7 +28,7 @@ Kirjan oma `CLAUDE.md` tuo nämä ohjeet rivillä `@zensical/tyokalut/CLAUDE.md`
 
 - Kansio on ääneenluvun leikkeiden repon (`kirja.toml`: `[puhe] repo`)
   klooni, **ei submodule**. Se kuuluu kirjan `.gitignore`en, ja `pages.yml`
-  hakee sen omalla checkout-askeleellaan (ks. README, Käyttöönotto).
+  hakee sen omalla checkout-askeleellaan (ks. README, Ääneenluku).
 - Älä poista kansiota äläkä sen tiedostoja: leikkeet on maksettu Azurelle.
   Jos kansio on vahingossa kirjan repossa gitlinkinä, korjaus on
   `git rm --cached zensical/puhe` (poistaa vain viittauksen) ja rivi

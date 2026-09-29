@@ -3,14 +3,12 @@
 Ohjelmointikurssien kirjojen ([ohj1](https://github.com/ohj-perus-jy/ohj1),
 [ohj2](https://github.com/ohj-perus-jy/ohj2),
 [jypelidocs](https://github.com/ohj-perus-jy/jypelidocs)) yhteinen
-työkaluketju: mdBook-murteella kirjoitettu `src/` muunnetaan
+työkaluketju, joka muuntaa markdownilla kirjoitetun lähdeaineiston
 [Zensical](https://zensical.org)-sivustoksi. Kirja käyttää tätä repoa
-git-submodulena, joten jokainen kirja ja haara kiinnittää oman versionsa, ja
-korjaus tehdään yhteen paikkaan.
+git-submodulena, jotta kaikista kirjoista saadaan yhtenäisen näköiset ja ominaisuuksiltaan samanlaiset.
 
-Merkkaus on mdBookin (`SUMMARY.md`, `{{#include}}`, `> [!VINKKI]`, `//-`-piilorivit
-ym.), koska kirjat kirjoitettiin alun perin mdBookille, mutta mdBookia itseään
-ei tarvita: se on poistettu kaikista kirjoista (viimeisenä ohj2:sta 2026-09-20).
+Merkkauksessa on vielä mukana mdBook-murretta (`SUMMARY.md`, `{{#include}}`, `> [!VINKKI]`, `//-`-piilorivit
+ym.), koska kirjat kirjoitettiin alun perin mdBookille.
 
 - Miksi mikin ratkaisu on tehty: [PERUSTELUT.md](PERUSTELUT.md).
 - Mitä työkalut tarjoavat: [Ominaisuudet](#ominaisuudet) alla.
@@ -154,9 +152,7 @@ uudelleen.
 
 ## Kirjan mkdocs.yml
 
-Kirjan tiedostossa on vain kirjan omat rivit. Yhteiset asetukset
-(`mkdocs-pohja.yml`) ja navigaatio tulevat `nav.yml`:stä, jonka `convert.py`
-kirjoittaa joka ajolla; kirjan oma arvo voittaa pohjan.
+Tähän kirjoitetaan kirjan omat tiedot. 
 
 ```yaml
 INHERIT: nav.yml
@@ -177,9 +173,6 @@ extra:
       url: https://jypeli.it.jyu.fi/
 ```
 
-Uusi tyyli tai skripti lisätään `assets/`:iin ja `mkdocs-pohja.yml`:n listaan,
-ei kirjan tiedostoon.
-
 ## Käyttö kirjassa
 
 ```bash
@@ -195,37 +188,11 @@ git submodule update --init                     # (kirjan run.sh tekee tämän i
 ./zensical/run.sh puhe --teksti         # luettavat tekstit ja hinta-arvio, ei ääniä
 ```
 
-Ääneenluku tarvitsee Azure Speech -resurssin avaimen ja alueen
-ympäristömuuttujissa `AZURE_SPEECH_KEY` ja `AZURE_SPEECH_REGION`. Leikkeet,
-myös vaiheittaisten ohjeiden, ovat erillisessä repossa (`[puhe] repo`),
-koska kirjan historia kasvaisi jokaisesta korjauksesta; julkaisu (pages.yml)
-hakee sen omalla checkout-askeleellaan kansioon `zensical/puhe/`. Korjauksen jälkeen `puhe` tekee vain muuttuneiden
-kappaleiden leikkeet, ja käännös varoittaa, jos jokin puuttuu. Sanan, jonka
-ääni sanoo väärin (C# "see risuaita"), korjaus tulee `convert.py`:n
-`SPEECH_SAYINGS`iin; se tekee uudelleen vain ne leikkeet, joissa sana on.
-
-**Äänivarasto ei ole submodule**, vaikka `zensical/tyokalut` on: kirja ei
-viittaa siihen mitenkään, vaan julkaisu hakee aina varaston uusimman version.
-`puhe.py` kloonaa, committaa ja pushaa varaston itse, joten kirjaan ei
-committata mitään leikkeiden takia. Älä siis aja `git add zensical/puhe`
-äläkä lisää sitä `.gitmodules`iin. Jos `git status` näyttää kansion, kirjan
-`.gitignore`sta puuttuu rivi `zensical/puhe/` (ks. Käyttöönotto). Jos kansio
-on jo vahingossa kirjan repossa, checkout kaatuu virheeseen `No url found
-for submodule path 'zensical/puhe' in .gitmodules`. Korjaus poistaa
-viittauksen mutta ei tiedostoja:
-
-```bash
-git rm --cached zensical/puhe    # pelkkä viittaus pois; leikkeet jäävät levylle
-```
-
-**Älä poista kansiota `zensical/puhe/`** ennen kuin olet varmistanut, että
-leikkeet on pushattu (`git -C zensical/puhe status -sb`): pushaamaton leike
-on maksettu Azurelle, eikä sitä ole muualla.
-
 Ensimmäinen ajo asentaa `.venv`:n kirjan hakemistoon (`setup.sh`), ja `run.sh`
 päivittää sen, kun `requirements.txt`:n Zensical-versio vaihtuu. Windowsissa
-kloonaa kirja WSL:n levylle, ei Windowsin kansioon: Windowsin kansiosta
-(9p-liitos) asennus kestää lähes 8 minuuttia, WSL:n levyllä noin 12 sekuntia.
+kloonaa kirja WSL:n levylle, ei Windowsin kansioon. Windowsin kansiosta
+(9p-liitos) asennus on hidasta, eikä Zensicalin `--watch` toimi kunnolla. Jos ehdottomasti kuitenkin haluat käyttää Windowsin kansiota, joudut ajamaan `./zensical/run.sh` joka kerta uudelleen muokkauksen jälkeen. 
+
 **Muokattava puu on `src/`, ei `docs/`**: `docs/` on kertakäyttöinen kopio.
 
 `git pull` ei päivitä submodulea itsestään. Kertaalleen kloonissa:
@@ -233,6 +200,69 @@ kloonaa kirja WSL:n levylle, ei Windowsin kansioon: Windowsin kansiosta
 ```bash
 git config submodule.recurse true
 ```
+
+## Ääneenluku
+
+Ääneenluku on oletuksena pois päältä: ilman `kirja.toml`:n `[puhe]`-taulukkoa
+mitään sivua ei lueta, kaiutinta ei näy, eikä Azurea tai äänivarastoa
+tarvita.  Käyttöönotto:
+
+1. Luo Azure-portaalissa Speech-resurssi ja vie sen avain ja alue (sivulta
+   *Keys and Endpoint*) ympäristömuuttujiin. Niitä tarvitsee vain se, joka
+   tekee leikkeitä; käännös ja julkaisu eivät.
+
+   ```bash
+   export AZURE_SPEECH_KEY=...
+   export AZURE_SPEECH_REGION=...     # resurssin alue, esim. westeurope
+   ```
+
+2. Luo äänivarastolle GitHubiin tyhjä **julkinen** repo, esim.
+   `ohj-perus-jy/<kirja>-puhe`. Yksityistä repoa julkaisu ei näe.
+3. Lisää `zensical/kirja.toml`:iin luettavat sivut ja varaston osoite (ks.
+   Kirjan asetukset: kirja.toml). Kaikki sivut luetaan kuviolla
+   `sivut = ["*"]`.
+
+   ```toml
+   [puhe]
+   sivut = ["tyokalut.md", "osa1/*.md"]
+   repo = "https://github.com/ohj-perus-jy/<kirja>-puhe.git"
+   ```
+
+4. Lisää kirjan `.gitignore`en rivi `zensical/puhe/`.
+5. Tarkista luettava teksti ja hinta-arvio: `./zensical/run.sh puhe --teksti`.
+   Kuviin kuvaava vaihtoehtoinen teksti, koska se luetaan ("Kuva: …").
+6. Tee leikkeet: `./zensical/run.sh puhe`. Se kloonaa varaston kansioon
+   `zensical/puhe/`, tekee leikkeet ja pushaa ne varastoon.
+7. Käynnistä `./zensical/run.sh` uudelleen (asetukset luetaan käynnistyessä):
+   valituilla sivuilla on nyt kaiutin yläpalkissa.
+8. Lisää `pages.yml`:ään työkalujen checkoutin perään:
+
+   ```yaml
+         - uses: actions/checkout@v7
+           with:
+             repository: ohj-perus-jy/<kirja>-puhe
+             path: zensical/puhe
+             fetch-depth: 1
+   ```
+
+9. Committaa ja pushaa `kirja.toml`, `.gitignore` ja `pages.yml` vasta, kun
+   leikkeet ovat varastossa (vaihe 6).
+
+Leikkeet, myös vaiheittaisten ohjeiden, ovat erillisessä repossa
+(`[puhe] repo`). Julkaisu (`pages.yml`) hakee sen omalla checkout-askeleellaan
+kansioon `zensical/puhe/`.
+Korjauksen jälkeen `puhe` tekee vain muuttuneiden kappaleiden leikkeet, ja
+käännös varoittaa, jos jokin puuttuu. Sanan, jonka ääni sanoo väärin (C# "see
+risuaita"), korjaus tulee `convert.py`:n `SPEECH_SAYINGS`iin.
+
+Huomaa, että äänivarasto *ei* ole submodule.
+
+Vaiheittainen ohje luetaan ääneen vain, jos sen
+tagissa on `audio` (`<walkthrough scenes audio>`).
+
+**Älä poista kansiota `zensical/puhe/`** ennen kuin olet varmistanut, että
+leikkeet on pushattu (`git -C zensical/puhe status -sb`): pushaamaton leike
+on maksettu Azurelle, eikä sitä ole muualla.
 
 ## Työkalujen muuttaminen
 
@@ -248,6 +278,9 @@ cd ../..
 git add zensical/tyokalut            # kirja kiinnittää uuden version
 git commit -m "Työkalut: ..."
 ```
+
+Uusi tyyli tai skripti lisätään `assets/`:iin ja `mkdocs-pohja.yml`:n listaan,
+ei kirjan `mkdocs.yml`:ään.
 
 Muut kirjat ja haarat saavat muutoksen päivittämällä osoittimen:
 
@@ -265,64 +298,116 @@ käännettäviin haaroihin samalla kertaa.
 
 ## Käyttöönotto uudessa kirjassa
 
-```bash
-git submodule add https://github.com/ohj-perus-jy/kirjatyokalut.git zensical/tyokalut
-```
+Tarvitset:
 
-Lisäksi `zensical/kirja.toml`, `zensical/mkdocs.yml` (yllä), kirjan juuren
-`CLAUDE.md`:hen rivi `@zensical/tyokalut/CLAUDE.md`, `.gitignore`iin
-`zensical/.venv*/`, `zensical/docs/`, `zensical/site/`, `zensical/nav.yml`,
-`zensical/.cache/`, `zensical/.convert.lock`, ääneenlukua varten
-`zensical/puhe/` (äänivaraston klooni, ks. Käyttö kirjassa), ja kääre
-`zensical/run.sh`:
+- kirjan repon GitHubissa ja sen juuressa materiaalin mdBookin muodossa:
+  `src/SUMMARY.md` ja sivut (pienin toimiva kirja: `tests/book/`)
+- Linuxin tai WSL:n, jossa on git ja Python 3.11+
+- valinnaisesti cargon, jolla `convert.py` asentaa bob-kaavioiden piirtäjän
 
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
-cd "$(dirname "$0")"
-[[ -f tyokalut/run.sh ]] || git submodule update --init tyokalut
-# "+" = tyokalut/ on eri versiossa kuin kirja odottaa (git pull ei päivitä sitä).
-if git submodule status tyokalut | grep -q '^+'; then
-    echo "huom: zensical/tyokalut on eri versiossa kuin kirja odottaa;" \
-         "päivitä: git submodule update (tai committaa uusi versio)" >&2
-fi
-exec tyokalut/run.sh "$@"
-```
+Tee kirjan juuressa:
 
-Julkaisu (`.github/workflows/pages.yml`): checkoutiin `submodules: true`,
-ääneenlukua varten äänivaraston oma checkout (`[puhe] repo`; ei submodule),
-ja käännös kirjan hakemistossa. **Äänivaraston repon pitää olla julkinen**:
-julkaisun `GITHUB_TOKEN` näkee vain kirjan oman repon, ja yksityinen varasto
-kaatuu checkoutiin virheeseen `Not Found - …/repos#get-a-repository`. Leikkeet
-ovat joka tapauksessa julkisella sivustolla.
+1. Lisää työkalut submoduleksi:
 
-```yaml
-      - uses: actions/checkout@v7
-        with:
-          submodules: true
-      - uses: actions/checkout@v7
-        with:
-          repository: ohj-perus-jy/ohj1-puhe
-          path: zensical/puhe
-          fetch-depth: 1
-      # ...
-      - run: pip install -r zensical/tyokalut/requirements.txt
-      - working-directory: zensical
-        run: |
-          python3 tyokalut/convert.py --strict
-          zensical build
-```
+   ```bash
+   git submodule add https://github.com/ohj-perus-jy/kirjatyokalut.git zensical/tyokalut
+   ```
 
-GitHubissa: *Settings* › *Pages* › *Source* on GitHub Actions (oma domain
-samassa näkymässä). Jos `dev` julkaistaan `/dev/`:iin, lisää `dev` kohtaan
-*Settings* › *Environments* › *github-pages* › *Deployment branches*:
-oletuksena vain oletushaara saa julkaista, ja `dev`-työnnön `deploy` kaatuu.
-Nämä asetukset eivät näy reposta.
+2. Luo `zensical/kirja.toml` ([Kirjan asetukset](#kirjan-asetukset-kirjatoml)).
+   Pelkkä nimi riittää alkuun:
 
-`convert.py` tarvitsee vain standardikirjaston (Python 3.11+, `tomllib`), ja
-kaaviot tulevat kirjan `cache/`:sta, joten julkaisu ei tarvitse svgbobia eikä
-PlantUML-palvelinta. Paikallisesti `convert.py` asentaa puuttuvan
-`svgbob_cli`:n cargolla, kun uusi tai muuttunut bob-kaavio sitä tarvitsee.
+   ```toml
+   nimi = "ohj1"
+   ```
+
+3. Luo `zensical/mkdocs.yml` ([Kirjan mkdocs.yml](#kirjan-mkdocsyml)).
+4. Luo `zensical/run.sh` ja tee siitä ajettava (`chmod +x zensical/run.sh`):
+
+   ```bash
+   #!/usr/bin/env bash
+   set -euo pipefail
+   cd "$(dirname "$0")"
+   [[ -f tyokalut/run.sh ]] || git submodule update --init tyokalut
+   # "+" = tyokalut/ on eri versiossa kuin kirja odottaa (git pull ei päivitä sitä).
+   if git submodule status tyokalut | grep -q '^+'; then
+       echo "huom: zensical/tyokalut on eri versiossa kuin kirja odottaa;" \
+            "päivitä: git submodule update (tai committaa uusi versio)" >&2
+   fi
+   exec tyokalut/run.sh "$@"
+   ```
+
+5. Lisää `.gitignore`en:
+
+   ```
+   zensical/.venv*/
+   zensical/docs/
+   zensical/site/
+   zensical/nav.yml
+   zensical/.cache/
+   zensical/.convert.lock
+   zensical/puhe/
+   ```
+
+6. Lisää kirjan juuren `CLAUDE.md`:hen rivi `@zensical/tyokalut/CLAUDE.md`.
+7. Kokeile: `./zensical/run.sh` ja avaa <http://localhost:8001>. Ensimmäinen
+   ajo asentaa Zensicalin ja voi kysyä sudo-salasanaa.
+8. Luo `.github/workflows/pages.yml`:
+
+   ```yaml
+   name: Deploy site to Pages
+   on:
+     push:
+       branches: ["main"]
+     workflow_dispatch:
+   permissions:
+     contents: read
+     pages: write
+     id-token: write
+   concurrency:
+     group: "pages"
+     cancel-in-progress: false
+   jobs:
+     zensical:
+       runs-on: ubuntu-latest
+       steps:
+         - uses: actions/checkout@v7
+           with:
+             submodules: true
+         - uses: actions/setup-python@v7
+           with:
+             python-version: "3.11"
+         - run: pip install -r zensical/tyokalut/requirements.txt
+         - working-directory: zensical
+           run: |
+             python3 tyokalut/convert.py --strict
+             zensical build
+         - uses: actions/upload-pages-artifact@v5
+           with:
+             path: zensical/site
+     deploy:
+       needs: zensical
+       runs-on: ubuntu-latest
+       environment:
+         name: github-pages
+         url: ${{ steps.deployment.outputs.page_url }}
+       steps:
+         - id: deployment
+           uses: actions/deploy-pages@v5
+   ```
+
+9. GitHubissa: *Settings* › *Pages* › *Source*: *GitHub Actions*. Oma domain
+   asetetaan samassa näkymässä.
+10. Committaa ja pushaa:
+
+    ```bash
+    git add .gitmodules .gitignore CLAUDE.md zensical .github
+    git commit -m "Zensical-työkalut käyttöön"
+    git push
+    ```
+
+Jos julkaiset myös `dev`-haaran `/dev/`:iin (malli: ohj1:n `pages.yml`), lisää
+`dev` kohtaan *Settings* › *Environments* › *github-pages* › *Deployment
+branches*. Ääneenluku otetaan käyttöön erikseen, ks. [Ääneenluku](#ääneenluku).
 
 ## Linkkitarkistus
 
