@@ -94,6 +94,47 @@ def test_the_menu_works_from_the_keyboard(browser, base_url):
     assert errors == []
 
 
+def hints(page) -> list[str]:
+    """Näkyvien teeman vihjeiden (content.tooltips) tekstit. Teema lisää
+    vihjeen bodyyn, kun painikkeella on osoitin tai kohdistus, ja poistaa sen
+    250 ms niiden lähdettyä."""
+    page.wait_for_timeout(500)
+    return page.locator(".md-tooltip2:visible").all_inner_texts()
+
+
+def test_the_hint_does_not_cover_the_list(browser, base_url):
+    """Painettu painike pitää kohdistuksen, joten vihje jäisi listan päälle.
+    Listan ollessa auki vihje on piilossa ja palaa, kun lista suljetaan
+    näppäimistöllä."""
+    page, errors = open_page(browser, base_url)
+    page.hover(".jyu-sites__button")
+    assert hints(page) == ["Vaihda sivustoa"]
+    page.click(".jyu-sites__button")
+    assert page.is_visible(".jyu-sites__list")
+    assert hints(page) == []
+    page.keyboard.press("Escape")
+    assert page.is_hidden(".jyu-sites__list")
+    assert hints(page) == ["Vaihda sivustoa"]
+    assert errors == []
+
+
+def test_the_hint_does_not_stay_open_after_the_mouse(browser, base_url):
+    """Hiirellä suljettaessa kohdistus ei jää painikkeeseen, koska vihje
+    pysyisi silloin auki osoittimen lähdettyä."""
+    page, errors = open_page(browser, base_url)
+    page.click(".jyu-sites__button")
+    page.click(".jyu-sites__button")
+    assert page.is_hidden(".jyu-sites__list")
+    page.mouse.move(10, 400)
+    assert hints(page) == []
+
+    page.click(".jyu-sites__button")
+    page.click(".md-content")
+    page.mouse.move(10, 400)
+    assert hints(page) == []
+    assert errors == []
+
+
 def test_choosing_jypeli_leaves_the_site(browser, base_url):
     """Kohta on tavallinen linkki: sama välilehti, ei skriptiä välissä."""
     page, errors = open_page(browser, base_url)
