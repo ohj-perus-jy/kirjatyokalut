@@ -16,19 +16,45 @@
 
   const links = [...list.querySelectorAll("a")];
 
+  /* Teeman vihje (content.tooltips) on auki, kun painikkeella on osoitin tai
+   * kohdistus, ja painettu painike pitää kohdistuksen. Listan ollessa auki
+   * vihje piilotetaan, koska se tulisi listan päälle, kuten kirjasinvalikossa
+   * (fontmenu.js). Vihjeen id on aria-describedbyssä vain vihjeen ollessa
+   * auki, joten se otetaan talteen. */
+  let tip = "";
+  const cover = () => {
+    const element = document.getElementById(tip);
+    if (element) element.hidden = !list.hidden;
+  };
+  new MutationObserver(() => {
+    tip = button.getAttribute("aria-describedby") || tip;
+    cover();
+  }).observe(button, { attributeFilter: ["aria-describedby"] });
+
   const open = () => {
     list.hidden = false;
+    cover();
     button.setAttribute("aria-expanded", "true");
   };
 
   const close = (refocus) => {
     if (list.hidden) return;
     list.hidden = true;
+    cover();
     button.setAttribute("aria-expanded", "false");
     if (refocus) button.focus();
   };
 
-  button.addEventListener("click", () => (list.hidden ? open() : close(false)));
+  /* Hiirellä suljettaessa kohdistus ei jää painikkeeseen, koska vihje pysyisi
+   * silloin auki osoittimen lähdettyä. Näppäimistöllä (detail 0) se jää. */
+  button.addEventListener("click", (event) => {
+    if (list.hidden) {
+      open();
+    } else {
+      close(false);
+      if (event.detail) button.blur();
+    }
+  });
 
   root.addEventListener("keydown", (event) => {
     /* Nimilinkin nuolet vierittävät sivua kuten ennenkin. */
