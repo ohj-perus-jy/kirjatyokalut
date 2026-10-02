@@ -170,3 +170,19 @@ def test_phone_contents_closes_when_a_link_is_tapped(browser, chapter_url):
     page.wait_for_function(f"{box_opacity} === '0'")
     assert errors == []
     context.close()
+
+
+def test_phone_contents_closes_when_tapped_outside(browser, chapter_url):
+    """Laatikon ulkopuolen napautus sulkee sen; laatikon oman listan napautus
+    kohtien ohi ei (assets/js/toc.js)."""
+    context = browser.new_context(viewport={"width": 400, "height": 700})
+    page = context.new_page()
+    page.goto(chapter_url, wait_until="load")
+    page.click(f"{TOC} .md-sidebar-button")
+    assert page.is_checked("#__toc")
+    box = page.locator(f"{TOC} .md-sidebar__inner").bounding_box()
+    page.mouse.click(box["x"] + box["width"] / 2, box["y"] + box["height"] - 2)
+    assert page.is_checked("#__toc")
+    page.mouse.click(20, 300)
+    assert not page.is_checked("#__toc")
+    context.close()
