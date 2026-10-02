@@ -1,4 +1,4 @@
-/* Leipätekstin kirjasin ja tekstin väri. */
+/* Leipätekstin kirjasin, koko ja tekstin väri. */
 
 /* Leipäteksti on Source Serif 4 kuten mdBookissa. Ei theme.font.text, koska se
  * vaihtaisi myös valikon, yläpalkin ja otsikot; kohteena vain artikkeli
@@ -24,6 +24,26 @@ body[data-jyu-font="atkinson"] .md-content__inner {
 
 body[data-jyu-font="literata"] .md-content__inner {
   font-family: "Literata", "Source Serif 4", Georgia, serif;
+}
+
+/* Lukijan valitsema tekstikoko (sama valikko): --jyu-text-scale bodyssä,
+ * oletus 1. Teeman .75rem kerrotaan, joten em-mitoitetut otsikot, koodi,
+ * taulukot ja laatikot seuraavat. Teeman rem-koot sisällön sisällä kerrotaan
+ * erikseen. Valikot, yläpalkki, vihjeet ja vaiheittaisen ohjeen säätimet
+ * pysyvät ennallaan, samoin tehtäväkortin numero, jonka sarake on rem-levyinen
+ * (tasks.css). Vain ruudulle: paperilla teeman print-koko. */
+@media screen {
+  .md-content__inner {
+    font-size: calc(0.75rem * var(--jyu-text-scale, 1));
+  }
+
+  .md-typeset .footnote {
+    font-size: calc(0.64rem * var(--jyu-text-scale, 1));
+  }
+
+  .md-typeset .tabbed-labels > label {
+    font-size: calc(0.7rem * var(--jyu-text-scale, 1));
+  }
 }
 
 /* Otsikot pysyvät teeman kirjasimessa (Source Sans 3). Teema ei aseta niille

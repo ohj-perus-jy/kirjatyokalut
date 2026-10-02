@@ -1,40 +1,50 @@
-/* Leipätekstin kirjasimen alasvetovalikko yläpalkissa. Avaa ja sulkee listan,
- * kirjoittaa valinnan bodyn data-jyu-font-attribuuttiin ja localStorageen
- * ("jyu-font"). Tallennetun arvon lukee sivun alussa header.html:n
- * inline-skripti, jotta teksti ei välähdä oletuskirjasimella.
+/* Leipätekstin kirjasimen ja koon valikko yläpalkissa. Avaa ja sulkee
+ * paneelin, kirjoittaa kirjasimen bodyn data-jyu-font-attribuuttiin ja koon
+ * bodyn --jyu-text-scale-muuttujaan sekä molemmat localStorageen ("jyu-font",
+ * "jyu-text-size"). Tallennetut arvot lukee sivun alussa header.html:n
+ * inline-skripti, jotta teksti ei välähdä oletuskirjasimella eikä hyppää.
  *
- * Oletus (data-font="") ei tallennu vaan poistaa tallennuksen. Lista on
- * role="listbox" kuten <select>: nuolet liikkuvat, Enter valitsee, Esc sulkee.
- * Myös hiiri siirtää kohdistusta, joten korostettuna on aina yksi kohta.
- * Painikkeessa on vain kuvake, joten valinta kerrotaan sen title- ja
- * aria-label-attribuuteissa (kohdan data-short). Title näkyy teeman vihjeenä
- * (content.tooltips), ks. hint. */
+ * Oletukset (data-font="", koko 100) eivät tallennu vaan poistavat
+ * tallennuksen. Paneeli pysyy auki valittaessa, jotta kirjasinta ja kokoa voi
+ * kokeilla yhdessä; se sulkeutuu painikkeesta, Esc:llä ja kun kohdistus tai
+ * napautus menee muualle. Koon napit ovat listan yllä, ja + ja − toimivat
+ * näppäiminä koko paneelissa. Kirjasinlista on role="listbox" kuten <select>:
+ * nuolet liikkuvat ja Enter valitsee. Myös hiiri siirtää kohdistusta, joten
+ * korostettuna on aina yksi kohta. Painikkeessa on vain kuvake, joten
+ * valinnat kerrotaan sen title- ja aria-label-attribuuteissa (kohdan
+ * data-short ja koko). Title näkyy teeman vihjeenä (content.tooltips), ks.
+ * hint. */
 
 (() => {
   "use strict";
 
-  const KEY = "jyu-font";
+  const FONT_KEY = "jyu-font";
+  const SIZE_KEY = "jyu-text-size";
 
   const root = document.querySelector("[data-md-component=jyu-font]");
   if (!root) return;
 
   const button = root.querySelector(".jyu-font__button");
+  const panel = root.querySelector(".jyu-font__panel");
   const list = root.querySelector(".jyu-font__list");
   const items = [...root.querySelectorAll(".jyu-font__item")];
-  if (!button || !list || !items.length) return;
+  const steppers = [...root.querySelectorAll(".jyu-font__step")];
+  const reset = root.querySelector(".jyu-font__reset");
+  const steps = (root.dataset.steps || "100").split(" ").map(Number);
+  if (!button || !panel || !list || !items.length || !reset) return;
 
   /* localStorage voi puuttua (yksityinen tila); silloin valinta koskee vain tätä sivua. */
-  const stored = () => {
+  const stored = (key) => {
     try {
-      return localStorage.getItem(KEY) || "";
+      return localStorage.getItem(key) || "";
     } catch {
       return "";
     }
   };
-  const store = (id) => {
+  const store = (key, value) => {
     try {
-      if (id) localStorage.setItem(KEY, id);
-      else localStorage.removeItem(KEY);
+      if (value) localStorage.setItem(key, value);
+      else localStorage.removeItem(key);
     } catch {
       /* ei tallennusta */
     }
@@ -45,8 +55,9 @@
    * valinta tehdään vihjeen ollessa auki (esim. osoitin jää painikkeelle ja
    * valitaan nuolilla), vihjeeseen jäisi vanha nimi ja se palautuisi myös
    * attribuuttiin. Siksi auki olevan vihjeen teksti vaihdetaan ja palautettu
-   * vanha nimi korjataan. Listan ollessa auki vihje piilotetaan (cover), koska
-   * se tulisi painikkeen alle listan päälle. Vihjeen id on aria-describedbyssä
+   * vanha nimi korjataan. Paneelin ollessa auki vihje piilotetaan (cover),
+   * koska se tulisi painikkeen alle paneelin päälle; piilossa sitä ei voi
+   * mitata, joten close mittaa uudelleen. Vihjeen id on aria-describedbyssä
    * vain vihjeen ollessa auki, joten se otetaan talteen. */
   let name = "";
   let tip = "";
@@ -64,7 +75,7 @@
   };
   const cover = () => {
     const element = document.getElementById(tip);
-    if (element) element.hidden = !list.hidden;
+    if (element) element.hidden = !panel.hidden;
   };
   new MutationObserver(() => {
     tip = button.getAttribute("aria-describedby") || tip;
@@ -72,18 +83,79 @@
     cover();
   }).observe(button, { attributeFilter: ["title", "aria-describedby"] });
 
-  const apply = (id) => {
-    const item = items.find((candidate) => candidate.dataset.font === id) || items[0];
-    const chosen = item.dataset.font;
-    if (chosen) document.body.setAttribute("data-jyu-font", chosen);
-    else document.body.removeAttribute("data-jyu-font");
-    for (const candidate of items) {
-      candidate.setAttribute("aria-selected", String(candidate === item));
-    }
-    const text = "Leipätekstin kirjasin: " + (item.dataset.short || item.querySelector(".jyu-font__name").textContent);
+  let font = items[0];
+  let size = 100;
+
+  const describe = () => {
+    const short = font.dataset.short || font.querySelector(".jyu-font__name").textContent;
+    const text = `Leipäteksti: ${short}, ${size} %`;
     hint(text);
     button.setAttribute("aria-label", text);
   };
+
+  /* Valittu kohta on listan ainoa sarkaimella saavutettava, jotta Tab vie
+   * koon napeista listaan ja listasta pois. */
+  const applyFont = (id) => {
+    font = items.find((candidate) => candidate.dataset.font === id) || items[0];
+    const chosen = font.dataset.font;
+    if (chosen) document.body.setAttribute("data-jyu-font", chosen);
+    else document.body.removeAttribute("data-jyu-font");
+    for (const candidate of items) {
+      candidate.setAttribute("aria-selected", String(candidate === font));
+      candidate.tabIndex = candidate === font ? 0 : -1;
+    }
+    describe();
+  };
+
+  const applySize = (value) => {
+    size = steps.includes(value) ? value : 100;
+    if (size === 100) document.body.style.removeProperty("--jyu-text-scale");
+    else document.body.style.setProperty("--jyu-text-scale", String(size / 100));
+    reset.firstElementChild.textContent = `${size} %`;
+    reset.setAttribute("aria-disabled", String(size === 100));
+    for (const stepper of steppers) {
+      const next = steps.indexOf(size) + Number(stepper.dataset.step);
+      stepper.setAttribute("aria-disabled", String(next < 0 || next >= steps.length));
+    }
+    describe();
+  };
+
+  /* Lukukohta pysyy paikallaan: ennen koon vaihtoa haetaan syvin tekstilohko,
+   * joka näkyy yläpalkin alareunassa, ja vaihdon jälkeen sivua vieritetään
+   * niin, että lohkon sama kohta on taas siinä. Kokonaan näkyvästä lohkosta
+   * pidetään paikallaan yläreuna. Ilman tätä yläpuolinen teksti kasvaisi tai
+   * kutistuisi ja luettava kohta karkaisi ruudulta. Piilossa olevat lohkot
+   * (suljettu details, toinen välilehti) ohitetaan, koska niillä ei ole
+   * korkeutta. */
+  const BLOCKS = "p, li, dt, dd, h1, h2, h3, h4, h5, h6, pre, tr, figure, summary, .admonition-title";
+  const keepReading = () => {
+    const content = document.querySelector(".md-content__inner");
+    if (!content) return () => {};
+    const top = document.querySelector(".md-header")?.getBoundingClientRect().bottom ?? 0;
+    let block = null;
+    for (const candidate of content.querySelectorAll(BLOCKS)) {
+      if (block && !block.contains(candidate)) break;
+      const box = candidate.getBoundingClientRect();
+      if (box.height && box.bottom > top) block = candidate;
+    }
+    if (!block) return () => {};
+    const before = block.getBoundingClientRect();
+    const part = Math.max(0, (top - before.top) / before.height);
+    return () => {
+      const after = block.getBoundingClientRect();
+      window.scrollBy(0, after.top + part * after.height - (before.top + part * before.height));
+    };
+  };
+
+  const resize = (value) => {
+    if (!steps.includes(value) || value === size) return;
+    const restore = keepReading();
+    store(SIZE_KEY, value === 100 ? "" : String(value));
+    applySize(value);
+    restore();
+  };
+
+  const step = (direction) => resize(steps[steps.indexOf(size) + direction]);
 
   /* Kohtien nimet näkyvät omilla kirjasimillaan, ja selain lataa kirjasimen
    * vasta kun sitä käytetään: ilman tätä nimet piirtyisivät avattaessa ensin
@@ -92,42 +164,40 @@
    * ennen kuin lista ehtii aueta. Perheet luetaan tyyleistä (fontmenu.css). */
   const preload = () => {
     for (const item of items) {
-      const name = item.querySelector(".jyu-font__name");
-      document.fonts?.load("1em " + getComputedStyle(name).fontFamily, name.textContent);
+      const label = item.querySelector(".jyu-font__name");
+      document.fonts?.load("1em " + getComputedStyle(label).fontFamily, label.textContent);
     }
   };
   root.addEventListener("pointerenter", preload, { once: true });
   root.addEventListener("focusin", preload, { once: true });
 
-  const selected = () => items.find((item) => item.getAttribute("aria-selected") === "true") || items[0];
-
   const open = () => {
-    list.hidden = false;
+    panel.hidden = false;
     cover();
     button.setAttribute("aria-expanded", "true");
-    selected().focus();
+    font.focus();
   };
 
+  /* Vihje tulee taas näkyviin, joten se mitataan nyt (ks. hint). */
   const close = (refocus) => {
-    if (list.hidden) return;
-    list.hidden = true;
+    if (panel.hidden) return;
+    panel.hidden = true;
     cover();
+    hint(name);
     button.setAttribute("aria-expanded", "false");
     if (refocus) button.focus();
   };
 
-  /* Ensin suljetaan, jotta vihje on taas näkyvissä ja hint voi mitata sen. */
-  const choose = (item, refocus) => {
-    close(refocus);
-    store(item.dataset.font);
-    apply(item.dataset.font);
+  const choose = (item) => {
+    store(FONT_KEY, item.dataset.font);
+    applyFont(item.dataset.font);
   };
 
-  /* Hiirellä kohdistus ei jää painikkeeseen eikä piilotettuun kohtaan, koska
-   * teeman vihje pysyisi silloin auki osoittimen lähdettyä. Näppäimistöllä
-   * (click-tapahtuman detail 0) kohdistus jää painikkeeseen tai palaa siihen. */
+  /* Hiirellä kohdistus ei jää painikkeeseen, koska teeman vihje pysyisi
+   * silloin auki osoittimen lähdettyä. Näppäimistöllä (click-tapahtuman
+   * detail 0) kohdistus jää painikkeeseen. */
   button.addEventListener("click", (event) => {
-    if (list.hidden) {
+    if (panel.hidden) {
       open();
     } else {
       close(false);
@@ -142,11 +212,14 @@
     }
   });
 
+  for (const stepper of steppers) {
+    stepper.addEventListener("click", () => step(Number(stepper.dataset.step)));
+  }
+  reset.addEventListener("click", () => resize(100));
+
   list.addEventListener("click", (event) => {
     const item = event.target.closest(".jyu-font__item");
-    if (!item) return;
-    item.blur();
-    choose(item, false);
+    if (item) choose(item);
   });
 
   /* Hiiren alla oleva kohta saa kohdistuksen (ulkoasu: :focus). Erillinen
@@ -170,23 +243,35 @@
       case "Enter":
       case " ":
         event.preventDefault();
-        if (index >= 0) choose(items[index], true);
-        break;
-      case "Escape":
-        event.preventDefault();
-        close(true);
-        break;
-      case "Tab":
-        close(false);
+        if (index >= 0) choose(items[index]);
         break;
     }
   });
 
-  /* Sulje, kun painetaan muualle. */
+  /* + ja − missä tahansa paneelissa; Ctrl/Cmd jää selaimen zoomaukselle. */
+  panel.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      close(true);
+    } else if ((event.key === "+" || event.key === "-") && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      event.preventDefault();
+      step(event.key === "+" ? 1 : -1);
+    }
+  });
+
+  /* Sulje, kun kohdistus siirtyy valikon ulkopuolelle (Tab) tai painetaan
+   * muualle. Ilman relatedTargetia kohdistus ei siirtynyt minnekään, vaan
+   * esimerkiksi paneelin tyhjää kohtaa napautettiin. */
+  root.addEventListener("focusout", (event) => {
+    if (event.relatedTarget && !root.contains(event.relatedTarget)) close(false);
+  });
+
   document.addEventListener("pointerdown", (event) => {
     if (!root.contains(event.target)) close(false);
   });
 
-  /* Alkutila: bodyn attribuutti on jo asetettu, tässä vihje ja valintamerkki. */
-  apply(stored());
+  /* Alkutila: bodyn attribuutti ja muuttuja ovat jo asetettu, tässä vihje,
+   * valintamerkki ja kokorivi. */
+  applyFont(stored(FONT_KEY));
+  applySize(Number(stored(SIZE_KEY)) || 100);
 })();

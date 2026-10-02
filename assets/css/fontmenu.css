@@ -1,12 +1,12 @@
-/* Leipätekstin kirjasimen alasvetovalikko yläpalkissa.
+/* Leipätekstin kirjasimen ja koon valikko yläpalkissa.
  * Merkkaus: overrides/partials/header.html, toiminta: assets/js/fontmenu.js,
- * kirjasimet: typography.css.
+ * kirjasimet ja koko: typography.css.
  *
  * Painike lainaa hakupalkin ulkoasun (korkeus, pyöristys, tausta), jotta
  * vierekkäiset hallinnat näyttävät samalta sarjalta. Siinä on vain kuvake ja
- * nuoli; nykyinen valinta näkyy title-vihjeenä ja listan valintamerkkinä.
- * Lista on oma elementtinsä eikä <select>, koska kohtien pitää näkyä omalla
- * kirjasimellaan. */
+ * nuoli; nykyiset valinnat näkyvät title-vihjeenä, paneelin kokorivillä ja
+ * listan valintamerkkinä. Lista on oma elementtinsä eikä <select>, koska
+ * kohtien pitää näkyä omalla kirjasimellaan. */
 
 .jyu-font {
   position: relative;
@@ -66,9 +66,9 @@
   transform: rotate(180deg);
 }
 
-/* Lista painikkeen alle, oikeaan reunaan tasattuna. Varjo kuten teeman
+/* Paneeli painikkeen alle, oikeaan reunaan tasattuna. Varjo kuten teeman
  * hakutuloslaatikossa. */
-.jyu-font__list {
+.jyu-font__panel {
   position: absolute;
   top: 100%;
   right: 0.4rem; /* painikkeen oikea marginaali */
@@ -76,19 +76,108 @@
   min-width: 13rem;
   margin: 0.1rem 0 0;
   padding: 0.3rem;
-  list-style: none;
   background-color: var(--md-default-bg-color);
   border-radius: 0.2rem;
   box-shadow: var(--md-shadow-z3);
 }
 
 /* Tummassa teemassa z3-varjon hiusviiva on musta eikä erotu taustasta. */
-[data-md-color-scheme="slate"] .jyu-font__list {
+[data-md-color-scheme="slate"] .jyu-font__panel {
   box-shadow: var(--md-shadow-z3), 0 0 0 0.05rem var(--jyu-rule);
 }
 
-.jyu-font__list[hidden] {
+.jyu-font__panel[hidden] {
   display: none;
+}
+
+.jyu-font__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Kokorivi listan yllä. Erotinviiva paneelin reunasta reunaan: negatiivinen
+ * marginaali kumoaa paneelin täytteen, ja täyte palauttaa sen. Vasen täyte on
+ * paneelin ja kohdan täyte + valintamerkin sarake ja väli (.jyu-font__item),
+ * jotta otsikko alkaa samasta kohdasta kuin kirjasinten nimet. */
+.jyu-font__size {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  margin: -0.3rem -0.3rem 0.3rem;
+  padding: 0.35rem 0.9rem 0.35rem 2.4rem;
+  font-size: 0.7rem;
+  line-height: 1.4;
+  border-bottom: 0.05rem solid var(--jyu-rule);
+}
+
+.jyu-font__size-label {
+  flex: 1;
+  margin-right: 0.5rem;
+}
+
+/* −, nykyinen koko ja +. Napit kirjasinpainikkeen korkuisia, jotta ne ovat
+ * puhelimessakin kunnon kosketuskohteita; luku on tekstinappi, joka palauttaa
+ * oletuksen. */
+.jyu-font__step,
+.jyu-font__reset {
+  height: 1.6rem;
+  padding: 0;
+  font: inherit;
+  color: var(--md-default-fg-color);
+  border: 0;
+  border-radius: 0.3rem;
+  cursor: pointer;
+}
+
+.jyu-font__step {
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  background-color: var(--md-default-fg-color--lightest);
+}
+
+.jyu-font__step svg {
+  width: 0.8rem;
+  height: 0.8rem;
+  fill: none;
+  stroke: currentcolor;
+}
+
+.jyu-font__reset {
+  min-width: 2.6rem;
+  font-variant-numeric: tabular-nums;
+  background-color: transparent;
+}
+
+.jyu-font__step:hover,
+.jyu-font__step:focus-visible {
+  background-color: var(--jyu-rule);
+}
+
+.jyu-font__reset:hover,
+.jyu-font__reset:focus-visible {
+  background-color: var(--md-default-fg-color--lightest);
+}
+
+.jyu-font__step:focus-visible,
+.jyu-font__reset:focus-visible {
+  outline: 0.1rem solid var(--md-accent-fg-color);
+  outline-offset: 0.05rem;
+}
+
+/* Ääripäässä ja oletuskoossa nappi ei tee mitään. aria-disabled eikä
+ * disabled, jotta kohdistus ei katoa napista kesken näppäilyn. */
+.jyu-font__step[aria-disabled="true"] {
+  cursor: default;
+  opacity: 0.35;
+  background-color: var(--md-default-fg-color--lightest);
+}
+
+.jyu-font__reset[aria-disabled="true"] {
+  cursor: default;
+  color: var(--md-default-fg-color--light);
+  background-color: transparent;
 }
 
 .jyu-font__item {

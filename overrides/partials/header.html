@@ -85,39 +85,52 @@
     <a href="{{ 'tulosta/' | url }}" title="Tulosta koko kirja" aria-label="Tulosta koko kirja" class="md-header__button md-icon jyu-print-button">
       {% include ".icons/lucide/printer.svg" %}
     </a>
-    {#- Leipätekstin kirjasinvalikko. Ulkoasu assets/css/fontmenu.css, toiminta
-        assets/js/fontmenu.js, kirjasimet typography.css. data-font on
-        tallennettava tunnus (tyhjä = oletus, ei tallennu), data-short
-        painikkeen vihjeessä näkyvä nimi. -#}
-    <div class="md-header__option jyu-font" data-md-component="jyu-font">
+    {#- Leipätekstin kirjasin- ja kokovalikko. Ulkoasu assets/css/fontmenu.css,
+        toiminta assets/js/fontmenu.js, kirjasimet ja koko typography.css.
+        data-steps on tekstikoon portaat prosentteina (100 = oletus, ei
+        tallennu). data-font on tallennettava tunnus (tyhjä = oletus, ei
+        tallennu), data-short painikkeen vihjeessä näkyvä nimi. -#}
+    <div class="md-header__option jyu-font" data-md-component="jyu-font" data-steps="90 100 110 120 135 150 175">
       <button type="button" class="jyu-font__button" id="jyu-font-button"
-              title="Leipätekstin kirjasin: Serif" aria-label="Leipätekstin kirjasin: Serif"
-              aria-haspopup="listbox" aria-expanded="false" aria-controls="jyu-font-list">
+              title="Leipäteksti: Serif, 100 %" aria-label="Leipäteksti: Serif, 100 %"
+              aria-expanded="false" aria-controls="jyu-font-panel">
         {% include ".icons/lucide/type.svg" %}
         <span class="jyu-font__chevron">{% include ".icons/lucide/chevron-down.svg" %}</span>
       </button>
-      <ul class="jyu-font__list" id="jyu-font-list" role="listbox" aria-label="Leipätekstin kirjasin" hidden>
-        <li class="jyu-font__item" role="option" aria-selected="true" tabindex="-1" data-font="" data-short="Serif">
-          {% include ".icons/lucide/check.svg" %}
-          <span class="jyu-font__name">Source Serif 4</span>
-          <span class="jyu-font__kind">serif</span>
-        </li>
-        <li class="jyu-font__item" role="option" aria-selected="false" tabindex="-1" data-font="atkinson" data-short="Atkinson">
-          {% include ".icons/lucide/check.svg" %}
-          <span class="jyu-font__name">Atkinson Hyperlegible Next</span>
-          <span class="jyu-font__kind">sans-serif</span>
-        </li>
-        <li class="jyu-font__item" role="option" aria-selected="false" tabindex="-1" data-font="literata" data-short="Literata">
-          {% include ".icons/lucide/check.svg" %}
-          <span class="jyu-font__name">Literata</span>
-          <span class="jyu-font__kind">serif</span>
-        </li>
-      </ul>
+      <div class="jyu-font__panel" id="jyu-font-panel" hidden>
+        <div class="jyu-font__size" role="group" aria-labelledby="jyu-font-size-label">
+          <span class="jyu-font__size-label" id="jyu-font-size-label">Tekstin koko</span>
+          <button type="button" class="jyu-font__step" data-step="-1" aria-label="Pienennä tekstiä">
+            {% include ".icons/lucide/minus.svg" %}
+          </button>
+          <button type="button" class="jyu-font__reset" title="Palauta 100 %" aria-disabled="true"><span aria-live="polite">100 %</span></button>
+          <button type="button" class="jyu-font__step" data-step="1" aria-label="Suurenna tekstiä">
+            {% include ".icons/lucide/plus.svg" %}
+          </button>
+        </div>
+        <ul class="jyu-font__list" id="jyu-font-list" role="listbox" aria-label="Leipätekstin kirjasin">
+          <li class="jyu-font__item" role="option" aria-selected="true" tabindex="-1" data-font="" data-short="Serif">
+            {% include ".icons/lucide/check.svg" %}
+            <span class="jyu-font__name">Source Serif 4</span>
+            <span class="jyu-font__kind">serif</span>
+          </li>
+          <li class="jyu-font__item" role="option" aria-selected="false" tabindex="-1" data-font="atkinson" data-short="Atkinson">
+            {% include ".icons/lucide/check.svg" %}
+            <span class="jyu-font__name">Atkinson Hyperlegible Next</span>
+            <span class="jyu-font__kind">sans-serif</span>
+          </li>
+          <li class="jyu-font__item" role="option" aria-selected="false" tabindex="-1" data-font="literata" data-short="Literata">
+            {% include ".icons/lucide/check.svg" %}
+            <span class="jyu-font__name">Literata</span>
+            <span class="jyu-font__kind">serif</span>
+          </li>
+        </ul>
+      </div>
     </div>
-    {#- Tallennettu valinta käyttöön ennen sisällön piirtämistä, kuten teeman
-        palettiskripti yllä; muuten teksti välähtäisi. Vain valikossa oleva
-        tunnus kelpaa. -#}
-    <script>try{var f=localStorage.getItem("jyu-font");if(f&&document.querySelector('.jyu-font__item[data-font="'+f+'"]'))document.body.setAttribute("data-jyu-font",f)}catch(e){}</script>
+    {#- Tallennetut valinnat käyttöön ennen sisällön piirtämistä, kuten teeman
+        palettiskripti yllä; muuten teksti välähtäisi tai hyppäisi. Vain
+        valikossa oleva tunnus ja data-stepsin porras kelpaavat. -#}
+    <script>try{var b=document.body,f=localStorage.getItem("jyu-font"),k=localStorage.getItem("jyu-text-size");if(f&&document.querySelector('.jyu-font__item[data-font="'+f+'"]'))b.setAttribute("data-jyu-font",f);if(k&&document.querySelector(".jyu-font").dataset.steps.split(" ").indexOf(k)>=0)b.style.setProperty("--jyu-text-scale",k/100)}catch(e){}</script>
     {% if config.extra.alternate %}
       {% include "partials/alternate.html" %}
     {% endif %}
