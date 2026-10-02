@@ -62,11 +62,12 @@
    *
    * Esc palauttaa kohdistuksen painikkeeseen, jolloin vihje aukeaisi ja jäisi
    * näkyviin, vaikka osoitin on muualla ja valinta näkyi juuri paneelissa.
-   * Siksi vihje pysyy piilossa (quiet), kunnes osoitin tulee painikkeelle tai
-   * kohdistus lähtee siitä ja palaa. */
+   * Siksi Escin jälkeen (quiet) kohdistus ei pidä vihjettä auki: se näkyy
+   * vain osoittimen ollessa painikkeella, kunnes kohdistus lähtee painikkeesta. */
   let name = "";
   let tip = "";
   let quiet = false;
+  let hovered = false;
   const hint = (text) => {
     name = text;
     if (button.hasAttribute("title")) {
@@ -81,15 +82,16 @@
   };
   const cover = () => {
     const element = document.getElementById(tip);
-    if (element) element.hidden = !panel.hidden || quiet;
+    if (element) element.hidden = !panel.hidden || (quiet && !hovered);
   };
-  const speak = () => {
-    if (!quiet) return;
-    quiet = false;
+  /* Piilossa ollutta vihjettä ei voinut mitata, joten se mitataan esiin tullessa. */
+  const hover = (on) => {
+    hovered = on;
     cover();
-    hint(name);
+    if (on) hint(name);
   };
-  button.addEventListener("pointerenter", speak);
+  button.addEventListener("pointerenter", () => hover(true));
+  button.addEventListener("pointerleave", () => hover(false));
   button.addEventListener("blur", () => { quiet = false; });
   button.addEventListener("focus", cover);
   new MutationObserver(() => {

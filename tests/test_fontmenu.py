@@ -370,8 +370,8 @@ def test_the_hint_does_not_stay_open_after_the_mouse(browser, base_url):
 
 def test_the_hint_does_not_cover_the_panel(browser, base_url):
     """Vihje tulisi painikkeen alle paneelin päälle, joten se on piilossa
-    paneelin ollessa auki. Escin jälkeen se palaa, kun osoitin tulee
-    painikkeelle, kertoo uudet valinnat ja on tekstinsä levyinen, jotta se
+    paneelin ollessa auki. Escin jälkeen se palaa, koska osoitin on yhä
+    painikkeella, kertoo uudet valinnat ja on tekstinsä levyinen, jotta se
     asettuu painikkeen keskelle."""
     page, errors = open_page(browser, base_url)
     page.hover(".jyu-font__button")
@@ -384,9 +384,6 @@ def test_the_hint_does_not_cover_the_panel(browser, base_url):
     page.keyboard.press("+")
     assert hints(page) == []
     page.keyboard.press("Escape")
-    assert hints(page) == []
-    page.mouse.move(10, 400)
-    page.hover(".jyu-font__button")
     assert hints(page) == ["Leipäteksti: Atkinson, 110 %"]
     assert page.evaluate(
         "(tip => tip.firstElementChild.offsetWidth"
@@ -421,13 +418,20 @@ def test_the_hint_names_the_new_choice(browser, base_url):
 
 def test_escape_does_not_leave_the_hint_open(browser, base_url):
     """Kirjasin hiirellä, sitten Esc: kohdistus palaa painikkeeseen, mutta
-    teeman vihje ei aukea sen takia, koska osoitin on muualla ja valinta
-    näkyi juuri paneelissa. Vihje tulee, kun osoitin tulee painikkeelle."""
+    kohdistus ei pidä teeman vihjettä auki, koska osoitin on muualla ja
+    valinta näkyi juuri paneelissa. Vihje näkyy vain osoittimen ollessa
+    painikkeella, myös kun osoitin käy painikkeella ja lähtee, kunnes
+    kohdistus lähtee painikkeesta."""
     page, errors = open_page(browser, base_url)
     page.click(".jyu-font__button")
     page.click(".jyu-font__item[data-font=literata]")
     page.keyboard.press("Escape")
     assert page.is_hidden(PANEL)
+    assert active(page) == "jyu-font-button"
+    assert hints(page) == []
+    page.hover(".jyu-font__button")
+    assert hints(page) == ["Leipäteksti: Literata, 100 %"]
+    page.mouse.move(10, 400)
     assert active(page) == "jyu-font-button"
     assert hints(page) == []
     page.hover(".jyu-font__button")
