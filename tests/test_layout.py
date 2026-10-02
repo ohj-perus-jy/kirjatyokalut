@@ -146,3 +146,27 @@ def test_footer_links_fit_on_one_row_on_a_phone(browser, chapter_url, width):
     assert len(tops) == 3
     assert len(set(tops)) == 1
     context.close()
+
+
+def test_phone_contents_closes_when_a_link_is_tapped(browser, chapter_url):
+    """Kapealla näytöllä sisällysluettelo on alakulman napista avautuva
+    laatikko (teeman #__toc-valintaruutu). Kohdan napautus vie otsikkoon ja
+    sulkee laatikon; teema itse jättäisi sen auki (assets/js/toc.js)."""
+    context = browser.new_context(viewport={"width": 400, "height": 700})
+    page = context.new_page()
+    errors = []
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    page.goto(chapter_url, wait_until="load")
+    box_opacity = f"getComputedStyle(document.querySelector('{TOC} .md-sidebar__inner')).opacity"
+    assert page.evaluate(box_opacity) == "0"
+    page.click(f"{TOC} .md-sidebar-button")
+    page.wait_for_function(f"{box_opacity} === '1'")
+    link = page.locator(f"{TOC} a.md-nav__link").nth(2)
+    href = link.get_attribute("href")
+    link.click()
+    page.wait_for_function(
+        f"document.getElementById('{href[1:]}').getBoundingClientRect().top < 100")
+    assert not page.is_checked("#__toc")
+    page.wait_for_function(f"{box_opacity} === '0'")
+    assert errors == []
+    context.close()
