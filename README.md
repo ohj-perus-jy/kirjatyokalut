@@ -180,7 +180,8 @@ git clone --recurse-submodules <kirjan repo>    # tai kloonin jälkeen:
 git submodule update --init                     # (kirjan run.sh tekee tämän itse)
 
 ./zensical/run.sh              # muunna, vahdi ../src:ää ja tarjoile portissa 8001
-./zensical/run.sh 8003         # eri portti
+                               # (varattuna seuraavassa vapaassa, run.sh kertoo)
+./zensical/run.sh 8003         # aloita portista 8003
 ./zensical/run.sh build        # pelkkä rakennus site/-hakemistoon
 ./zensical/run.sh test         # testit: koekirja ja tämä kirja
 ./zensical/run.sh puhe         # ääneenluvun puuttuvat leikkeet varastoon ja pushaus

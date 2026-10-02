@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Kirjan Zensical-sivuston ajo. Kirjan oma zensical/run.sh kutsuu tätä:
 #   ./run.sh              -> kopioi ../src -> docs/, vahdi muutoksia ja tarjoile
-#                            portissa 8001
-#   ./run.sh 8003         -> sama, eri portissa
+#                            portissa 8001 tai seuraavassa vapaassa
+#   ./run.sh 8003         -> sama, alkaen portista 8003
 #   ./run.sh build        -> pelkkä rakennus site/-hakemistoon
 #   ./run.sh test         -> testit
 #   ./run.sh puhe         -> ääneenluvun leikkeet ja vaiheittaisen ohjeen äänet
@@ -62,9 +62,39 @@ if [[ ${1:-} == build ]]; then
     exec .venv/bin/zensical build
 fi
 
+# Ensimmäinen vapaa portti pyydetystä (oletus 8001) ylöspäin, jotta usean kirjan
+# voi tarjoilla yhtä aikaa. Kokeilu sitoo saman osoitteen kuin zensical serve, ja
+# SO_REUSEADDR on päällä kuten sillä: suljetun palvelimen TIME_WAIT-yhteydet eivät
+# vie porttia. Kontissa näkyvät vain kontin portit; VS Code välittää portin
+# koneelle ja valitsee siellä toisen, jos se on varattu.
+want=${1:-8001}
+port=$(python3 - "$want" <<'EOF'
+import socket, sys
+start = int(sys.argv[1])
+for port in range(start, start + 20):
+    with socket.socket() as s:
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            s.bind(("0.0.0.0", port))
+        except OSError:
+            continue
+    print(port)
+    break
+else:
+    sys.exit(f"portit {start}–{start + 19} ovat kaikki varattuja")
+EOF
+)
+if [[ $port != "$want" ]]; then
+    echo "Portti $want on varattu, käytetään porttia $port."
+fi
+echo "Kirja: http://localhost:$port"
+if [[ -f /.dockerenv || -f /run/.containerenv ]]; then
+    echo "Dev containerissa koneen osoite voi olla eri: katso VS Coden Ports-välilehti."
+fi
+
 # Vahti palvelimen rinnalle: `zensical serve` seuraa docs/:ia, ei ../src:iä
 # (convert.py: watch). Palvelinta ei exec:ata, jotta trap ehtii lopettaa vahdin.
 python3 "$TOOL/convert.py" --watch &
 watcher=$!
 trap 'kill "$watcher" 2>/dev/null' EXIT INT TERM
-.venv/bin/zensical serve --dev-addr "0.0.0.0:${1:-8001}"
+.venv/bin/zensical serve --dev-addr "0.0.0.0:$port"
