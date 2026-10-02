@@ -67,6 +67,14 @@
   margin-top: -1.5rem;
 }
 
+/* Terminaalisoittimen kerrokset (asciinema-player.css: aloituspeite 10,
+ * ohjauspalkki 30) omaan pinoamiskontekstiinsa. Muuten ne piirtyvät yläpalkin
+ * (4) ja sen valikoiden päälle, kun soitin vierii palkin alle. Tässä eikä
+ * soittimen tyylissä, koska se on kolmannen osapuolen tiedosto. */
+.ap-player {
+  isolation: isolate;
+}
+
 /* Repo-linkin tyhjät kääreet pois. Linkki on tyhjennetty mallista
  * (overrides/partials/source.html), mutta teema piirtää kääreet, koska
  * repo_url on asetettu muokkauslinkkiä varten; yläpalkissa tyhjä kääre

@@ -57,6 +57,23 @@ def test_the_attributes_of_the_tag_reach_the_player(page):
         ["3", 3, False, 0], ["3", 3, True, 1]]
 
 
+def test_the_player_stays_under_the_header(page):
+    """Soittimen aloituspeite (z-index 10) ei saa nousta yläpalkin (4) päälle,
+    kun soitin vierii palkin alle: palkin painikkeet ja valikot jäisivät
+    peitteen alle eikä niitä voisi napsauttaa. Matala ikkuna, jotta sivu
+    vierii tarpeeksi."""
+    page.set_viewport_size({"width": 1280, "height": 300})
+    assert page.evaluate("""() => {
+        const header = document.querySelector('.md-header').getBoundingClientRect();
+        const player = document.querySelector('asciinema .ap-player');
+        scrollBy(0, player.getBoundingClientRect().top - header.top);
+        const box = player.getBoundingClientRect();
+        if (box.top > header.top + 1) throw new Error('soitin ei vierinyt palkin alle');
+        const hit = document.elementFromPoint(box.left + box.width / 2, header.bottom - 2);
+        return hit.closest('.md-header') !== null;
+    }""")
+
+
 def test_the_recording_plays(page):
     """Toisto alkaa alusta, joten ensimmäinen rivi ei ole enää sama kuin poster."""
     page.click("asciinema .ap-play-button")
