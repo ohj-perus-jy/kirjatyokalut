@@ -140,3 +140,86 @@ def test_a_title_changed_while_open_shows_in_the_tooltip(desktop):
     desktop.evaluate("document.activeElement.blur()")
     desktop.wait_for_selector(ACTIVE, state="detached")
     assert desktop.get_attribute(EYE, "title") == "Piilota rivit"
+
+
+# Yläpalkin elementit, joilla on ei-tyhjä title piirtohetkellä, kuvaruuduittain.
+WATCH_TITLES = """() => { window.titled = [];
+    const tick = () => {
+        for (const e of document.querySelectorAll('.md-header [title]'))
+            if (e.getAttribute('title')) titled.push(e.getAttribute('title'));
+        requestAnimationFrame(tick);
+    };
+    tick() }"""
+
+
+def test_theme_tooltips_leave_the_browser_no_title(desktop):
+    """Teema ottaa titlen pois vasta avatessaan vihjeen, kuvaruutua
+    myöhemmin, ja selaimen oma title-vihje ehti välillä tulla rinnalle ja
+    jäädä, myös näppäimistöllä kohdistettaessa (Chrome). Teeman ottamilla
+    elementeillä ei ole ei-tyhjää titleä piirtohetkellä koskaan, ja teeman
+    vihjeessä on silti oikea teksti hiirellä ja näppäimistöllä."""
+    desktop.evaluate(WATCH_TITLES)
+    desktop.hover(".jyu-print-button")
+    desktop.wait_for_selector(ACTIVE)
+    assert tooltip_text(desktop) == "Tulosta koko kirja"
+    desktop.mouse.move(600, 500)
+    desktop.wait_for_selector(ACTIVE, state="detached", timeout=2000)
+    desktop.focus(".jyu-print-button")
+    desktop.wait_for_selector(ACTIVE)
+    assert tooltip_text(desktop) == "Tulosta koko kirja"
+    desktop.evaluate("document.activeElement.blur()")
+    desktop.wait_for_selector(ACTIVE, state="detached", timeout=2000)
+    desktop.wait_for_timeout(100)
+    assert desktop.evaluate("titled") == []
+    assert desktop.get_attribute(".jyu-print-button", "aria-label") == "Tulosta koko kirja"
+
+
+def test_an_element_named_only_by_its_title_keeps_its_name(desktop):
+    """Teemanvaihtimen labeleilla ei ole muuta nimeä kuin title, joten ne
+    saavat sen aria-labeliksi, kun title siirretään pois."""
+    labels = desktop.eval_on_selector_all(
+        "label[for^=__palette]",
+        "labels => labels.map(l => [l.getAttribute('title'), l.getAttribute('aria-label')])")
+    assert labels == [[None, "Vaihda tummaan teemaan"], [None, "Vaihda vaaleaan teemaan"]]
+
+
+@pytest.mark.parametrize("scheme", ["light", "dark"])
+def test_the_theme_toggle_shows_its_tooltip_and_ring_from_the_keyboard(browser, chapter_url, scheme):
+    """Tab kohdistaa teemanvaihtimen piilotettuun radionappiin, ja teeman
+    vihje on näkyvässä labelissa, joka ei aina ole kohdistetun napin vieressä
+    (tummassa teemassa ei ole): vihje aukeaa näkyvään labeliin, sillä on
+    kohdistusrengas, ja vihje sulkeutuu, kun kohdistus lähtee."""
+    context = browser.new_context(color_scheme=scheme)
+    page = context.new_page()
+    page.goto(chapter_url, wait_until="load")
+    visible = "[data-md-component=palette] label:not([hidden])"
+    name = page.get_attribute(visible, "aria-label")
+    page.focus("[data-md-component=palette] .md-option")
+    page.wait_for_selector(ACTIVE)
+    assert tooltip_text(page) == name
+    assert page.eval_on_selector(visible, "label => getComputedStyle(label).outlineStyle") == "auto"
+    page.evaluate("document.activeElement.blur()")
+    page.wait_for_selector(ACTIVE, state="detached", timeout=2000)
+    context.close()
+
+
+def fades_like_the_theme(page, leave):
+    """Vihjeen häivytys alkaa heti, kun osoitin tai kohdistus lähtee, ja vihje
+    poistuu häivytyksen (250 ms) jälkeen, kuten teeman omissa vihjeissä."""
+    page.wait_for_selector(ACTIVE)
+    leave()
+    page.wait_for_timeout(80)
+    assert page.locator(ACTIVE).count() == 0
+    page.wait_for_function("!document.querySelector('.md-tooltip2')", timeout=1000)
+
+
+def test_added_and_theme_toggle_tooltips_fade_like_the_themes(desktop):
+    """Lisätyn napin (ajonappi) ja teemanvaihtimen näppäimistövihje
+    häipyvät yhtä nopeasti kuin teeman omat; aiemmin ne odottivat ensin
+    250 ms ja viipyivät siksi kaksi kertaa pidempään."""
+    desktop.hover(RUN)
+    fades_like_the_theme(desktop, lambda: desktop.mouse.move(600, 500))
+    desktop.focus("[data-md-component=palette] .md-option")
+    fades_like_the_theme(desktop, lambda: desktop.evaluate("document.activeElement.blur()"))
+    desktop.hover(".jyu-print-button")
+    fades_like_the_theme(desktop, lambda: desktop.mouse.move(600, 500))

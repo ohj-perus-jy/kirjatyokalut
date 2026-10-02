@@ -68,14 +68,15 @@ def title(page) -> str | None:
 def test_the_browser_has_no_title_to_show(browser, base_url):
     """Teeman vihjeen rinnalle tuli välillä selaimen oma title-vihje, joka jäi
     näkyviin: Chrome ja Safari päivittävät sen tekstin vasta osoittimen
-    liikkuessa. Teema on kytkenyt vihjeensä HTML:n titlestä, ja sen jälkeen
-    painikkeella ei ole ei-tyhjää titleä missään vaiheessa: ei levossa, ei
-    vihjeen ollessa auki eikä sen sulkeuduttua. Vihjeen teksti tulee
-    skriptistä."""
+    liikkuessa. Valikko antaa vihjeen tekstin titlenä, ja tooltips.js siirtää
+    sen vihjeeseen ennen piirtoa, joten painikkeella ei ole ei-tyhjää titleä
+    yhdessäkään kuvaruudussa: ei levossa, ei vihjeen ollessa auki eikä sen
+    sulkeuduttua."""
     page, errors = open_page(browser, base_url)
     page.evaluate("""() => { window.titles = [];
-        new MutationObserver(() => titles.push(document.querySelector('.jyu-font__button').getAttribute('title')))
-          .observe(document.querySelector('.jyu-font__button'), {attributeFilter: ['title']}) }""")
+        const button = document.querySelector('.jyu-font__button');
+        const tick = () => { titles.push(button.getAttribute('title')); requestAnimationFrame(tick) };
+        tick() }""")
     assert not title(page)
     page.hover(".jyu-font__button")
     assert hints(page) == ["Leipäteksti: Serif, 100 %"]

@@ -15,6 +15,17 @@
  * Koskee myös teeman omia vihjeitä, kuten kopiointinappia. Valikkojen napit
  * (aria-expanded) hoitavat kohdistuksensa itse (sitemenu.js, fontmenu.js).
  *
+ * Teeman ottamien elementtien title siirretään heti talteen ja pois
+ * attribuutista (stash). Teema ottaa titlen pois vasta avatessaan vihjeen,
+ * kuvaruutua myöhemmin, ja siihen mennessä selain on voinut ajastaa oman
+ * title-vihjeensä, joka jää näkyviin teeman vihjeen rinnalle: Chrome ja
+ * Safari päivittävät sen tekstin vasta osoittimen liikkuessa, ja Chrome
+ * näyttää sen myös näppäimistöllä kohdistetulle elementille. Teema avaa nyt
+ * tyhjän vihjeen, ja teksti kirjoitetaan tästä (fill). Skriptin myöhemmin
+ * asettama title siirtyy samoin, joten title on yhä tapa antaa vihjeen
+ * teksti (fontmenu.js). Elementti, jolla ei ole muuta nimeä (teeman
+ * teemanvaihtimen labelit), saa titlen aria-labeliksi.
+ *
  * Ensimmäisenä extra_javascriptissä: DOMContentLoaded-kuuntelijat ajetaan
  * rekisteröintijärjestyksessä, ja teeman jälkeen heti tämän on nähtävä, mitkä
  * title-elementit teema ehti ottaa, ennen kuin muut skriptit lisäävät omiaan. */
@@ -22,7 +33,7 @@
 (() => {
   "use strict";
 
-  /* Sulkemisen viive ja häivytyksen kesto, kuten teemassa. */
+  /* Häivytyksen kesto kuten teemassa, ja kosketuksella myös sulkemisen viive. */
   const HIDE_MS = 250;
 
   /* Teeman ottamat elementit (title sivulla sen käynnistyessä) ja tässä
@@ -30,9 +41,44 @@
   const taken = new WeakSet();
   const attached = new WeakSet();
 
+  /* Teeman ottamien elementtien vihjeteksti ja ne, joille tämä antoi
+   * aria-labelin titlestä. */
+  const texts = new WeakMap();
+  const labelled = new WeakSet();
+
+  /* Teeman vihje on auki, kun aria-describedby osoittaa siihen. */
+  const fill = (element) => {
+    const tip = document.getElementById(element.getAttribute("aria-describedby"));
+    if (tip?.getAttribute("role") !== "tooltip" || !texts.has(element)) return;
+    const inner = tip.firstElementChild;
+    inner.textContent = texts.get(element);
+    tip.style.setProperty("--md-tooltip-width", `${inner.offsetWidth}px`);
+  };
+
+  const stash = (element) => {
+    const title = element.getAttribute("title");
+    if (title === null) return;
+    element.removeAttribute("title");
+    /* Tyhjä title on teeman palauttama: vihje avattiin titlen jo poissa ollessa. */
+    if (!title) return;
+    texts.set(element, title);
+    const named = element.hasAttribute("aria-labelledby")
+      || (element.hasAttribute("aria-label") && !labelled.has(element))
+      || element.textContent.trim();
+    if (!named) {
+      element.setAttribute("aria-label", title);
+      labelled.add(element);
+    }
+    fill(element);
+  };
+
   let count = 0;
 
-  const attach = (button) => {
+  /* Teeman näköinen vihje ankkurin alle: avaus heti, sulkeminen viiveellä ja
+   * häivytys kuten teemassa. Lisätyille napeille (attach) ja teemanvaihtimelle
+   * (palette). Sijainti päivitetään myös vierittäessä, koska yläpalkki pysyy
+   * paikallaan. */
+  const tooltip = () => {
     const tip = document.createElement("div");
     tip.className = "md-tooltip2";
     tip.setAttribute("role", "tooltip");
@@ -41,14 +87,12 @@
     inner.className = "md-tooltip2__inner md-typeset";
     tip.append(inner);
 
-    let text = "";
+    let anchor = null;
     let open = false;
-    let focused = false;
-    let hovered = false;
     let timer = 0;
 
     const place = () => {
-      const box = button.getBoundingClientRect();
+      const box = anchor.getBoundingClientRect();
       tip.style.setProperty("--md-tooltip-host-x", `${box.x + scrollX}px`);
       tip.style.setProperty("--md-tooltip-host-y", `${box.y + scrollY}px`);
       tip.style.setProperty("--md-tooltip-x", `${box.width / 2}px`);
@@ -56,47 +100,78 @@
     };
 
     const fill = (value) => {
-      text = value;
       inner.textContent = value;
       tip.style.setProperty("--md-tooltip-width", `${inner.offsetWidth}px`);
     };
 
-    const show = () => {
+    const show = (target, value) => {
       clearTimeout(timer);
-      if (open) return;
-      const title = button.getAttribute("title");
-      if (!title) return;
-      open = true;
-      button.removeAttribute("title");
-      /* Häivytyksen aikana uudelleen avattu on vielä sivulla. */
-      if (!tip.isConnected) document.body.append(tip);
-      fill(title);
-      tip.style.setProperty("--md-tooltip-tail", "0px");
-      tip.classList.add("md-tooltip2--bottom");
+      anchor = target;
+      if (!open) {
+        open = true;
+        /* Häivytyksen aikana uudelleen avattu on vielä sivulla. */
+        if (!tip.isConnected) document.body.append(tip);
+        tip.style.setProperty("--md-tooltip-tail", "0px");
+        tip.classList.add("md-tooltip2--bottom");
+        addEventListener("resize", place);
+        addEventListener("scroll", place, { passive: true });
+        /* Seuraavassa kehyksessä, jotta siirtymä näkyy, kuten teemassa. */
+        requestAnimationFrame(() => {
+          if (open) tip.classList.add("md-tooltip2--active");
+        });
+      }
+      fill(value);
       place();
-      button.setAttribute("aria-describedby", tip.id);
-      addEventListener("resize", place);
-      /* Seuraavassa kehyksessä, jotta siirtymä näkyy, kuten teemassa. */
-      requestAnimationFrame(() => {
-        if (open) tip.classList.add("md-tooltip2--active");
-      });
     };
 
-    /* Sulkeminen viiveellä kuten teemassa: napautus (touchstart, touchend)
-     * ehtii näyttää vihjeen, ja osoittimen käväisy napin ohi ei välkytä. */
-    const hide = () => {
+    /* Sulkeminen kuten teemassa: häivytys alkaa heti, ja vihje poistuu
+     * häivytyksen jälkeen. wait viivästää häivytyksen alkua: kosketuksella
+     * napautus (touchstart, touchend) ehtii näin näyttää vihjeen. closed
+     * kutsutaan häivytyksen alkaessa. */
+    const hide = (closed, wait = 0) => {
       if (!open) return;
+      clearTimeout(timer);
       timer = setTimeout(() => {
         open = false;
         tip.classList.remove("md-tooltip2--active");
         removeEventListener("resize", place);
-        button.removeAttribute("aria-describedby");
-        /* Skripti on voinut vaihtaa titlen vihjeen ollessa auki
-         * (hidelines.js); silloin uusi jää eikä vanhaa palauteta. */
-        if (!button.hasAttribute("title")) button.setAttribute("title", text);
+        removeEventListener("scroll", place);
+        closed?.();
         timer = setTimeout(() => tip.remove(), HIDE_MS);
-      }, HIDE_MS);
+      }, wait);
     };
+
+    return { id: tip.id, show, hide, fill, isOpen: () => open };
+  };
+
+  const attach = (button) => {
+    const tip = tooltip();
+    const touch = !matchMedia("(hover)").matches;
+    let text = "";
+    let owned = false;
+    let focused = false;
+    let hovered = false;
+
+    /* Title on vihjeen hallussa avauksesta häivytyksen alkuun. */
+    const show = () => {
+      if (!owned) {
+        const title = button.getAttribute("title");
+        if (!title) return;
+        text = title;
+        owned = true;
+        button.removeAttribute("title");
+        button.setAttribute("aria-describedby", tip.id);
+      }
+      tip.show(button, text);
+    };
+
+    const hide = () => tip.hide(() => {
+      owned = false;
+      button.removeAttribute("aria-describedby");
+      /* Skripti on voinut vaihtaa titlen vihjeen ollessa auki
+       * (hidelines.js); silloin uusi jää eikä vanhaa palauteta. */
+      if (!button.hasAttribute("title")) button.setAttribute("title", text);
+    }, touch ? HIDE_MS : 0);
 
     const update = () => {
       if (focused || hovered) show();
@@ -105,7 +180,7 @@
 
     button.addEventListener("focusin", () => { focused = true; update(); });
     button.addEventListener("focusout", () => { focused = false; update(); });
-    if (matchMedia("(hover)").matches) {
+    if (!touch) {
       button.addEventListener("mouseenter", () => { hovered = true; update(); });
       button.addEventListener("mouseleave", () => { hovered = false; update(); });
     } else {
@@ -119,14 +194,47 @@
     /* Title vaihtui vihjeen ollessa auki: teksti vihjeeseen ja attribuutti
      * taas pois. */
     new MutationObserver(() => {
-      if (!open || !button.hasAttribute("title")) return;
-      fill(button.getAttribute("title"));
+      if (!owned || !button.hasAttribute("title")) return;
+      text = button.getAttribute("title");
+      tip.fill(text);
       button.removeAttribute("title");
     }).observe(button, { attributeFilter: ["title"] });
   };
 
+  /* Teemanvaihtimen vihje näppäimistöllä. Teema kiinnittää vihjeen näkyvään
+   * labeliin, mutta Tab kohdistaa piilotettuun radionappiin, eikä teeman
+   * vihje aukea, koska kohdistus ei ole labelissa (eikä osoitintapahtumilla
+   * voi auttaa: teema tarkistaa todellisen :hover-tilan). Siksi
+   * näppäimistökohdistuksen ajan näytetään oma vihje näkyvän labelin alla
+   * labelin tekstillä. Näkyvä label ei ole välttämättä kohdistetun napin
+   * vieressä: teema näyttää sen hidden-attribuutilla eikä valinnalla, ja kun
+   * yhtään nappia ei ole valittu, Tab kohdistaa ensimmäiseen. Nuolilla
+   * vaihdettaessa teema vaihtaa näkyvän labelin change-tapahtumassa, joten
+   * vihje siirretään seuraavassa kehyksessä. Kohdistusrengas: layout.css. */
+  const palette = () => {
+    const form = document.querySelector("[data-md-component=palette]");
+    if (!form) return;
+    const tip = tooltip();
+    const show = () => {
+      const label = form.querySelector("label:not([hidden])");
+      const text = label && (texts.get(label) || label.getAttribute("aria-label"));
+      if (text) tip.show(label, text);
+    };
+    form.addEventListener("focusin", (event) => {
+      if (event.target.matches(".md-option:focus-visible")) show();
+    });
+    form.addEventListener("change", () => {
+      if (tip.isOpen()) requestAnimationFrame(show);
+    });
+    form.addEventListener("focusout", () => tip.hide());
+  };
+
   const start = () => {
-    for (const element of document.querySelectorAll("[title]")) taken.add(element);
+    for (const element of document.querySelectorAll("[title]")) {
+      taken.add(element);
+      stash(element);
+    }
+    palette();
     const consider = (button) => {
       if (taken.has(button) || attached.has(button)) return;
       attached.add(button);
@@ -135,7 +243,13 @@
     new MutationObserver((records) => {
       for (const record of records) {
         if (record.type === "attributes") {
-          if (record.target.hasAttribute("title")) consider(record.target);
+          const target = record.target;
+          if (taken.has(target)) {
+            if (record.attributeName === "title") stash(target);
+            else fill(target);
+          } else if (record.attributeName === "title" && target.hasAttribute("title")) {
+            consider(target);
+          }
           continue;
         }
         for (const node of record.addedNodes) {
@@ -145,7 +259,7 @@
         }
       }
     }).observe(document.body, {
-      childList: true, subtree: true, attributeFilter: ["title"],
+      childList: true, subtree: true, attributeFilter: ["title", "aria-describedby"],
     });
   };
   if (document.readyState === "loading") {

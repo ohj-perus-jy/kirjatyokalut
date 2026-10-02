@@ -498,11 +498,14 @@ def test_the_speaker_tooltip_closes_after_a_click(player):
     button.click()
     page.mouse.move(600, 500)
     page.wait_for_selector(".md-tooltip2--active", state="detached")
-    # Vihje palauttaa title-attribuutin vasta poistuessaan.
-    page.wait_for_selector(".jyu-puhe-button[title]")
+    # Title on tooltips.js:n hallussa (ei attribuuttina), nimi aria-labelissa.
     assert button.get_attribute("aria-pressed") == "true"
-    assert button.get_attribute("title") == "Kuuntele sivu"
+    assert not button.get_attribute("title")
     assert button.get_attribute("aria-label") == "Kuuntele sivu"
+    button.hover()
+    page.wait_for_selector(".md-tooltip2--active")
+    assert page.locator(".md-tooltip2--active").text_content().strip() == "Kuuntele sivu"
+    page.mouse.move(600, 500)
     button.focus()
     page.keyboard.press("Enter")
     assert button.get_attribute("aria-pressed") == "false"

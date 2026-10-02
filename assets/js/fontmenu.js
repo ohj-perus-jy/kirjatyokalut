@@ -49,60 +49,46 @@
     }
   };
 
-  /* Teeman vihje on auki, kun painikkeella on osoitin tai kohdistus. Teema
-   * kytkee sen title-attribuutin perusteella käynnistyessään
-   * (DOMContentLoaded); avautuessaan se ottaa titlen vihjeen tekstiksi ja pois
-   * attribuutista ja sulkeutuessaan palauttaa sen. Selain ehti silti välillä
-   * näyttää oman title-vihjeensä teeman vihjeen rinnalle ja jättää sen
-   * näkyviin: Chrome ja Safari päivittävät sen tekstin vasta osoittimen
-   * liikkuessa. Siksi title poistetaan teeman käynnistyttyä (tämän
-   * DOMContentLoaded-kuuntelija ajetaan teeman jälkeen), teema avaa tyhjän
-   * vihjeen ja teksti kirjoitetaan tästä (hint), myös kun valinta vaihtuu
-   * vihjeen ollessa auki. Paneelin ollessa auki vihje piilotetaan (cover),
-   * koska se tulisi painikkeen alle paneelin päälle; piilossa sitä ei voi
-   * mitata, joten se mitataan esiin tullessa. Vihjeen id on
-   * aria-describedbyssä vain vihjeen ollessa auki, joten se otetaan talteen.
+  /* Teeman vihje on auki, kun painikkeella on osoitin tai kohdistus. Sen
+   * teksti annetaan titlenä: tooltips.js siirtää titlen vihjeeseen ja pitää
+   * sen poissa attribuutista, ettei selain näytä omaa vihjettään rinnalle,
+   * myös kun valinta vaihtuu vihjeen ollessa auki. Paneelin ollessa auki
+   * vihje piilotetaan (cover), koska se tulisi painikkeen alle paneelin
+   * päälle; piilossa sitä ei voi mitata, joten se mitataan esiin tullessa
+   * (measure). Vihjeen id on aria-describedbyssä vain vihjeen ollessa auki,
+   * joten se otetaan talteen.
    *
    * Esc palauttaa kohdistuksen painikkeeseen, jolloin vihje aukeaisi ja jäisi
    * näkyviin, vaikka osoitin on muualla ja valinta näkyi juuri paneelissa.
    * Siksi Escin jälkeen (quiet) kohdistus ei pidä vihjettä auki: se näkyy
    * vain osoittimen ollessa painikkeella, kunnes kohdistus lähtee painikkeesta. */
-  let name = "";
   let tip = "";
   let quiet = false;
   let hovered = false;
   const hint = (text) => {
-    name = text;
+    button.title = text;
+  };
+  const measure = () => {
     const inner = document.getElementById(tip)?.firstElementChild;
-    if (inner) {
-      inner.textContent = text;
-      inner.parentElement.style.setProperty("--md-tooltip-width", `${inner.offsetWidth}px`);
-    }
+    if (inner) inner.parentElement.style.setProperty("--md-tooltip-width", `${inner.offsetWidth}px`);
   };
   const cover = () => {
     const element = document.getElementById(tip);
     if (element) element.hidden = !panel.hidden || (quiet && !hovered);
   };
-  /* Piilossa ollutta vihjettä ei voinut mitata, joten se mitataan esiin tullessa. */
   const hover = (on) => {
     hovered = on;
     cover();
-    if (on) hint(name);
+    if (on) measure();
   };
   button.addEventListener("pointerenter", () => hover(true));
   button.addEventListener("pointerleave", () => hover(false));
   button.addEventListener("blur", () => { quiet = false; });
   button.addEventListener("focus", cover);
-  /* Vihje avautui tai sulkeutui (aria-describedby), tai teema palautti titlen. */
   new MutationObserver(() => {
     tip = button.getAttribute("aria-describedby") || tip;
-    if (button.getAttribute("title")) button.removeAttribute("title");
     cover();
-    hint(name);
-  }).observe(button, { attributeFilter: ["title", "aria-describedby"] });
-  const untitle = () => button.removeAttribute("title");
-  if (document.readyState === "loading") addEventListener("DOMContentLoaded", untitle);
-  else untitle();
+  }).observe(button, { attributeFilter: ["aria-describedby"] });
 
   let font = items[0];
   let size = 100;
@@ -205,7 +191,7 @@
     panel.hidden = true;
     quiet = refocus;
     cover();
-    hint(name);
+    measure();
     button.setAttribute("aria-expanded", "false");
     if (refocus) button.focus();
   };

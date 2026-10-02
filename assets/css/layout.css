@@ -103,6 +103,16 @@
   text-decoration: none;
 }
 
+/* Teemanvaihtimen kohdistusrengas näkyvään labeliin. Teema piirtää sen
+ * kohdistetun radionapin seuraavalle labelille, mutta näyttää labelin
+ * hidden-attribuutilla eikä valinnalla, ja kun yhtään nappia ei ole valittu,
+ * Tab kohdistaa ensimmäiseen: tummassa teemassa sen label on piilossa, eikä
+ * rengasta näkynyt. Vihje näppäimistöllä: tooltips.js. */
+[data-md-component="palette"]:has(.md-option:focus-visible) label:not([hidden]) {
+  outline-style: auto;
+  outline-color: var(--md-accent-fg-color);
+}
+
 /* Hakupainikkeen hover samalla täytöllä kuin sivusto- ja kirjasinvalikon
  * (sitemenu.css, fontmenu.css); teeman --md-default-fg-color--lighter on
  * liian tumma. Teeman 0,4 s:n häivytys pois kuten niissäkin (syy
