@@ -223,3 +223,29 @@ def test_added_and_theme_toggle_tooltips_fade_like_the_themes(desktop):
     fades_like_the_theme(desktop, lambda: desktop.evaluate("document.activeElement.blur()"))
     desktop.hover(".jyu-print-button")
     fades_like_the_theme(desktop, lambda: desktop.mouse.move(600, 500))
+
+
+def test_only_the_themes_tooltips_lose_their_title(browser, book, serve):
+    """Title siirretään vain elementeiltä, joille teema tekee vihjeen
+    (yläpalkki ja sisältö). Alatunnisteen linkeille teema ei tee vihjettä,
+    joten niillä title pysyy ja selaimen oma vihje näkyy kuten ennen.
+    Lyhenteen title on myös sen saavutettava nimi, joten se pysyy."""
+    page = browser.new_page()
+    page.goto(f"{serve(book.site)}/osa2/02-huomiot/", wait_until="load")
+    footer = page.eval_on_selector_all(
+        ".md-footer-meta a[title]", "links => links.map(a => a.getAttribute('title'))")
+    assert footer and all(footer)
+    assert page.get_attribute("abbr", "title") == "Hypertext Markup Language"
+    assert page.get_attribute("abbr", "aria-description") is None
+    assert page.locator(".md-header [title]:not([title=''])").count() == 0
+    page.close()
+
+
+def test_a_title_that_described_stays_as_a_description(desktop):
+    """Tekstillisen elementin title oli sen kuvaus (otsikon ¶-linkki:
+    Permanent link). Kun title siirretään pois, se jää aria-descriptioniksi;
+    ikoninapeille, joiden nimi on sama teksti, kuvausta ei toisteta."""
+    link = desktop.locator(".md-content .headerlink").first
+    assert link.get_attribute("title") is None
+    assert link.get_attribute("aria-description") == "Permanent link"
+    assert desktop.get_attribute(".jyu-print-button", "aria-description") is None

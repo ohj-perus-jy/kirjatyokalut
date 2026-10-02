@@ -15,8 +15,9 @@
  * Koskee myös teeman omia vihjeitä, kuten kopiointinappia. Valikkojen napit
  * (aria-expanded) hoitavat kohdistuksensa itse (sitemenu.js, fontmenu.js).
  *
- * Teeman ottamien elementtien title siirretään heti talteen ja pois
- * attribuutista (stash). Teema ottaa titlen pois vasta avatessaan vihjeen,
+ * Teeman ottamien elementtien (yläpalkin ja sisällön title-elementit, THEME)
+ * title siirretään heti talteen ja pois attribuutista (stash). Teema ottaa
+ * titlen pois vasta avatessaan vihjeen,
  * kuvaruutua myöhemmin, ja siihen mennessä selain on voinut ajastaa oman
  * title-vihjeensä, joka jää näkyviin teeman vihjeen rinnalle: Chrome ja
  * Safari päivittävät sen tekstin vasta osoittimen liikkuessa, ja Chrome
@@ -24,7 +25,12 @@
  * tyhjän vihjeen, ja teksti kirjoitetaan tästä (fill). Skriptin myöhemmin
  * asettama title siirtyy samoin, joten title on yhä tapa antaa vihjeen
  * teksti (fontmenu.js). Elementti, jolla ei ole muuta nimeä (teeman
- * teemanvaihtimen labelit), saa titlen aria-labeliksi.
+ * teemanvaihtimen labelit), saa titlen aria-labeliksi, ja muilla se jää
+ * kuvaukseksi (aria-description), jos se eroaa nimestä (otsikon ¶-linkki).
+ * abbr jää ennalleen: sen title on myös saavutettava nimi, eikä sitä voi
+ * kohdistaa, joten näppäimistön ja ruudunlukijan käyttäjä ei saisi selitystä
+ * muualta. Muiden title-elementtien (alatunniste, sivupalkki) vihje on
+ * selaimen oma, koska teema ei tee niille vihjettä.
  *
  * Ensimmäisenä extra_javascriptissä: DOMContentLoaded-kuuntelijat ajetaan
  * rekisteröintijärjestyksessä, ja teeman jälkeen heti tämän on nähtävä, mitkä
@@ -41,10 +47,15 @@
   const taken = new WeakSet();
   const attached = new WeakSet();
 
+  /* Elementit, joille teema tekee vihjeen (content.tooltips). */
+  const THEME = "[data-md-component=header] [title],"
+    + " [data-md-component=content] [title]:not([data-preview])";
+
   /* Teeman ottamien elementtien vihjeteksti ja ne, joille tämä antoi
-   * aria-labelin titlestä. */
+   * aria-labelin tai aria-descriptionin titlestä. */
   const texts = new WeakMap();
   const labelled = new WeakSet();
+  const described = new WeakSet();
 
   /* Teeman vihje on auki, kun aria-describedby osoittaa siihen. */
   const fill = (element) => {
@@ -55,19 +66,26 @@
     tip.style.setProperty("--md-tooltip-width", `${inner.offsetWidth}px`);
   };
 
+  const stashable = (element) => element.localName !== "abbr";
+
   const stash = (element) => {
+    if (!stashable(element)) return;
     const title = element.getAttribute("title");
     if (title === null) return;
     element.removeAttribute("title");
     /* Tyhjä title on teeman palauttama: vihje avattiin titlen jo poissa ollessa. */
     if (!title) return;
     texts.set(element, title);
-    const named = element.hasAttribute("aria-labelledby")
-      || (element.hasAttribute("aria-label") && !labelled.has(element))
-      || element.textContent.trim();
-    if (!named) {
+    /* Tämän itse asettama attribuutti päivitetään, muuta ei kosketa. */
+    const own = (name, set) => element.hasAttribute(name) && !set.has(element);
+    const text = element.textContent.trim();
+    if (!element.hasAttribute("aria-labelledby") && !own("aria-label", labelled) && !text) {
       element.setAttribute("aria-label", title);
       labelled.add(element);
+    } else if (!own("aria-description", described)
+        && title !== (element.getAttribute("aria-label") || text)) {
+      element.setAttribute("aria-description", title);
+      described.add(element);
     }
     fill(element);
   };
@@ -230,7 +248,7 @@
   };
 
   const start = () => {
-    for (const element of document.querySelectorAll("[title]")) {
+    for (const element of document.querySelectorAll(THEME)) {
       taken.add(element);
       stash(element);
     }
@@ -240,6 +258,10 @@
       attached.add(button);
       attach(button);
     };
+    /* Teema ei ottanut nappeja yläpalkin ja sisällön ulkopuolelta, vaikka ne
+     * olivat jo sivulla (ääneenluvun soitinpalkki lisätään ennen
+     * DOMContentLoadedia). */
+    document.querySelectorAll("button[title]").forEach(consider);
     new MutationObserver((records) => {
       for (const record of records) {
         if (record.type === "attributes") {

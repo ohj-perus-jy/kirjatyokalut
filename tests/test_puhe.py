@@ -532,3 +532,14 @@ def test_the_speed_cycles_applies_to_the_next_clip_and_is_remembered(player):
     assert speed.text_content() == "1,25×"
     assert page.evaluate("window.__current.playbackRate") == 1.25
     assert errors == []
+
+
+def test_the_player_buttons_get_the_themes_tooltip(player):
+    """Soitinpalkki lisätään ennen kuin teema käynnistyy, mutta teema ei tee
+    sen napeille vihjettä; tooltips.js tekee, teeman näköisenä."""
+    page, errors = player()
+    page.click(".jyu-puhe-button")
+    page.hover(".jyu-puhe-close")
+    page.wait_for_selector(".md-tooltip2--active")
+    assert page.locator(".md-tooltip2--active").text_content().strip() == "Lopeta lukeminen"
+    assert errors == []

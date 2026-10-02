@@ -55,7 +55,8 @@ Laatikon sisältö.
 
 ## Laatikon jälkeen
 
-Kappale laatikon jälkeen.
+Kappale laatikon jälkeen. Lyhenne <abbr title="Hypertext Markup Language">HTML</abbr>
+pitää titlensä, koska se on myös lyhenteen saavutettava nimi (tooltips.js).
 
 Toinen kappale, jotta sivu vierii matalassa ikkunassa.
 
