@@ -405,6 +405,69 @@
   }
 }
 
+/* Sisällysluettelo sivupalkkina eli 960 px:stä alkaen. Teema piirtää sen oman
+ * vierityspalkin aina, ja kun luettelo ulottuu ikkunan oikeaan reunaan, palkki
+ * on heti selaimen palkin vieressä: kaksi palkkia rinnakkain. Palkki näkyy
+ * nyt kuten kiskossa vain osoittimen ollessa luettelon päällä tai
+ * näppäimistöllä liikuttaessa (perustelut kiskon säännöissä yllä).
+ * Luettelo seuraa lukukohtaa itse (mkdocs-pohja.yml: toc.follow), joten
+ * vieritystä tarvitaan harvoin. Häivytys kertoo, että listaa on lisää:
+ * yläreunassa sticky-otsikon alla, kun listaa on vieritetty, ja alareunassa,
+ * kun listaa on alempana (assets/js/toc.js asettaa attribuutit ja otsikon
+ * korkeuden). Ilman skriptiä maski ei peitä mitään. */
+@media screen and (min-width: 60em) {
+  .md-sidebar--secondary .md-sidebar__scrollwrap {
+    scrollbar-color: rgb(from var(--jyu-rail-scrollbar) r g b / 0) transparent;
+    transition: scrollbar-color 0.25s;
+    mask-image: linear-gradient(
+      to bottom,
+      #000 var(--jyu-toc-title, 0px),
+      rgb(0 0 0 / var(--jyu-toc-above, 1)) var(--jyu-toc-title, 0px),
+      #000 calc(var(--jyu-toc-title, 0px) + 1.5rem),
+      #000 calc(100% - var(--jyu-toc-below, 0px)),
+      rgb(0 0 0 / var(--jyu-toc-end, 1)) 100%
+    );
+  }
+
+  .md-sidebar--secondary .md-sidebar__scrollwrap[data-jyu-above] {
+    --jyu-toc-above: 0;
+  }
+
+  .md-sidebar--secondary .md-sidebar__scrollwrap[data-jyu-below] {
+    --jyu-toc-below: 2.5rem;
+    --jyu-toc-end: 0;
+  }
+
+  /* Vieritetyssä päässä rulla ei jatka sivun vierittämistä, jottei
+   * luettelon ja sivun vieritys sekoitu. Vain kun lista vierii: Chromium
+   * ei ketjuta rullaa sivulle edes mahtuvasta listasta, jos contain on
+   * päällä, jolloin sivu ei vierisi luettelon päältä lainkaan. */
+  .md-sidebar--secondary .md-sidebar__scrollwrap:is([data-jyu-above], [data-jyu-below]) {
+    overscroll-behavior: contain;
+  }
+
+  .md-sidebar--secondary .md-sidebar__scrollwrap::-webkit-scrollbar-thumb {
+    background-color: transparent;
+    transition: background-color 0.25s;
+  }
+
+  .md-sidebar--secondary:hover .md-sidebar__scrollwrap,
+  .md-sidebar--secondary .md-sidebar__scrollwrap:has(:focus-visible) {
+    scrollbar-color: var(--jyu-rail-scrollbar) transparent;
+  }
+
+  .md-sidebar--secondary:hover .md-sidebar__scrollwrap::-webkit-scrollbar-thumb,
+  .md-sidebar--secondary
+    .md-sidebar__scrollwrap:has(:focus-visible)::-webkit-scrollbar-thumb {
+    background-color: var(--md-default-fg-color--lighter);
+  }
+
+  .md-sidebar--secondary
+    .md-sidebar__scrollwrap::-webkit-scrollbar-thumb:hover {
+    background-color: var(--md-accent-fg-color);
+  }
+}
+
 /* Teema pitää valikon laatikkona 1220 px:iin asti, joten välillä 1180–1219 px
  * sen laatikkosäännöt kumotaan ja sen työpöytäsäännöt tuodaan tänne. Kopioita
  * teeman säännöistä: päivitä, jos teema muuttaa niitä. Kisko on kapeampi,

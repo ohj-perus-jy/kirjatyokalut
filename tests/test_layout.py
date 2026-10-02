@@ -132,6 +132,99 @@ def test_wide_screen_centres_the_rail_with_the_text(browser, chapter_url, width,
     context.close()
 
 
+TOC_WRAP = f"{TOC} .md-sidebar__scrollwrap"
+
+
+@pytest.fixture
+def short_window(browser, chapter_url):
+    """Matala ikkuna, jossa sisällysluettelo ei mahdu kerralla näkyviin."""
+    context = browser.new_context(viewport={"width": 1280, "height": 300})
+    page = context.new_page()
+    page.goto(chapter_url, wait_until="load")
+    yield page
+    context.close()
+
+
+def toc_state(page) -> dict:
+    return page.evaluate(f"""() => {{
+        const wrap = document.querySelector('{TOC_WRAP}')
+        return {{above: wrap.hasAttribute('data-jyu-above'),
+                 below: wrap.hasAttribute('data-jyu-below'),
+                 title: parseFloat(wrap.style.getPropertyValue('--jyu-toc-title')),
+                 color: getComputedStyle(wrap).scrollbarColor}}
+    }}""")
+
+
+def test_contents_scrollbar_shows_only_under_the_pointer(short_window):
+    """Sisällysluettelon oma palkki oli aina näkyvissä heti selaimen palkin
+    vieressä. Nyt se näkyy kuten kiskossa vain osoittimen ollessa
+    luettelon päällä (väri nolla-alfalla levossa)."""
+    page = short_window
+    page.mouse.move(600, 150)
+    assert "/ 0)" in toc_state(page)["color"]
+    page.hover(f"{TOC} .md-nav__title")
+    # Väri vaihtuu 0,25 s:n siirtymällä.
+    page.wait_for_function(
+        f"!getComputedStyle(document.querySelector('{TOC_WRAP}')).scrollbarColor.includes('/ 0)')",
+        timeout=2000)
+
+
+def test_contents_fades_where_the_list_continues(short_window):
+    """Häivytys kertoo, kumpaan suuntaan listaa on lisää: alussa vain
+    alareunassa, lopussa vain yläreunassa sticky-otsikon alla."""
+    page = short_window
+    state = toc_state(page)
+    assert (state["above"], state["below"]) == (False, True)
+    assert state["title"] > 0
+    page.eval_on_selector(TOC_WRAP, "wrap => wrap.scrollTo(0, wrap.scrollHeight)")
+    page.wait_for_function(
+        f"document.querySelector('{TOC_WRAP}').hasAttribute('data-jyu-above')")
+    state = toc_state(page)
+    assert (state["above"], state["below"]) == (True, False)
+
+
+def test_contents_follows_the_reading_position(short_window):
+    """Luettelo vierii itse niin, että luettavan otsikon kohta näkyy
+    (toc.follow). Viimeistä edellinen kohta, joka ei näy ilman seurantaa;
+    viimeinen ei käy, koska sivun lopussa teema madaltaa luetteloa
+    alatunnisteen verran."""
+    page = short_window
+    links = page.locator(f"{TOC} a.md-nav__link")
+    target = links.nth(links.count() - 2).get_attribute("href")[1:]
+    visible = f"""() => {{
+        const wrap = document.querySelector('{TOC_WRAP}').getBoundingClientRect()
+        const link = document.querySelector("{TOC} a[href='#{target}']").getBoundingClientRect()
+        return link.top >= wrap.top && link.bottom <= wrap.bottom
+    }}"""
+    assert not page.evaluate(visible)
+    page.evaluate(f"document.getElementById('{target}').scrollIntoView()")
+    page.wait_for_selector(f"{TOC} a.md-nav__link--active[href='#{target}']", timeout=2000)
+    page.wait_for_function(visible, timeout=2000)
+
+
+def test_wheel_over_the_contents_does_not_scroll_the_page(short_window, browser, chapter_url):
+    """Kun luettelo on vieritetty loppuun, rulla ei jatka sivun
+    vierittämistä. Jos luettelo mahtuu kokonaan, rulla vierittää sivua
+    kuten ennenkin."""
+    page = short_window
+    page.hover(f"{TOC} .md-nav__title")
+    for _ in range(10):
+        page.mouse.wheel(0, 400)
+    page.wait_for_function(
+        f"!document.querySelector('{TOC_WRAP}').hasAttribute('data-jyu-below')")
+    page.wait_for_timeout(300)
+    assert page.evaluate("scrollY") == 0
+
+    context = browser.new_context(viewport={"width": 1280, "height": 900})
+    tall = context.new_page()
+    tall.goto(chapter_url, wait_until="load")
+    assert not toc_state(tall)["below"]
+    tall.hover(f"{TOC} .md-nav__title")
+    tall.mouse.wheel(0, 400)
+    tall.wait_for_function("scrollY > 0", timeout=2000)
+    context.close()
+
+
 def test_drawer_scrollbar_stays_between_the_rounded_corners(browser, chapter_url):
     """Kapean näytön laatikon vierityspalkin raita alkaa ja päättyy kulmien
     pyöristyksen sisäpuolella, mutta vieritysalue on yhä koko laatikon korkuinen."""
