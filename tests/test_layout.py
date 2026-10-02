@@ -202,6 +202,34 @@ def test_contents_follows_the_reading_position(short_window):
     page.wait_for_function(visible, timeout=2000)
 
 
+@pytest.mark.parametrize("motion, behavior", [("no-preference", "smooth"), ("reduce", "auto")])
+def test_contents_follows_smoothly(browser, chapter_url, motion, behavior):
+    """Teema jättää vierittäessä vieritystavan selaimen oletukseksi, jolloin
+    luettelo hyppi; oletus on pehmeä, ellei lukija ole vähentänyt liikettä."""
+    context = browser.new_context(viewport={"width": 1280, "height": 300}, reduced_motion=motion)
+    page = context.new_page()
+    page.goto(chapter_url, wait_until="load")
+    assert page.eval_on_selector(TOC_WRAP, "wrap => getComputedStyle(wrap).scrollBehavior") == behavior
+    context.close()
+
+
+def test_a_heading_in_a_closed_box_is_passed_with_the_box(browser, chapter_url):
+    """Suljetun <details>-laatikon otsikko on sisällysluettelossa. Chromium
+    antoi sille sijainnin kauempana sivulla, joten luettelo merkitsi sen
+    ohitetuksi liian myöhään; nyt sen paikka on laatikon paikka."""
+    context = browser.new_context(viewport={"width": 1280, "height": 300})
+    page = context.new_page()
+    page.goto(chapter_url.replace("/osa1/01-hei/", "/osa2/02-huomiot/"), wait_until="load")
+    link = f"{TOC} a[href='#otsikko-laatikossa']"
+    page.evaluate("document.getElementById('ennen-laatikkoa').scrollIntoView()")
+    page.wait_for_selector(f"{TOC} a.md-nav__link--active[href='#ennen-laatikkoa']", timeout=2000)
+    assert "md-nav__link--passed" not in page.get_attribute(link, "class")
+    page.evaluate("document.getElementById('laatikon-jalkeen').scrollIntoView()")
+    page.wait_for_selector(f"{TOC} a.md-nav__link--active[href='#laatikon-jalkeen']", timeout=2000)
+    assert "md-nav__link--passed" in page.get_attribute(link, "class")
+    context.close()
+
+
 def test_wheel_over_the_contents_does_not_scroll_the_page(short_window, browser, chapter_url):
     """Kun luettelo on vieritetty loppuun, rulla ei jatka sivun
     vierittämistä. Jos luettelo mahtuu kokonaan, rulla vierittää sivua
