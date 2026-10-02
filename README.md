@@ -114,6 +114,7 @@ ylähakemisto) ja lukee materiaalin sen viereisestä `src/`:stä.
 | `requirements.txt` | kiinnitetty Zensical-versio; `requirements-dev.txt` lisää testien riippuvuudet |
 | `tests/` | testit ja koekirja (`tests/book/`) |
 | `linkit/` | ulkoisten linkkien tarkistus (GitHub Action, lychee) |
+| `skriptit/` | kaikkien kirjojen päivitys ja työkalujen kiinnitys (`pull-all.sh`, `pin-tools.sh`), ks. [Kaikki kirjat kerralla](#kaikki-kirjat-kerralla) |
 | `CLAUDE.md` | kirjojen yhteiset kirjoitusohjeet Claudelle |
 
 ## Kirjan asetukset: kirja.toml
@@ -297,6 +298,22 @@ julkaisu kaatuu checkoutiin. Se on tarkoitus: unohdus näkyy heti.
 Jos kirjan `pages.yml` kääntää useita haaroja (`main` ja `dev`), jokaisen
 haaran pitää toimia samalla `pages.yml`:llä: rakenteen muutos viedään kaikkiin
 käännettäviin haaroihin samalla kertaa.
+
+### Kaikki kirjat kerralla
+
+Kun kirjat ja tämä repo ovat kloonattuina samaan hakemistoon, `skriptit/`
+hoitaa ne kaikki kerralla. Skriptit linkitetään tuohon yhteiseen hakemistoon,
+koska ne käsittelevät hakemistoa, jossa niitä kutsutaan:
+
+```bash
+ln -s kirjatyokalut/skriptit/pull-all.sh kirjatyokalut/skriptit/pin-tools.sh .
+./pull-all.sh                  # kaikki repot ajan tasalle, työkalut mainiin
+./pin-tools.sh [kirja ...]     # kirjaan kiinnitetään työkalujen main (commit, ei pushia)
+```
+
+`pull-all.sh` kertoo, missä kirjassa kiinnitetty työkaluversio on eri kuin
+main. `pin-tools.sh` tekee siitä kirjan nykyiseen haaraan commitin, jonka
+viestiin tulevat työkalujen committien otsikot.
 
 ## Käyttöönotto uudessa kirjassa
 
