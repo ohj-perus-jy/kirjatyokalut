@@ -180,6 +180,9 @@ def test_phone_contents_closes_when_tapped_outside(browser, chapter_url):
     page.goto(chapter_url, wait_until="load")
     page.click(f"{TOC} .md-sidebar-button")
     assert page.is_checked("#__toc")
+    # Laatikko liukuu auki; mitataan vasta perillä.
+    page.wait_for_function(
+        f"getComputedStyle(document.querySelector('{TOC} .md-sidebar__inner')).opacity === '1'")
     box = page.locator(f"{TOC} .md-sidebar__inner").bounding_box()
     page.mouse.click(box["x"] + box["width"] / 2, box["y"] + box["height"] - 2)
     assert page.is_checked("#__toc")

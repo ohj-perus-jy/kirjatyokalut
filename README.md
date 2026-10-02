@@ -61,6 +61,7 @@ Kielet: `csharp`, `java`, `javascript` (korostetut rivit: `csharp`, `java`).
 | Ominaisuus | Toteutus |
 | --- | --- |
 | Valikko kiinteänä kiskona 1180 px:stä alkaen (11" iPad vaakatasossa), luvun avaus vierittää valikon kohdalleen | layout.css, nav-scroll.js |
+| Nappien vihjeet (title) teeman tyyliin myös skriptien lisäämille napeille; napautuksen jälkeen vihje ei jää näkyviin | tooltips.js |
 | Sisällysluettelo kapealla näytöllä alakulman napista; kohdan tai ulkopuolen napautus sulkee sen | toc.js |
 | Sivustovalikko kurssin nimen vieressä (`extra.sites`) | header.html, sitemenu.js/css |
 | Leipätekstin kirjasinvalikko: Source Serif 4, Atkinson Hyperlegible Next, Literata | header.html, fontmenu.js/css, typography.css |

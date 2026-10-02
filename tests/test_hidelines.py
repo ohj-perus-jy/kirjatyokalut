@@ -47,15 +47,17 @@ def test_the_marked_lines_are_the_hidden_ones(page):
 
 
 def test_the_eye_shows_and_hides_them(page):
-    """Ensimmäinen painallus näyttää piilorivit, toinen piilottaa."""
+    """Ensimmäinen painallus näyttää piilorivit, toinen piilottaa. Nimi
+    luetaan aria-labelista: osoitin on napilla, joten vihje on auki ja title
+    sen hallussa (tooltips.js, kuten teeman kopiointinapilla)."""
     page.click(f"{BLOCK} {EYE}")
     assert page.inner_text(BLOCK).startswith("void main() {")
-    assert page.get_attribute(f"{BLOCK} {EYE}", "title") == "Piilota rivit"
+    assert page.get_attribute(f"{BLOCK} {EYE}", "aria-label") == "Piilota rivit"
     assert page.get_attribute(f"{BLOCK} {EYE}", "aria-pressed") == "true"
 
     page.click(f"{BLOCK} {EYE}")
     assert "void main() {" not in page.inner_text(BLOCK)
-    assert page.get_attribute(f"{BLOCK} {EYE}", "title") == "Näytä piilotetut rivit"
+    assert page.get_attribute(f"{BLOCK} {EYE}", "aria-label") == "Näytä piilotetut rivit"
     assert page.get_attribute(f"{BLOCK} {EYE}", "aria-pressed") == "false"
 
 
