@@ -131,6 +131,9 @@ extra_javascript:
   # Alalukujen avaaminen ei vieritä valikkoa; ks. assets/js/nav-scroll.js.
   - assets/js/nav-scroll.js
 
+  # Kapean näytön sisällysluettelo sulkeutuu, kun kohtaa tai ulkopuolta napautetaan.
+  - assets/js/toc.js
+
   # Koko kirja yhdelle sivulle (/tulosta/).
   - assets/js/print.js
 
