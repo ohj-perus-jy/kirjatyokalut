@@ -11,9 +11,8 @@
  * näppäiminä koko paneelissa. Kirjasinlista on role="listbox" kuten <select>:
  * nuolet liikkuvat ja Enter valitsee. Myös hiiri siirtää kohdistusta, joten
  * korostettuna on aina yksi kohta. Painikkeessa on vain kuvake, joten
- * valinnat kerrotaan sen title- ja aria-label-attribuuteissa (kohdan
- * data-short ja koko). Title näkyy teeman vihjeenä (content.tooltips), ks.
- * hint. */
+ * valinnat kerrotaan sen aria-labelissa ja teeman vihjeessä
+ * (content.tooltips) (kohdan data-short ja koko), ks. hint. */
 
 (() => {
   "use strict";
@@ -50,15 +49,19 @@
     }
   };
 
-  /* Teeman vihje on auki, kun painikkeella on osoitin tai kohdistus. Auetessaan
-   * se ottaa title-attribuutin talteen ja sulkeutuessaan palauttaa sen. Jos
-   * valinta tehdään vihjeen ollessa auki (esim. osoitin jää painikkeelle ja
-   * valitaan nuolilla), vihjeeseen jäisi vanha nimi ja se palautuisi myös
-   * attribuuttiin. Siksi auki olevan vihjeen teksti vaihdetaan ja palautettu
-   * vanha nimi korjataan. Paneelin ollessa auki vihje piilotetaan (cover),
+  /* Teeman vihje on auki, kun painikkeella on osoitin tai kohdistus. Teema
+   * kytkee sen title-attribuutin perusteella käynnistyessään
+   * (DOMContentLoaded); avautuessaan se ottaa titlen vihjeen tekstiksi ja pois
+   * attribuutista ja sulkeutuessaan palauttaa sen. Selain ehti silti välillä
+   * näyttää oman title-vihjeensä teeman vihjeen rinnalle ja jättää sen
+   * näkyviin: Chrome ja Safari päivittävät sen tekstin vasta osoittimen
+   * liikkuessa. Siksi title poistetaan teeman käynnistyttyä (tämän
+   * DOMContentLoaded-kuuntelija ajetaan teeman jälkeen), teema avaa tyhjän
+   * vihjeen ja teksti kirjoitetaan tästä (hint), myös kun valinta vaihtuu
+   * vihjeen ollessa auki. Paneelin ollessa auki vihje piilotetaan (cover),
    * koska se tulisi painikkeen alle paneelin päälle; piilossa sitä ei voi
-   * mitata, joten close mittaa uudelleen. Vihjeen id on aria-describedbyssä
-   * vain vihjeen ollessa auki, joten se otetaan talteen.
+   * mitata, joten se mitataan esiin tullessa. Vihjeen id on
+   * aria-describedbyssä vain vihjeen ollessa auki, joten se otetaan talteen.
    *
    * Esc palauttaa kohdistuksen painikkeeseen, jolloin vihje aukeaisi ja jäisi
    * näkyviin, vaikka osoitin on muualla ja valinta näkyi juuri paneelissa.
@@ -70,10 +73,6 @@
   let hovered = false;
   const hint = (text) => {
     name = text;
-    if (button.hasAttribute("title")) {
-      button.title = text;
-      return;
-    }
     const inner = document.getElementById(tip)?.firstElementChild;
     if (inner) {
       inner.textContent = text;
@@ -94,11 +93,16 @@
   button.addEventListener("pointerleave", () => hover(false));
   button.addEventListener("blur", () => { quiet = false; });
   button.addEventListener("focus", cover);
+  /* Vihje avautui tai sulkeutui (aria-describedby), tai teema palautti titlen. */
   new MutationObserver(() => {
     tip = button.getAttribute("aria-describedby") || tip;
-    if (button.hasAttribute("title") && button.title !== name) button.title = name;
+    if (button.getAttribute("title")) button.removeAttribute("title");
     cover();
+    hint(name);
   }).observe(button, { attributeFilter: ["title", "aria-describedby"] });
+  const untitle = () => button.removeAttribute("title");
+  if (document.readyState === "loading") addEventListener("DOMContentLoaded", untitle);
+  else untitle();
 
   let font = items[0];
   let size = 100;

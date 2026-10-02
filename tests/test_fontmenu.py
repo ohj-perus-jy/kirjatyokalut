@@ -55,14 +55,41 @@ def rem(page) -> float:
 
 
 def label(page) -> str:
-    """Painikkeen nimi, jossa nykyiset valinnat kerrotaan. Sama nimi on
-    title-attribuutissa, mutta teeman vihje pitää sitä hallussaan auki
-    ollessaan (ks. hints)."""
+    """Painikkeen nimi, jossa nykyiset valinnat kerrotaan. Sama teksti on
+    teeman vihjeessä (ks. hints); titleä painikkeella ei ole sivun
+    käynnistyttyä."""
     return page.get_attribute(".jyu-font__button", "aria-label")
 
 
 def title(page) -> str | None:
     return page.get_attribute(".jyu-font__button", "title")
+
+
+def test_the_browser_has_no_title_to_show(browser, base_url):
+    """Teeman vihjeen rinnalle tuli välillä selaimen oma title-vihje, joka jäi
+    näkyviin: Chrome ja Safari päivittävät sen tekstin vasta osoittimen
+    liikkuessa. Teema on kytkenyt vihjeensä HTML:n titlestä, ja sen jälkeen
+    painikkeella ei ole ei-tyhjää titleä missään vaiheessa: ei levossa, ei
+    vihjeen ollessa auki eikä sen sulkeuduttua. Vihjeen teksti tulee
+    skriptistä."""
+    page, errors = open_page(browser, base_url)
+    page.evaluate("""() => { window.titles = [];
+        new MutationObserver(() => titles.push(document.querySelector('.jyu-font__button').getAttribute('title')))
+          .observe(document.querySelector('.jyu-font__button'), {attributeFilter: ['title']}) }""")
+    assert not title(page)
+    page.hover(".jyu-font__button")
+    assert hints(page) == ["Leipäteksti: Serif, 100 %"]
+    page.click(".jyu-font__button")
+    page.click(".jyu-font__item[data-font=literata]")
+    page.keyboard.press("Escape")
+    page.hover(".jyu-font__button")
+    assert hints(page) == ["Leipäteksti: Literata, 100 %"]
+    page.mouse.move(10, 400)
+    page.click("body", position={"x": 10, "y": 400})
+    assert hints(page) == []
+    assert not title(page)
+    assert not any(page.evaluate("titles"))
+    assert errors == []
 
 
 def active(page) -> str:
@@ -364,7 +391,8 @@ def test_the_hint_does_not_stay_open_after_the_mouse(browser, base_url):
     assert page.is_hidden(PANEL)
     page.mouse.move(10, 400)
     assert hints(page) == []
-    assert title(page) == "Leipäteksti: Atkinson, 100 %"
+    assert not title(page)
+    assert label(page) == "Leipäteksti: Atkinson, 100 %"
     assert errors == []
 
 
@@ -395,8 +423,7 @@ def test_the_hint_does_not_cover_the_panel(browser, base_url):
 def test_the_hint_names_the_new_choice(browser, base_url):
     """Näppäimistöllä kohdistus palaa painikkeeseen, ja vihje kertoo uuden
     valinnan, kun kohdistus seuraavan kerran tulee painikkeeseen, vaikka
-    valinta tehtiin edellisen vihjeen ollessa auki. Sulkeutuessaan teema
-    palauttaa titleen avautumishetken nimen, joka korjataan."""
+    valinta tehtiin edellisen vihjeen ollessa auki."""
     page, errors = open_page(browser, base_url)
     page.focus(".jyu-font__button")
     assert hints(page) == ["Leipäteksti: Serif, 100 %"]
@@ -412,7 +439,8 @@ def test_the_hint_names_the_new_choice(browser, base_url):
     assert hints(page) == ["Leipäteksti: Atkinson, 100 %"]
     page.keyboard.press("Tab")
     assert hints(page) == []
-    assert title(page) == label(page) == "Leipäteksti: Atkinson, 100 %"
+    assert not title(page)
+    assert label(page) == "Leipäteksti: Atkinson, 100 %"
     assert errors == []
 
 
