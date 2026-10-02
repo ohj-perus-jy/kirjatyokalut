@@ -1,8 +1,10 @@
 /* Työpöytäasettelu: valikko kiinteänä kiskona vasemmassa reunassa, kuten
- * mdBookissa. Zensicalin oletusvalikko on position: sticky, joten se liikkuu
- * sisällön mukana ensimmäiset vierityspikselit ja pysähtyy nytkähtäen, ja
- * katkeaa terävästi sumennettuun yläpalkkiin; kiskossa ei ole mitään, mikä
- * liikkuisi tai katkeaisi. Vain työpöydällä eli 1180 px:stä (73,75em) alkaen,
+ * mdBookissa, ja leveällä näytöllä kisko, teksti ja sisällysluettelo
+ * keskitettyinä yhdessä (--jyu-side). Zensicalin oletusvalikko on
+ * position: sticky, joten se liikkuu sisällön mukana ensimmäiset
+ * vierityspikselit ja pysähtyy nytkähtäen, ja katkeaa terävästi
+ * sumennettuun yläpalkkiin; kiskossa ei ole mitään, mikä liikkuisi tai
+ * katkeaisi. Vain työpöydällä eli 1180 px:stä (73,75em) alkaen,
  * jotta 11 tuuman iPad vaakatasossa mahtuu; teeman oma raja on 1220 px.
  * Kapeammilla näytöillä valikko on Zensicalin oma laatikko (drawer), josta
  * muutetaan vain avausnuolen suunta ja vierityspalkin pituus (ks. alempana). */
@@ -17,6 +19,14 @@
    * kourusta, joka jää ruudukon (61rem) ja vierityspalkin yli, enintään
    * 16rem; tekstipalstasta ei lähde pikseliäkään. */
   --jyu-rail: clamp(15rem, 100vw - 62rem - var(--jyu-gap), 16rem);
+
+  /* Kiskon etäisyys ikkunan vasemmasta reunasta. Kun kisko, rako ja
+   * ruudukko (61rem) mahtuvat ja tilaa jää yli, ne keskitetään yhdessä:
+   * ylimääräinen tila jakautuu tasan vasemmalle ja oikealle eikä jää
+   * valikon ja tekstin väliin. Muuten nolla eli kisko reunassa. 50 %
+   * lasketaan käyttöpaikassa: kiinteälle kiskolle ikkunasta, muille sivun
+   * levyisestä isännästä, kummastakin ilman vierityspalkkia. */
+  --jyu-side: max(0px, 50% - (var(--jyu-rail) + var(--jyu-gap) + 61rem) / 2);
 
   /* Kiskon vierityspalkin väri hiiren ollessa valikon päällä, ks. alempana. */
   --jyu-rail-scrollbar: color-mix(in srgb, var(--md-accent-fg-color) 80%, white);
@@ -225,15 +235,16 @@
 
 @media screen and (min-width: 73.75em) {
 
-  /* 1. Kisko: kiinteä, koko korkeus, oma tausta ja erotinviiva. Yläosaan jää
-   *    yläpalkin korkeuden verran tilaa kurssin nimelle. !important, koska
+  /* 1. Kisko: kiinteä, koko korkeus, oma tausta ja erotinviiva; leveällä
+   *    näytöllä irti reunasta (--jyu-side). Yläosaan jää yläpalkin
+   *    korkeuden verran tilaa kurssin nimelle. !important, koska
    *    Zensicalin JavaScript kirjoittaa sivupalkille inline-tyylit (top ja
    *    vieritysalueen korkeus) olettaen sen olevan yläpalkin alla. */
   .md-sidebar--primary {
     position: fixed;
     top: 0 !important;
     bottom: 0;
-    left: 0;
+    left: var(--jyu-side);
     width: var(--jyu-rail);
     height: 100vh;
     padding: 2.4rem 0 0;
@@ -325,9 +336,18 @@
    *    marginaali ruudukolle, jotta ruudukon automaattinen keskitys säilyy.
    *    Alatunniste tarvitsee saman erikseen, koska se on .md-mainin sisar
    *    eikä lapsi; ilman sitä "Edellinen"-linkki jäisi kiskon alle. Kiskon
-   *    päälle --jyu-gap, jotta vasen rako on yhtä leveä kuin oikea. */
-  .md-main,
+   *    päälle --jyu-gap, jotta vasen rako on yhtä leveä kuin oikea.
+   *    Leveällä näytöllä --jyu-side kummallekin puolelle, jolloin
+   *    ruudukolle jää tasan sen oma leveys ja se asettuu kiskon viereen.
+   *    Alatunnisteelle marginaalina, jotta sen yläreunan viiva ja sävytetty
+   *    kaista päättyvät samaan kohtaan eivätkä jatku ikkunan reunaan. */
+  .md-main {
+    padding-right: var(--jyu-side);
+    padding-left: calc(var(--jyu-side) + var(--jyu-rail) + var(--jyu-gap));
+  }
+
   .md-footer {
+    margin-inline: var(--jyu-side);
     padding-left: calc(var(--jyu-rail) + var(--jyu-gap));
   }
 
@@ -341,11 +361,15 @@
   }
 
   /* 3. Yläpalkin rivi reunasta reunaan, jotta logo ja kurssin nimi
-   *    asettuvat kiskon päälle. */
+   *    asettuvat kiskon päälle. Leveällä näytöllä rivi siirtyy kiskon
+   *    mukana: vasemmalla teeman 0,4rem kiskon reunasta, ja oikealla haku
+   *    päättyy sisällysluettelon tekstin kohdalle (sen 0,6rem:n sisennys).
+   *    max() pitää kapeammalla 1,2rem:n välin vierityspalkkiin. */
   .md-header__inner {
     max-width: none;
     margin: 0;
-    padding-right: 1.2rem;
+    padding-right: max(1.2rem, var(--jyu-side) + 0.6rem);
+    padding-left: calc(var(--jyu-side) + 0.4rem);
   }
 
   /* Kiskon otsikko on kurssin nimi, ei sivun otsikko: Zensical vaihtaa ne
@@ -372,7 +396,7 @@
 
   .md-header::before {
     position: absolute;
-    inset: 0 0 0 var(--jyu-rail);
+    inset: 0 0 0 calc(var(--jyu-side) + var(--jyu-rail));
     z-index: -1;
     background-color: var(--md-default-bg-color--light);
     backdrop-filter: blur(0.4rem);

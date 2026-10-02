@@ -94,6 +94,44 @@ def test_rail_fits_an_11_inch_ipad_in_landscape(browser, chapter_url, width, rai
     context.close()
 
 
+EDGES = """() => {
+    const box = s => document.querySelector(s).getBoundingClientRect()
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize)
+    const right = box('.md-header').right  // ikkunan oikea reuna ilman vierityspalkkia
+    const rail = box('.md-sidebar--primary'), grid = box('.md-main__inner')
+    return {
+        left: rail.left, right: right - grid.right,
+        gap: (grid.left - rail.right) / rem,
+        logo: box('.md-header__button.md-logo').left - rail.left,
+        search: box('.md-search').right - box('.md-sidebar--secondary .md-nav__list').right,
+        footer: [box('.md-footer').left - rail.left, box('.md-footer').right - grid.right],
+    }
+}"""
+
+
+@pytest.mark.parametrize("width, centred", [(1600, False), (1920, True), (2800, True)])
+def test_wide_screen_centres_the_rail_with_the_text(browser, chapter_url, width, centred):
+    """Kun kisko, rako ja ruudukko (61rem) mahtuvat ja tilaa jää yli, ne
+    keskitetään yhdessä: tyhjä tila jakautuu tasan kiskon vasemmalle ja
+    sisällysluettelon oikealle puolelle eikä jää valikon ja tekstin väliin.
+    Logo ja haku siirtyvät mukana, ja alatunniste päättyy ruudukon reunaan.
+    Kapeammalla kisko on reunassa kuten ennen."""
+    context = browser.new_context(viewport={"width": width, "height": 700})
+    page = context.new_page()
+    page.goto(chapter_url, wait_until="load")
+    edges = page.evaluate(EDGES)
+    if centred:
+        assert edges["left"] > 50
+        assert edges["left"] == pytest.approx(edges["right"], abs=1)
+        assert edges["gap"] == pytest.approx(0.8, abs=0.01)
+        assert edges["search"] == pytest.approx(0, abs=1)
+        assert edges["footer"] == pytest.approx([0, 0], abs=1)
+    else:
+        assert edges["left"] == 0
+    assert 0 < edges["logo"] < 30
+    context.close()
+
+
 def test_drawer_scrollbar_stays_between_the_rounded_corners(browser, chapter_url):
     """Kapean näytön laatikon vierityspalkin raita alkaa ja päättyy kulmien
     pyöristyksen sisäpuolella, mutta vieritysalue on yhä koko laatikon korkuinen."""
