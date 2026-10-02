@@ -13,6 +13,8 @@ PANEL = ".jyu-font__panel"
 DOWN = ".jyu-font__step[data-step='-1']"
 UP = ".jyu-font__step[data-step='1']"
 RESET = ".jyu-font__reset"
+# Leipätekstin perustaso rem-yksiköissä: teeman .75rem × 1,1 (typography.css).
+BASE = 0.75 * 1.1
 
 
 @pytest.fixture(scope="module")
@@ -72,14 +74,14 @@ def active(page) -> str:
 
 
 def test_without_a_choice_the_page_is_as_before(browser, base_url):
-    """Oletus on Source Serif 4 teeman koossa eikä bodyssä ole attribuuttia
-    eikä muuttujaa: ilman valintaa sivu on täsmälleen entisensä, ja painikkeen
-    vihje kertoo nykyiset valinnat."""
+    """Oletus on Source Serif 4 perustasolla (teeman koko × 1,1) eikä bodyssä
+    ole attribuuttia eikä muuttujaa: ilman valintaa sivu on täsmälleen
+    entisensä, ja painikkeen vihje kertoo nykyiset valinnat."""
     page, errors = open_page(browser, base_url)
     assert body_font(page) is None
     assert page.evaluate("document.body.style.length") == 0
     assert content_font(page) == "Source Serif 4"
-    assert font_size(page, ".md-content__inner") == 0.75 * rem(page)
+    assert font_size(page, ".md-content__inner") == pytest.approx(BASE * rem(page))
     assert label(page) == "Leipäteksti: Serif, 100 %"
     assert page.evaluate(f"localStorage.getItem('{KEY}')") is None
     assert page.evaluate(f"localStorage.getItem('{SIZE_KEY}')") is None
@@ -129,7 +131,7 @@ def test_the_print_page_follows_the_choice(browser, base_url):
                     f"localStorage.setItem('{SIZE_KEY}', '120')")
     assert body_font(page) == "atkinson"
     assert content_font(page) == "Atkinson Hyperlegible Next"
-    assert font_size(page, ".md-content__inner") == pytest.approx(0.75 * 1.2 * rem(page))
+    assert font_size(page, ".md-content__inner") == pytest.approx(BASE * 1.2 * rem(page))
     assert label(page) == "Leipäteksti: Atkinson, 120 %"
     assert errors == []
 
@@ -160,7 +162,7 @@ def test_an_unknown_stored_value_is_ignored(browser, base_url):
     assert body_font(page) is None
     assert page.evaluate("document.body.style.length") == 0
     assert content_font(page) == "Source Serif 4"
-    assert font_size(page, ".md-content__inner") == 0.75 * rem(page)
+    assert font_size(page, ".md-content__inner") == pytest.approx(BASE * rem(page))
     assert label(page) == "Leipäteksti: Serif, 100 %"
     assert errors == []
 
@@ -179,9 +181,10 @@ def test_the_size_buttons_scale_the_content_only(browser, base_url):
     page.click(".jyu-font__button")
     page.click(UP)
     assert page.is_visible(PANEL)
-    assert font_size(page, ".md-content__inner") == pytest.approx(1.1 * text)
-    assert font_size(page, ".md-content__inner h1") == pytest.approx(1.1 * heading)
-    assert font_size(page, ".tabbed-labels > label") == pytest.approx(1.1 * tab)
+    # Selain pyöristää lasketut koot, joten suhteellinen toleranssi.
+    assert font_size(page, ".md-content__inner") == pytest.approx(1.1 * text, rel=1e-3)
+    assert font_size(page, ".md-content__inner h1") == pytest.approx(1.1 * heading, rel=1e-3)
+    assert font_size(page, ".tabbed-labels > label") == pytest.approx(1.1 * tab, rel=1e-3)
     assert {s: font_size(page, s) for s in outside} == before
     assert page.inner_text(RESET) == "110 %"
     assert page.get_attribute(RESET, "aria-disabled") == "false"
@@ -190,9 +193,9 @@ def test_the_size_buttons_scale_the_content_only(browser, base_url):
 
     page.click(UP)
     page.click(UP)
-    assert font_size(page, ".md-content__inner") == pytest.approx(1.35 * text)
+    assert font_size(page, ".md-content__inner") == pytest.approx(1.35 * text, rel=1e-3)
     page.click(DOWN)
-    assert font_size(page, ".md-content__inner") == pytest.approx(1.2 * text)
+    assert font_size(page, ".md-content__inner") == pytest.approx(1.2 * text, rel=1e-3)
     assert errors == []
 
 
@@ -204,7 +207,7 @@ def test_the_size_is_remembered_before_the_script(browser, base_url):
         init_script=f"localStorage.setItem('{SIZE_KEY}', '150')")
     page.route("**/fontmenu.js", lambda route: route.abort())
     page.reload(wait_until="domcontentloaded")
-    assert font_size(page, ".md-content__inner") == pytest.approx(0.75 * 1.5 * rem(page))
+    assert font_size(page, ".md-content__inner") == pytest.approx(BASE * 1.5 * rem(page))
     assert errors == []
 
 
@@ -218,7 +221,7 @@ def test_the_steps_stop_at_both_ends(browser, base_url):
     assert page.get_attribute(DOWN, "aria-disabled") == "true"
     page.click(DOWN, force=True)  # Playwright ei muuten napsauta aria-disabledia.
     assert page.inner_text(RESET) == "90 %"
-    assert font_size(page, ".md-content__inner") == pytest.approx(0.75 * 0.9 * rem(page))
+    assert font_size(page, ".md-content__inner") == pytest.approx(BASE * 0.9 * rem(page))
 
     page.evaluate(f"localStorage.setItem('{SIZE_KEY}', '175')")
     page.reload(wait_until="load")
@@ -244,7 +247,7 @@ def test_the_number_resets_the_size_and_forgets_it(browser, base_url):
     assert page.inner_text(RESET) == "100 %"
     assert page.get_attribute(RESET, "aria-disabled") == "true"
     assert page.evaluate("document.body.style.length") == 0
-    assert font_size(page, ".md-content__inner") == 0.75 * rem(page)
+    assert font_size(page, ".md-content__inner") == pytest.approx(BASE * rem(page))
     assert page.evaluate(f"localStorage.getItem('{SIZE_KEY}')") is None
     assert errors == []
 
@@ -367,8 +370,9 @@ def test_the_hint_does_not_stay_open_after_the_mouse(browser, base_url):
 
 def test_the_hint_does_not_cover_the_panel(browser, base_url):
     """Vihje tulisi painikkeen alle paneelin päälle, joten se on piilossa
-    paneelin ollessa auki. Paneelin sulkeuduttua se palaa, kertoo uudet
-    valinnat ja on tekstinsä levyinen, jotta se asettuu painikkeen keskelle."""
+    paneelin ollessa auki. Escin jälkeen se palaa, kun osoitin tulee
+    painikkeelle, kertoo uudet valinnat ja on tekstinsä levyinen, jotta se
+    asettuu painikkeen keskelle."""
     page, errors = open_page(browser, base_url)
     page.hover(".jyu-font__button")
     assert hints(page) == ["Leipäteksti: Serif, 100 %"]
@@ -380,6 +384,9 @@ def test_the_hint_does_not_cover_the_panel(browser, base_url):
     page.keyboard.press("+")
     assert hints(page) == []
     page.keyboard.press("Escape")
+    assert hints(page) == []
+    page.mouse.move(10, 400)
+    page.hover(".jyu-font__button")
     assert hints(page) == ["Leipäteksti: Atkinson, 110 %"]
     assert page.evaluate(
         "(tip => tip.firstElementChild.offsetWidth"
@@ -390,9 +397,9 @@ def test_the_hint_does_not_cover_the_panel(browser, base_url):
 
 def test_the_hint_names_the_new_choice(browser, base_url):
     """Näppäimistöllä kohdistus palaa painikkeeseen, ja vihje kertoo uuden
-    valinnan, vaikka valinta tehtäisiin ennen kuin edellinen vihje ehtii
-    sulkeutua. Sulkeutuessaan teema palauttaa titleen avautumishetken nimen,
-    joka korjataan."""
+    valinnan, kun kohdistus seuraavan kerran tulee painikkeeseen, vaikka
+    valinta tehtiin edellisen vihjeen ollessa auki. Sulkeutuessaan teema
+    palauttaa titleen avautumishetken nimen, joka korjataan."""
     page, errors = open_page(browser, base_url)
     page.focus(".jyu-font__button")
     assert hints(page) == ["Leipäteksti: Serif, 100 %"]
@@ -400,10 +407,31 @@ def test_the_hint_names_the_new_choice(browser, base_url):
     page.keyboard.press("ArrowDown")
     page.keyboard.press("Enter")
     page.keyboard.press("Escape")
+    assert active(page) == "jyu-font-button"
+    assert hints(page) == []
+    page.keyboard.press("Tab")
+    page.keyboard.press("Shift+Tab")
+    assert active(page) == "jyu-font-button"
     assert hints(page) == ["Leipäteksti: Atkinson, 100 %"]
     page.keyboard.press("Tab")
     assert hints(page) == []
     assert title(page) == label(page) == "Leipäteksti: Atkinson, 100 %"
+    assert errors == []
+
+
+def test_escape_does_not_leave_the_hint_open(browser, base_url):
+    """Kirjasin hiirellä, sitten Esc: kohdistus palaa painikkeeseen, mutta
+    teeman vihje ei aukea sen takia, koska osoitin on muualla ja valinta
+    näkyi juuri paneelissa. Vihje tulee, kun osoitin tulee painikkeelle."""
+    page, errors = open_page(browser, base_url)
+    page.click(".jyu-font__button")
+    page.click(".jyu-font__item[data-font=literata]")
+    page.keyboard.press("Escape")
+    assert page.is_hidden(PANEL)
+    assert active(page) == "jyu-font-button"
+    assert hints(page) == []
+    page.hover(".jyu-font__button")
+    assert hints(page) == ["Leipäteksti: Literata, 100 %"]
     assert errors == []
 
 

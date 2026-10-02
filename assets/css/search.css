@@ -1,4 +1,8 @@
 /* Hakuikkuna: tekstikoot teeman rem-portaina ja suodatinpaneeli piiloon.
+ * Otsikko, kenttä ja ote kerrotaan leipätekstin perustasolla
+ * (--jyu-text-base, typography.css), jotta ne pysyvät vähintään
+ * leipätekstin kokoisina; mukautettu ominaisuus periytyy shadow DOMiin.
+ * Metatiedot (määrä, polku) ovat valikon kokoluokkaa eivätkä kasva.
  * Ikkuna on shadow DOM:issa, johon assets/js/search.js liittää tämän
  * tiedoston; :host-etuliite pitää säännöt poissa sivulta. Luokkanimet ovat
  * Zensicalin 0.0.62 minifioimia (bundle.js: ht, st, Ta); tests/test_search.py
@@ -9,7 +13,7 @@
 
 :host .e {
   --space-1: 0.2rem; /* Zensical: 4 px */
-  --font-size: 0.8rem;
+  --font-size: calc(0.8rem * var(--jyu-text-base, 1));
 }
 
 /* 36 rem = Zensicalin 720 px perusmitassa (1 rem = 20 px). Kapealla näytöllä
@@ -22,11 +26,11 @@
 
 :host .s input,
 :host .x {
-  font-size: 0.8rem;
+  font-size: calc(0.8rem * var(--jyu-text-base, 1));
 }
 
 :host .u {
-  font-size: 0.7rem;
+  font-size: calc(0.7rem * var(--jyu-text-base, 1));
 }
 
 :host .B,

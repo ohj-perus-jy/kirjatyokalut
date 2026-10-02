@@ -58,9 +58,15 @@
    * vanha nimi korjataan. Paneelin ollessa auki vihje piilotetaan (cover),
    * koska se tulisi painikkeen alle paneelin päälle; piilossa sitä ei voi
    * mitata, joten close mittaa uudelleen. Vihjeen id on aria-describedbyssä
-   * vain vihjeen ollessa auki, joten se otetaan talteen. */
+   * vain vihjeen ollessa auki, joten se otetaan talteen.
+   *
+   * Esc palauttaa kohdistuksen painikkeeseen, jolloin vihje aukeaisi ja jäisi
+   * näkyviin, vaikka osoitin on muualla ja valinta näkyi juuri paneelissa.
+   * Siksi vihje pysyy piilossa (quiet), kunnes osoitin tulee painikkeelle tai
+   * kohdistus lähtee siitä ja palaa. */
   let name = "";
   let tip = "";
+  let quiet = false;
   const hint = (text) => {
     name = text;
     if (button.hasAttribute("title")) {
@@ -75,8 +81,17 @@
   };
   const cover = () => {
     const element = document.getElementById(tip);
-    if (element) element.hidden = !panel.hidden;
+    if (element) element.hidden = !panel.hidden || quiet;
   };
+  const speak = () => {
+    if (!quiet) return;
+    quiet = false;
+    cover();
+    hint(name);
+  };
+  button.addEventListener("pointerenter", speak);
+  button.addEventListener("blur", () => { quiet = false; });
+  button.addEventListener("focus", cover);
   new MutationObserver(() => {
     tip = button.getAttribute("aria-describedby") || tip;
     if (button.hasAttribute("title") && button.title !== name) button.title = name;
@@ -182,6 +197,7 @@
   const close = (refocus) => {
     if (panel.hidden) return;
     panel.hidden = true;
+    quiet = refocus;
     cover();
     hint(name);
     button.setAttribute("aria-expanded", "false");

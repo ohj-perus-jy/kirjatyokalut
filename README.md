@@ -65,7 +65,7 @@ Kielet: `csharp`, `java`, `javascript` (korostetut rivit: `csharp`, `java`).
 | Sisällysluettelo kapealla näytöllä alakulman napista; kohdan tai ulkopuolen napautus sulkee sen | toc.js |
 | Sisällysluettelo seuraa lukukohtaa (`toc.follow`); oma vierityspalkki vain osoittimella, häivytys ylä- ja alareunassa kertoo, että listaa on lisää | mkdocs-pohja.yml, layout.css, toc.js |
 | Sivustovalikko kurssin nimen vieressä (`extra.sites`) | header.html, sitemenu.js/css |
-| Leipätekstin kirjasin- ja kokovalikko: Source Serif 4, Atkinson Hyperlegible Next, Literata; koko 90–175 %, lukukohta pysyy paikallaan | header.html, fontmenu.js/css, typography.css |
+| Leipätekstin kirjasin- ja kokovalikko: Source Serif 4, Atkinson Hyperlegible Next, Literata; koko 90–175 %, lukukohta pysyy paikallaan. Perustaso 10 % teeman kokoa suurempi (--jyu-text-base) | header.html, fontmenu.js/css, typography.css |
 | Vaalea ja tumma teema käyttöjärjestelmän mukaan, vaihdin yläpalkissa | mkdocs-pohja.yml |
 | Haku; hakuikkunan teksti leipätekstin portaissa, kentän paikkamerkki "Hae" | search.js/css |
 | Tulosta: koko kirja yhdeksi PDF:ksi | `build_print_page`, print.js/css |
