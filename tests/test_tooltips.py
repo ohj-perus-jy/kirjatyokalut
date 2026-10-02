@@ -54,9 +54,39 @@ def test_a_tap_leaves_no_tooltip_behind(phone, selector):
     """Napautuksen jälkeen vihje häviää eikä kohdistus jää nappiin: teeman
     oma kopiointinappi ja skriptin lisäämä ajonappi."""
     phone.tap(selector)
-    phone.wait_for_timeout(600)
-    assert tooltip_text(phone) is None
+    phone.wait_for_selector(ACTIVE, state="detached", timeout=2000)
     assert phone.evaluate("document.activeElement.matches('button')") is False
+
+
+@pytest.fixture
+def walkthrough(browser, book, serve):
+    """Vaiheittainen ohje kosketusnäytöllä, esityksenä (leveä ruutu)."""
+    context = browser.new_context(
+        viewport={"width": 1000, "height": 700}, has_touch=True, is_mobile=True)
+    page = context.new_page()
+    page.goto(f"{serve(book.site)}/osa1/vaiheet/", wait_until="load")
+    page.wait_for_selector(".jyu-walk--live .jw-tick")
+    yield page
+    context.close()
+
+
+def test_a_tap_on_a_walkthrough_step_leaves_no_tooltip_behind(walkthrough):
+    """Aikajanan vaihenappi on sivulla jo teeman käynnistyessä (walkthrough.js
+    rakentaa esityksen heti), joten sillä on teeman vihje; napautuksen jälkeen
+    sekään ei jää. Kohdistus näyttää vihjeen, jotta testi mittaa jotakin."""
+    tick = walkthrough.locator(".jw-tick").nth(2)
+    tick.focus()
+    walkthrough.wait_for_selector(ACTIVE)
+    assert tooltip_text(walkthrough) == "3. Kirjaudu"
+    walkthrough.evaluate("document.activeElement.blur()")
+    walkthrough.wait_for_selector(ACTIVE, state="detached")
+    tick.tap()
+    walkthrough.wait_for_selector(ACTIVE, state="detached", timeout=2000)
+    assert tick.get_attribute("class") == "jw-tick jw-tick--current"
+    # Kohdistus siirtyy ohjeen säiliöön, jotta nuolinäppäimet toimivat yhä.
+    assert walkthrough.evaluate("document.activeElement.matches('.jyu-walk')")
+    walkthrough.keyboard.press("ArrowLeft")
+    assert walkthrough.locator(".jw-tick").nth(1).get_attribute("class") == "jw-tick jw-tick--current"
 
 
 def test_a_touch_shows_the_tooltip(phone):

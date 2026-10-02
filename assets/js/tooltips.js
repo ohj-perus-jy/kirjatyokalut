@@ -25,8 +25,10 @@
   /* Sulkemisen viive ja häivytyksen kesto, kuten teemassa. */
   const HIDE_MS = 250;
 
-  /* Teeman vihje tunnistetaan nappiin tulevasta aria-describedbystä. */
-  const THEME_TIP = /^__tooltip2_/;
+  /* Teeman ottamat elementit (title sivulla sen käynnistyessä) ja tässä
+   * vihjeen saaneet napit. */
+  const taken = new WeakSet();
+  const attached = new WeakSet();
 
   let count = 0;
 
@@ -124,9 +126,7 @@
   };
 
   const start = () => {
-    /* Teeman ottamat: kaikki, joilla on title nyt. */
-    const taken = new WeakSet(document.querySelectorAll("[title]"));
-    const attached = new WeakSet();
+    for (const element of document.querySelectorAll("[title]")) taken.add(element);
     const consider = (button) => {
       if (taken.has(button) || attached.has(button)) return;
       attached.add(button);
@@ -154,17 +154,19 @@
     start();
   }
 
-  /* Osoittimella painettu nappi menettää kohdistuksen (detail on 0
-   * näppäimistöllä). Vihjeellinen nappi: title tai auki olevan vihjeen
-   * aria-describedby. */
+  /* Osoittimella painettu vihjeellinen nappi menettää kohdistuksen (detail
+   * on 0 näppäimistöllä). Vihjeellisyys katsotaan kirjanpidosta eikä
+   * attribuuteista: avautuessaan teema ottaa titlen pois ennen kuin kirjoittaa
+   * aria-describedbyn, joten click-hetkellä kumpaakaan ei välttämättä ole.
+   * Kohdistus siirtyy lähimpään kohdistettavaan säiliöön, jos sellainen on
+   * (vaiheittaisen ohjeen nuolinäppäimet toimivat sen sisällä), muuten pois. */
   document.addEventListener("click", (event) => {
     if (!event.detail) return;
     const button = event.target.closest("button");
     if (!button || button.hasAttribute("aria-expanded")) return;
-    const tip = button.getAttribute("aria-describedby") || "";
-    if (button.hasAttribute("title") || THEME_TIP.test(tip)
-      || tip.startsWith("__jyu_tooltip_")) {
-      button.blur();
-    }
+    if (!taken.has(button) && !attached.has(button)) return;
+    const host = button.parentElement?.closest("[tabindex]");
+    if (host) host.focus({ preventScroll: true });
+    else button.blur();
   });
 })();
