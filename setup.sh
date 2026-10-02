@@ -24,5 +24,8 @@ fi
 vaihe "Päivitetään pip" .venv/bin/pip install --upgrade pip
 vaihe "Asennetaan Zensical" .venv/bin/pip install -r "$TOOL/requirements.txt"
 
-echo
-echo "Valmis. Käynnistä:  ./zensical/run.sh"
+# run.sh (--run) jatkaa itse käynnistykseen, joten ohje vain suoraan ajettaessa.
+if [[ ${1:-} != --run ]]; then
+    echo
+    echo "Valmis. Käynnistä:  ./zensical/run.sh"
+fi
