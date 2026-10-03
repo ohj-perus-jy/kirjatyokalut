@@ -415,6 +415,37 @@
   }
 }
 
+/* Sisällysluettelon nappi kapean näytön alakulmassa kirjasinvalikon painikkeen
+ * näköiseksi (fontmenu.css): himmeä täyttö, täysi tekstiväri ja osoittimen
+ * alla tai avattuna --jyu-rule. Teeman nappi on pelkkää läpikuultavaa
+ * taustaväriä, joten tummassa teemassa se ei erottunut sivusta. Täyttö on
+ * kuvana teeman sumennetun taustan päällä, kuten kirjasinpainike yläpalkin
+ * päällä; muuten teksti näkyisi napin läpi. Teeman korostusvärinen hover ja
+ * värien häivytys pois kuten kirjasinvalikossa. Teema näyttää napin vain
+ * alle 960 px:n leveydellä, joten sääntöjä ei rajata. */
+.md-sidebar--secondary .md-sidebar-button {
+  color: var(--md-default-fg-color);
+  background-image: linear-gradient(var(--md-default-fg-color--lightest) 0 0);
+  transition: transform 125ms cubic-bezier(0.4, 0, 0.2, 1), opacity 125ms;
+}
+
+.md-sidebar--secondary .md-sidebar-button:is(:focus, :hover),
+#__toc:checked ~ .md-sidebar-button__wrapper .md-sidebar-button {
+  color: var(--md-default-fg-color);
+  background-color: var(--md-default-bg-color--light);
+  background-image: linear-gradient(var(--jyu-rule) 0 0);
+}
+
+/* Tummassa teemassa z2-varjo on musta eikä erotu taustasta; reunaviiva kuten
+ * kirjasinvalikon paneelissa. Myös napista avautuvalle laatikolle, joka on
+ * laatikko vain kapealla näytöllä. */
+@media screen and (max-width: 59.9844em) {
+  [data-md-color-scheme="slate"] .md-sidebar--secondary
+    :is(.md-sidebar-button, .md-sidebar__inner) {
+    box-shadow: var(--md-shadow-z2), 0 0 0 0.05rem var(--jyu-rule);
+  }
+}
+
 /* Sisällysluettelo sivupalkkina eli 960 px:stä alkaen. Teema piirtää sen oman
  * vierityspalkin aina, ja kun luettelo ulottuu ikkunan oikeaan reunaan, palkki
  * on heti selaimen palkin vieressä: kaksi palkkia rinnakkain. Palkki näkyy

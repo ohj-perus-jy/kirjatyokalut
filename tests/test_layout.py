@@ -348,3 +348,21 @@ def test_phone_contents_closes_when_tapped_outside(browser, chapter_url):
     page.mouse.click(20, 300)
     assert not page.is_checked("#__toc")
     context.close()
+
+
+def test_phone_contents_button_looks_like_the_font_button(browser, chapter_url):
+    """Alakulman nappi erottuu tummassakin teemassa: sama täyttö ja tekstiväri
+    kuin yläpalkin kirjasinpainikkeella. Teeman oma nappi on pelkkää
+    läpikuultavaa taustaväriä, joka sulautui tummaan sivuun."""
+    context = browser.new_context(viewport={"width": 400, "height": 700},
+                                  color_scheme="dark")
+    page = context.new_page()
+    page.goto(chapter_url, wait_until="load")
+    button, font = page.evaluate("""() => [
+        ".md-sidebar-button", ".jyu-font__button"].map(selector => {
+            const style = getComputedStyle(document.querySelector(selector))
+            return [style.color, style.backgroundImage, style.backgroundColor]
+        })""")
+    assert button[0] == font[0]
+    assert font[2] in button[1]
+    context.close()
