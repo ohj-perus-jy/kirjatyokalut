@@ -1446,6 +1446,15 @@ def test_speech_line_drops_footnotes_attributes_and_entities():
     assert convert.speech_line("Teksti[^1] &ndash; toinen {: .luokka }") == "Teksti – toinen."
 
 
+def test_speech_line_drops_icon_shortcodes_but_not_in_code():
+    """Kuvake lyhytkoodina luetaan kuten valmis SVG eli ei mitenkään, jottei
+    leikkeen tunniste vaihdu; koodissa näytetty luetaan."""
+    assert convert.speech_line("**:material-information-outline: Huomautus:** Tyyppi ei vaihdu") == (
+        "Huomautus: Tyyppi ei vaihdu.")
+    assert convert.speech_line("Kello 12:30: kirjoita `:material-menu:` riville") == (
+        "Kello 12:30: kirjoita :material-menu: riville.")
+
+
 def test_speech_line_reads_what_is_inside_angle_brackets_in_code():
     """Koodin kulmasulut eivät ole tageja: paikkamerkki ja tyyppiparametri
     luetaan, vertailu jää."""

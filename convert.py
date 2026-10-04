@@ -1759,6 +1759,10 @@ SPEECH_KEYS = {"Ctrl": "Control", "Cmd": "Command"}
 SPEECH_HEADING_RE = re.compile(r"^#{1,6}\s+(?P<text>.*?)(?:\s*\{[^}]*\})?\s*$")
 SPEECH_ITEM_RE = re.compile(r"^(?:[-*+]|\d+\.)\s+(?P<text>.*)$")
 SPEECH_ALERT_RE = re.compile(r"^\[!(?P<label>[^\]]+)\]$")
+# Kuvakkeen lyhytkoodi (:material-menu:) on koriste kuten valmis SVG-kuvake;
+# joukot kuten Zensicalin templates/.icons/. Koodin sisällä se on tekstiä.
+SPEECH_ICON_RE = re.compile(
+    r"(`[^`]*`)|:(?:fontawesome|lucide|material|octicons|simple)-[\w-]+:")
 
 
 def speech_code(code: str) -> str:
@@ -1782,6 +1786,7 @@ def speech_code(code: str) -> str:
 def speech_inline(text: str) -> str:
     """Kappaleen Markdown luettavaksi: linkeistä teksti, osoitteet ja merkinnät
     pois, näppäimet sanoina ja valikkopolun › taukona."""
+    text = SPEECH_ICON_RE.sub(lambda m: m[1] or "", text)
     text = re.sub(r"</kbd>\s*\+\s*<kbd>", " plus ", text)
     text = re.sub(r"<kbd>([^<]*)</kbd>",
                   lambda m: " ".join(SPEECH_KEYS.get(word, word) for word in m[1].split()), text)
