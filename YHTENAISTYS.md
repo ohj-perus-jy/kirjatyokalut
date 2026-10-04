@@ -22,7 +22,6 @@ lähde kirjoitetaan uusiksi ennen kuin osoitin siirtyy versioon ilman muunnosta.
 | `### [Windows](#tab/win)` … `***` | `=== "Windows"` | 14 | 9 | – | `convert_tabs` |
 | `<i class="bi bi-chevron-right">` | `›` | ✓ | 58 | – | `convert_icons` |
 | `<i class="bi bi-list">` ym. | `:material-menu:` ym. | – | 22 | – | `convert_icons`, `icons/` |
-| `<i class="bi bi-stars">` | `<i class="jyu-star">` (oma, ks. alla) | ✓ | 66 | – | `bi-stars` `BONUS_TAG_RE`:ssä |
 | sisennetty otsikko | otsikko sarakkeessa 0 | ✓ | – | – | `dedent_headings` |
 | `SUMMARY.md` | `nav:` käsin | 55 | 72 | 106 | `build_nav` |
 | `{{#include polku}}` | `--8<-- "polku"` | 2 | 194 | – | `convert_includes` |
@@ -30,7 +29,8 @@ lähde kirjoitetaan uusiksi ennen kuin osoitin siirtyy versioon ilman muunnosta.
 Luku = esiintymät lähteessä (ohj1 `dev`, ohj2 ja jy `main`, 2026-09-28;
 välilehdistä joukot, `SUMMARY.md`:stä rivit), – = ei esiintymiä, ✓ = kirjoitettu
 uusiksi. Kun rivillä ei ole lukuja, sen muunnoksen voi poistaa. Poistettu
-2026-09-21: `[siirrot]` (`NEST_UNDER`) ja `DROP_SECTIONS`.
+2026-09-21: `[siirrot]` (`NEST_UNDER`) ja `DROP_SECTIONS`; 2026-10-04:
+`bi-stars` (`BONUS_TAG_RE`).
 
 - **Aidat:** `fence_language` on ensin opetettava lukemaan `{ .kieli … }`,
   muuten piilo- ja korostusrivit katoavat (ohj2 66, jy 44 lohkoa).

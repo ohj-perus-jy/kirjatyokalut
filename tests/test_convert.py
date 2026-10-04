@@ -910,14 +910,6 @@ def test_convert_bonus_marks_skips_code_fences():
     assert converted == text
 
 
-def test_convert_bonus_marks_still_reads_the_mdbook_class():
-    """mdBookin aikainen bi-stars kelpaa, kunnes ohj2 on kirjoitettu uusiksi."""
-    text = ' * <i class="bi bi-stars jyu-gold"></i> Kulukategoria voi olla *pakollinen*.\n'
-    converted, marks = convert.convert_bonus_marks(text)
-    assert marks == 1
-    assert "bi-stars" not in converted
-
-
 # --- Loput ikonit (README kohta 17) ------------------------------------------
 
 def test_convert_icons_writes_the_path_arrow_as_a_character():
@@ -996,14 +988,6 @@ def test_convert_icons_names_an_unknown_icon_instead_of_dropping_it():
     assert (arrows, icons) == (0, 0)
     assert unknown == {"bi-rocket-takeoff"}
     assert converted == text
-
-
-def test_convert_icons_runs_after_the_bonus_marks():
-    """bi-stars ei ole ICON_MAPissa, joten väärässä järjestyksessä ajettuna
-    tämä ilmoittaisi bonusmerkin tuntemattomaksi."""
-    assert "bi-stars" not in convert.ICON_MAP
-    _, _, _, unknown = convert.convert_icons('<i class="bi bi-stars"></i>\n')
-    assert unknown == {"bi-stars"}
 
 
 def test_convert_icons_warns_about_a_missing_glyph(monkeypatch, capsys,

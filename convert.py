@@ -304,15 +304,13 @@ TASK_TITLE_RE = re.compile(
     r'<task-title\s+num="(?P<num>[^"]*)"\s*>(?P<inner>.*?)</task-title>')
 TASK_POINTS_RE = re.compile(r"<points>(?P<points>.*?)</points>")
 
-# Bonusmerkki <i class="jyu-star"></i>; mdBookin aikainen <i class="bi bi-stars">
-# kelpaa, kunnes ohj2 on kirjoitettu uusiksi (YHTENAISTYS.md). Merkki piirretään
-# Materialin creation-kuvakkeella (.icons/material/creation.svg). Valmis
-# inline-SVG eikä lyhytkoodi, koska <summary>-rivillä Python-Markdown jäsentää
-# lyhytkoodin vain attribuutilla markdown="span", ja muunnos nimeää merkin
-# ruudunlukijalle (BONUS_WORD_RE). Kääre .twemoji on teeman oma, joten koko,
-# kohdistus ja väri tulevat teeman CSS:stä; oma sääntö vain väriin, ks.
-# assets/css/tasks.css.
-BONUS_TAG_RE = re.compile(r'<i\s+class="[^"]*\b(?:jyu-star|bi-stars)\b[^"]*"\s*>\s*</i>')
+# Bonusmerkki <i class="jyu-star"></i>. Merkki piirretään Materialin
+# creation-kuvakkeella (.icons/material/creation.svg). Valmis inline-SVG eikä
+# lyhytkoodi, koska <summary>-rivillä Python-Markdown jäsentää lyhytkoodin vain
+# attribuutilla markdown="span", ja muunnos nimeää merkin ruudunlukijalle
+# (BONUS_WORD_RE). Kääre .twemoji on teeman oma, joten koko, kohdistus ja väri
+# tulevat teeman CSS:stä; oma sääntö vain väriin, ks. assets/css/tasks.css.
+BONUS_TAG_RE = re.compile(r'<i\s+class="[^"]*\bjyu-star\b[^"]*"\s*>\s*</i>')
 BONUS_MARK_PATH = (
     "m19 1-1.26 2.75L15 5l2.74 1.26L19 9l1.25-2.74L23 5l-2.75-1.25"
     "M9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5"
@@ -2854,8 +2852,7 @@ def convert_page(origin: Path, source_path: str, clips: set[str] | None = None) 
     # svgbobia (kääre ei saa markdown="1":tä).
     converted, _ = convert_divs(converted)
     converted, _, page_art = convert_svgbob(converted, source_path)
-    # Tehtäväkortit ennen bonusmerkkejä (task_head lukee kortin tagin itse)
-    # ja bonusmerkit ennen ikoneita (bi-stars ei ole ICON_MAPissa).
+    # Tehtäväkortit ennen bonusmerkkejä (task_head lukee kortin tagin itse).
     converted, _ = convert_tasks(converted)
     # Vaiheittainen ohje ennen convert_tabsia kuten tehtäväkortit: tagit
     # nostetaan sarakkeeseen 0, eikä sisennettyä HTML-lohkoa tunnisteta.
