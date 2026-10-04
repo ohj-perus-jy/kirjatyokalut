@@ -30,7 +30,8 @@ kirjoittamalla merkinnän `src/`:ään. Toteutus-sarakkeen funktiot ovat
 | `{{#include tiedosto}}` | tiedoston sisältö tai valitut rivit paikalleen | `convert_includes` |
 | `> [!VINKKI]` ym. | värillinen laatikko: Osaamistavoitteet, Huomautus, Vinkki, Tärkeää, Varoitus, Todo, WIP; oppaiden merkinnät Kokeile, Ei toimi vielä, Kysymys | `convert_alerts`, admonitions.css |
 | `<details>`, `<summary>` | avattava osio, jonka sisällä Markdown toimii | `convert_details` |
-| `<task>`, `<task-title num>`, `<points>`, `<handout>`, `<task-link>` | tehtäväkortti: numero, pisteet, tehtävänanto; bonusmerkki | `convert_tasks`, `convert_bonus_marks`, tasks.css |
+| `<task>`, `<task-title num>`, `<points>`, `<handout>`, `<task-link>` | tehtäväkortti: numero, pisteet, tehtävänanto; Bonus-liuska, kun otsikossa on bonusmerkki | `convert_tasks`, tasks.css |
+| `<i class="jyu-star"></i>` | bonusmerkki (bonustehtävä, valinnainen lisätieto); nimetään ruudunlukijalle, jos rivillä ei ole sanaa "bonus" tai "valinnais…" | `convert_bonus_marks`, tasks.css |
 | `<div class="ht-reqs">` | harjoitustyön vaatimuslohko, numerointi 1.1, 1.2, … | `convert_divs`, requirements.css |
 | `<visa>`, `<vaittama vastaus>`, `<kysymys>`, `<perustelu>` | Testaa tietosi -visa: valinta paljastaa vastauksen ja perustelun, vastaukset muistetaan selaimessa | `convert_quizzes`, visa.js/css |
 | `### [Windows](#tab/win)` | käyttöjärjestelmävälilehdet; valinta pätee koko sivustolla ja muistetaan | `convert_tabs` |

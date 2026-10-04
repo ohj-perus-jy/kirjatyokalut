@@ -22,7 +22,7 @@ lähde kirjoitetaan uusiksi ennen kuin osoitin siirtyy versioon ilman muunnosta.
 | `### [Windows](#tab/win)` … `***` | `=== "Windows"` | 14 | 9 | – | `convert_tabs` |
 | `<i class="bi bi-chevron-right">` | `›` | ✓ | 58 | – | `convert_icons` |
 | `<i class="bi bi-list">` ym. | `:material-menu:` ym. | – | 22 | – | `convert_icons`, `icons/` |
-| `<i class="bi bi-stars">` | `:material-creation:{ .jyu-bonus }` | 5 | 30 | – | `convert_bonus_marks` |
+| `<i class="bi bi-stars">` | `<i class="jyu-star">` (oma, ks. alla) | ✓ | 66 | – | `bi-stars` `BONUS_TAG_RE`:ssä |
 | sisennetty otsikko | otsikko sarakkeessa 0 | ✓ | – | – | `dedent_headings` |
 | `SUMMARY.md` | `nav:` käsin | 55 | 72 | 106 | `build_nav` |
 | `{{#include polku}}` | `--8<-- "polku"` | 2 | 194 | – | `convert_includes` |
@@ -42,8 +42,14 @@ uusiksi. Kun rivillä ei ole lukuja, sen muunnoksen voi poistaa. Poistettu
   Nyt välilehden sisällä oleva `<details>` jää `<p>`-kääreeseen (ohj1 4,
   ohj2 4 lohkoa), koska `convert_tabs` sisentää sen. Tarkista, korjaako
   `===`-muoto tai `???` (`pymdownx.details`) tämän.
-- **Bonusmerkki:** lyhytkoodia ei jäsennetä `<summary>`-rivillä, jolla on 4/5
-  (ohj1) ja 22/30 (ohj2) merkeistä. Kokeilematta.
+- **Bonusmerkki:** `:material-creation:{ .jyu-bonus }` kokeiltiin ja hylättiin
+  2026-10-04: `<summary>`-rivillä lyhytkoodi jäsennetään vain, kun tagissa on
+  `markdown="span"`, merkki jää ruudunlukijalta nimeämättä (`BONUS_WORD_RE`),
+  ja lähde on raskaampi lukea. Tilalle oma merkintä, myös tehtäväotsikoissa
+  (ohj2 36/66).
+- **Kuvakkeet:** sama `markdown="span"` tarvitaan ohj2:n `<summary>`-riveillä
+  (esim. `bi-info-circle`). Ääneenluku ohittaa lyhytkoodin kuten valmiin SVG:n
+  (`SPEECH_ICON_RE`), joten leikkeet eivät muutu.
 - **`SUMMARY.md`:** `nav.yml` on generoitu, joten käsin kirjoitettu `nav:`
   menee kirjan `mkdocs.yml`:ään, ja `build_print_page` lukee sen sieltä.
   Lukujen numerot kirjoitetaan otsikoihin tai jäävät koodiksi.
@@ -63,6 +69,7 @@ Vastinetta ei ole, tai se vaatisi laskemaan käsin. Perustelut:
 | `// HIGHLIGHT_GREEN_BEGIN` … `_END` | `mark_highlights` | sama |
 | `// FILE: Nimi.java` | `convert_files` | yksi rivi välilehden ja `.multifile`-aidan sijaan |
 | `<task>`, `<task-title>`, `<points>` | `convert_tasks` | kortti on HTML-kehys, jota ei kirjoiteta käsin |
+| `<i class="jyu-star"></i>` | `convert_bonus_marks`, `convert_tasks` | lyhytkoodi vaatisi `<summary>`-rivillä `markdown="span"`:n; muunnos nimeää merkin ruudunlukijalle |
 | `<visa>`, `<walkthrough>`, `<animation>` | `convert_quizzes`, `convert_walkthroughs`, `convert_animations` | omia ominaisuuksia |
 | ` ```plantuml `, ` ```bob ` | `convert_plantuml`, `convert_svgbob` | piirto ei ole teeman ominaisuus |
 | suoraan kirjoitettu `›` | `convert_icons` | valikkopolun nuoli vaimealla värillä |

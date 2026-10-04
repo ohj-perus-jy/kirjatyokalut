@@ -4,7 +4,7 @@ Sama otsikko kuin osan 2 tehtäväsivulla: tunnisteet törmäisivät
 tulostussivulla ilman luvun etuliitettä.
 
 <task>
-  <task-title num="1.1"><i class="bi bi-stars"></i>Kello<points>1 p.</points></task-title>
+  <task-title num="1.1"><i class="jyu-star"></i>Kello<points>1 p.</points></task-title>
   <handout>
 
 Tee luokka `Kello`, jolla on attribuutit `minuutit` ja `tunnit`.

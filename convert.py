@@ -304,12 +304,15 @@ TASK_TITLE_RE = re.compile(
     r'<task-title\s+num="(?P<num>[^"]*)"\s*>(?P<inner>.*?)</task-title>')
 TASK_POINTS_RE = re.compile(r"<points>(?P<points>.*?)</points>")
 
-# Bonusmerkki <i class="bi bi-stars">. Bootstrap Iconsia ei ladata, joten merkki
-# piirretään Materialin creation-kuvakkeella (.icons/material/creation.svg).
-# Valmis inline-SVG eikä lyhytkoodi, koska <summary>-rivillä Python-Markdown ei
-# jäsennä lyhytkoodia. Kääre .twemoji on teeman oma, joten koko, kohdistus ja
-# väri tulevat teeman CSS:stä; oma sääntö vain väriin, ks. assets/css/tasks.css.
-BONUS_TAG_RE = re.compile(r'<i\s+class="[^"]*\bbi-stars\b[^"]*"\s*>\s*</i>')
+# Bonusmerkki <i class="jyu-star"></i>; mdBookin aikainen <i class="bi bi-stars">
+# kelpaa, kunnes ohj2 on kirjoitettu uusiksi (YHTENAISTYS.md). Merkki piirretään
+# Materialin creation-kuvakkeella (.icons/material/creation.svg). Valmis
+# inline-SVG eikä lyhytkoodi, koska <summary>-rivillä Python-Markdown jäsentää
+# lyhytkoodin vain attribuutilla markdown="span", ja muunnos nimeää merkin
+# ruudunlukijalle (BONUS_WORD_RE). Kääre .twemoji on teeman oma, joten koko,
+# kohdistus ja väri tulevat teeman CSS:stä; oma sääntö vain väriin, ks.
+# assets/css/tasks.css.
+BONUS_TAG_RE = re.compile(r'<i\s+class="[^"]*\b(?:jyu-star|bi-stars)\b[^"]*"\s*>\s*</i>')
 BONUS_MARK_PATH = (
     "m19 1-1.26 2.75L15 5l2.74 1.26L19 9l1.25-2.74L23 5l-2.75-1.25"
     "M9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5"
@@ -1292,7 +1295,7 @@ def bonus_mark(labelled: bool) -> str:
 
 
 def convert_bonus_marks(text: str) -> tuple[str, int]:
-    """<i class="bi bi-stars"> -> bonusmerkki. -> (teksti, merkkejä).
+    """<i class="jyu-star"> -> bonusmerkki. -> (teksti, merkkejä).
 
     Tehtäväkorttien merkit on jo käsitelty (task_head). Nimeäminen ratkaistaan
     riveittäin (BONUS_WORD_RE). Koodiaidat ohitetaan.

@@ -864,18 +864,18 @@ def test_convert_tasks_marks_only_the_handout_for_markdown():
 def test_convert_tasks_puts_the_bonus_badge_inside_the_name():
     """Liuska jää nimen sisään, jotta se seuraa viimeistä sanaa myös nimen
     rivittyessä."""
-    text = ('<task-title num="1.7"><i class="bi bi-stars"></i>'
+    text = ('<task-title num="1.7"><i class="jyu-star"></i>'
             "Numerolaskuri<points>1 p.</points></task-title>\n")
     converted, _ = convert.convert_tasks(text)
     assert '<span class="task-name">Numerolaskuri <span class="task-bonus">' in converted
     assert converted.count('<span class="task-bonus">') == 1
-    assert "bi-stars" not in converted
+    assert "jyu-star" not in converted
 
 
 def test_task_badge_draws_the_bonus_mark_as_decoration():
     """Liuskassa lukee "Bonus", joten merkki on koriste eikä sitä nimetä
     ruudunlukijalle."""
-    text = ('<task-title num="1.7"><i class="bi bi-stars"></i>'
+    text = ('<task-title num="1.7"><i class="jyu-star"></i>'
             "Numerolaskuri<points>1 p.</points></task-title>\n")
     converted, _ = convert.convert_tasks(text)
     assert '<span class="twemoji jyu-bonus" aria-hidden="true">' in converted
@@ -885,16 +885,16 @@ def test_task_badge_draws_the_bonus_mark_as_decoration():
 
 def test_convert_bonus_marks_names_the_mark_when_the_line_has_no_bonus_word():
     """Vaatimuslistassa merkki on rivin ainoa ero pakolliseen, joten se saa nimen."""
-    text = ' * <i class="bi bi-stars jyu-gold"></i> Kulukategoria voi olla *pakollinen*.\n'
+    text = ' * <i class="jyu-star"></i> Kulukategoria voi olla *pakollinen*.\n'
     converted, marks = convert.convert_bonus_marks(text)
     assert marks == 1
     assert 'role="img" aria-label="Bonus"' in converted
-    assert "bi-stars" not in converted
+    assert "jyu-star" not in converted
 
 
 def test_convert_bonus_marks_leaves_the_mark_silent_next_to_the_word():
     """Rivi alkaa sanalla "Bonus:", jolloin nimi vain toistaisi otsikon."""
-    text = ('<details markdown="1"><summary><i class="bi bi-stars jyu-gold"></i>'
+    text = ('<details markdown="1"><summary><i class="jyu-star"></i>'
             " Bonus: Lisää ominaisuuksia</summary>\n")
     converted, marks = convert.convert_bonus_marks(text)
     assert marks == 1
@@ -904,10 +904,18 @@ def test_convert_bonus_marks_leaves_the_mark_silent_next_to_the_word():
 
 def test_convert_bonus_marks_skips_code_fences():
     """Aidan sisällä näytetty esimerkki on tekstiä eikä merkintää."""
-    text = '```html\n<i class="bi bi-stars"></i>\n```\n'
+    text = '```html\n<i class="jyu-star"></i>\n```\n'
     converted, marks = convert.convert_bonus_marks(text)
     assert marks == 0
     assert converted == text
+
+
+def test_convert_bonus_marks_still_reads_the_mdbook_class():
+    """mdBookin aikainen bi-stars kelpaa, kunnes ohj2 on kirjoitettu uusiksi."""
+    text = ' * <i class="bi bi-stars jyu-gold"></i> Kulukategoria voi olla *pakollinen*.\n'
+    converted, marks = convert.convert_bonus_marks(text)
+    assert marks == 1
+    assert "bi-stars" not in converted
 
 
 # --- Loput ikonit (README kohta 17) ------------------------------------------
