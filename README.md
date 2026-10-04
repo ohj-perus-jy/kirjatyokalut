@@ -195,7 +195,8 @@ git submodule update --init                     # (kirjan run.sh tekee tämän i
 ```
 
 Ensimmäinen ajo asentaa `.venv`:n kirjan hakemistoon (`setup.sh`), ja `run.sh`
-päivittää sen, kun `requirements.txt`:n Zensical-versio vaihtuu. Windowsissa
+päivittää sen, kun `requirements.txt`:n Zensical-versio vaihtuu tai järjestelmän
+Python päivittyy (esim. 3.12 → 3.14). Windowsissa
 kloonaa kirja WSL:n levylle, ei Windowsin kansioon. Windowsin kansiosta
 (9p-liitos) asennus on hidasta, eikä Zensicalin `--watch` toimi kunnolla. Jos ehdottomasti kuitenkin haluat käyttää Windowsin kansiota, joudut ajamaan `./zensical/run.sh` joka kerta uudelleen muokkauksen jälkeen. 
 

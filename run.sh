@@ -19,10 +19,15 @@ source "$TOOL/vaihe.sh"
 
 # Asenna, jos .venv puuttuu, sen Zensical ei ole requirements.txt:n versio tai
 # se on siirretty: skriptien #!-rivi osoittaa silloin vanhaan polkuun.
+# Versio kysytään .venv:n omalta Pythonilta eikä etsitä lib/python*/:sta:
+# .venv/bin/python3 on linkki järjestelmän python3:een, joten järjestelmän
+# päivityksen (esim. 3.12 -> 3.14) jälkeen se on uusi Python, joka ei näe
+# vanhan version lib/python3.12:ta. setup.sh luo .venv:n silloin uudelleen.
 pin=$(sed -n 's/^zensical==//p' "$TOOL/requirements.txt")
 if [[ ! -x .venv/bin/zensical ]] ||
    [[ ! -x $(sed -n '1s/^#!//p' .venv/bin/zensical) ]] ||
-   ! compgen -G ".venv/lib/python*/site-packages/zensical-$pin.dist-info" >/dev/null; then
+   [[ $(.venv/bin/python -c 'from importlib.metadata import version
+print(version("zensical"))' 2>/dev/null) != "$pin" ]]; then
     "$TOOL/setup.sh" --run
 fi
 
