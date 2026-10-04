@@ -66,6 +66,49 @@ theme:
         icon: material/weather-sunny
         name: Vaihda vaaleaan teemaan
 
+# Markdown-laajennukset. Lista korvaa Zensicalin oletukset kokonaan
+# (zensical/config.py: DEFAULT_MARKDOWN_EXTENSIONS), joten tässä ovat kaikki
+# oletukset sellaisinaan; vain toc:n permalink_title on lisätty, koska
+# otsikkoankkurin title-attribuutti ("Permanent link") ei tule teeman
+# kielipaketista vaan laajennuksen oletuksesta.
+markdown_extensions:
+  abbr: {}
+  admonition: {}
+  attr_list: {}
+  def_list: {}
+  footnotes: {}
+  md_in_html: {}
+  toc:
+    permalink: true
+    permalink_title: Pysyvä linkki tähän otsikkoon
+  pymdownx.arithmatex:
+    generic: true
+  pymdownx.betterem: {}
+  pymdownx.caret: {}
+  pymdownx.details: {}
+  pymdownx.emoji:
+    emoji_generator: zensical.extensions.emoji.to_svg
+    emoji_index: zensical.extensions.emoji.twemoji
+  pymdownx.highlight:
+    anchor_linenums: true
+    line_spans: __span
+    pygments_lang_class: true
+  pymdownx.inlinehilite: {}
+  pymdownx.keys: {}
+  pymdownx.magiclink: {}
+  pymdownx.mark: {}
+  pymdownx.smartsymbols: {}
+  pymdownx.superfences:
+    custom_fences:
+      - name: mermaid
+        class: mermaid
+  pymdownx.tabbed:
+    alternate_style: true
+    combine_header_slug: true
+  pymdownx.tasklist:
+    custom_checkbox: true
+  pymdownx.tilde: {}
+
 extra_css:
   # Leipätekstin kirjasin; miksi ei theme.font.text, ks. tiedoston alku.
   - assets/css/typography.css
