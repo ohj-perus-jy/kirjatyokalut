@@ -243,9 +243,10 @@ def test_only_the_themes_tooltips_lose_their_title(browser, book, serve):
 
 def test_a_title_that_described_stays_as_a_description(desktop):
     """Tekstillisen elementin title oli sen kuvaus (otsikon ¶-linkki:
-    Permanent link). Kun title siirretään pois, se jää aria-descriptioniksi;
-    ikoninapeille, joiden nimi on sama teksti, kuvausta ei toisteta."""
+    permalink_title, mkdocs-pohja.yml). Kun title siirretään pois, se jää
+    aria-descriptioniksi; ikoninapeille, joiden nimi on sama teksti, kuvausta
+    ei toisteta."""
     link = desktop.locator(".md-content .headerlink").first
     assert link.get_attribute("title") is None
-    assert link.get_attribute("aria-description") == "Permanent link"
+    assert link.get_attribute("aria-description") == "Pysyvä linkki tähän otsikkoon"
     assert desktop.get_attribute(".jyu-print-button", "aria-description") is None
