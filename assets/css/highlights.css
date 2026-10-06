@@ -1,25 +1,35 @@
 /* Korostetut rivit (vihreä, keltainen, punainen); rivit merkitsee
  * assets/js/highlights.js. mdBookin peittovärejä ei kopioida, koska
  * Zensicalin syntaksivärit ovat koodin taustaa vasten tasan WCAG AA:n
- * rajalla eikä peitto saa pudottaa niitä: kirkkaus pidetään, vain sävy
- * vaihtuu. Vasempaan reunaan tulee lisäksi täysivärinen palkki kuten teeman
- * omassa korostuksessa, koska sävy yksin ei erotu puna-vihersokealle. */
+ * rajalla eikä korostus saa pudottaa niitä. Vasempaan reunaan tulee lisäksi
+ * täysivärinen palkki kuten teeman omassa korostuksessa, koska sävy yksin ei
+ * erotu puna-vihersokealle.
+ *
+ * Kirkkaus riippuu sävystä, koska näytön keltainen on luonnostaan kirkas ja
+ * punainen tumma. Keltainen on vaaleassa teemassa koodin taustaa vaaleampi
+ * ja tummassa tummempi: taustan kirkkaudessa se jäisi vaaleassa harmaaseen
+ * sulautuvaksi pastelliksi ja tummassa oliiviksi. Kumpikin suunta kasvattaa
+ * syntaksivärien kontrastia. Vihreä ja punainen ovat vaaleassa taustaa
+ * tummempia, koska taustan kirkkaudessa punainen olisi lähes valkoinen;
+ * niiden riveillä syntaksivärit tummennetaan (alempana). */
 
 :root {
   --jyu-hl-green: hsl(130, 75%, 90%);
   --jyu-hl-green-edge: hsl(130, 60%, 32%);
-  --jyu-hl-yellow: hsl(50, 90%, 87%);
+  --jyu-hl-yellow: hsl(57, 100%, 80%);
   --jyu-hl-yellow-edge: hsl(45, 90%, 33%);
-  --jyu-hl-red: hsl(5, 90%, 93%);
+  --jyu-hl-red: hsl(5, 100%, 92%);
   --jyu-hl-red-edge: hsl(5, 70%, 50%);
 }
 
-/* Tummassa teemassa samat sävyt koodin taustan (code.css) kirkkaudessa. */
+/* Tummassa teemassa samat sävyt koodin taustan (code.css) kirkkaudessa,
+ * keltainen tummempana (ks. yllä) ja sen palkki kirkkaana, koska tumma
+ * keltainen tausta erottuu yksin vähiten. */
 [data-md-color-scheme="slate"] {
   --jyu-hl-green: hsl(130, 70%, 11%);
   --jyu-hl-green-edge: hsl(130, 50%, 45%);
-  --jyu-hl-yellow: hsl(50, 70%, 11%);
-  --jyu-hl-yellow-edge: hsl(45, 70%, 45%);
+  --jyu-hl-yellow: hsl(50, 100%, 6%);
+  --jyu-hl-yellow-edge: hsl(48, 90%, 50%);
   --jyu-hl-red: hsl(5, 70%, 17%);
   --jyu-hl-red-edge: hsl(5, 70%, 58%);
 }
@@ -51,6 +61,21 @@
 .md-typeset .highlight .hl-red {
   background-color: var(--jyu-hl-red);
   box-shadow: inset 2px 0 0 var(--jyu-hl-red-edge);
+}
+
+/* Vaaleassa vihreällä ja punaisella rivillä teeman syntaksivärit 12 %
+ * tummempina, jotta ne ovat korostusta vasten vähintään yhtä kontrastisia
+ * kuin koodin taustaa vasten (4,5:1). Arvot ovat teeman vaalean teeman
+ * värit (Zensicalin main.css): muuttujaa ei voi tummentaa sen omasta
+ * arvosta, koska se viittaisi itseensä. Nimet, kommentit ja välimerkit
+ * ovat valmiiksi tummia. */
+[data-md-color-scheme="default"] .md-typeset .highlight :is(.hl-green, .hl-red) {
+  --md-code-hl-number-color: color-mix(in srgb, #d52a2a 88%, black);
+  --md-code-hl-special-color: color-mix(in srgb, #db1457 88%, black);
+  --md-code-hl-function-color: color-mix(in srgb, #a846b9 88%, black);
+  --md-code-hl-constant-color: color-mix(in srgb, #6e59d9 88%, black);
+  --md-code-hl-keyword-color: color-mix(in srgb, #3f6ec6 88%, black);
+  --md-code-hl-string-color: color-mix(in srgb, #1c7d4d 88%, black);
 }
 
 /* Nappirivin alla oleva pinta (codebuttons.css) peittää ensimmäisen näkyvän
