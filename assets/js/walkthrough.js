@@ -528,6 +528,12 @@
     .filter((node) => !node.classList?.contains("headerlink"))
     .map((node) => node.textContent).join("").trim();
 
+  /* Kuvasuurennus (kirja.toml: kuvasuurennus; teema lataa GLightboxin vasta
+   * tämän skriptin jälkeen ja lukee gallerian silloin): vaiheen kuvat ovat
+   * oma galleriansa, jottei suurennuksen selaus vie piilossa olevien
+   * vaiheiden kuviin. */
+  let walks = 0;
+
   function enhance(root, scenes) {
     const chapters = [];
     const steps = [];
@@ -544,6 +550,13 @@
       }
     }
     if (!steps.length) return;
+
+    const walk = walks++;
+    for (const step of steps) {
+      for (const link of step.el.querySelectorAll("a.glightbox")) {
+        link.dataset.gallery = `jw-${walk}-${step.index}`;
+      }
+    }
 
     /* Aikajana on kohtauksen alla luvuittain: luvun pilleri ja sen alla luvun
      * vaiheet, osan leveys vaiheiden määrän mukaan (walkthrough.css:
@@ -733,26 +746,29 @@
     }
 
     /* Koko ruutu (näyttämön kulman kuvake): kohtaus vasemmalla ja vaiheen
-     * teksti oikealla (walkthrough.css: .jyu-walk--full). Selaimen koko
-     * näytön tila, kun se
-     * onnistuu; muuten, esimerkiksi iPhonella, ikkunan täyttävä kerros.
-     * native: koko näytön tila on päällä, joten sen päättyminen (Esc
-     * selaimelle) sulkee myös kerroksen. */
+     * teksti oikealla (walkthrough.css: .jyu-walk--full). Ikkunan täyttävä
+     * kerros, ja kun se onnistuu (ei esimerkiksi iPhonella), lisäksi selaimen
+     * koko näytön tila koko sivulle: pelkkä ohje koko näytön tilassa
+     * piilottaisi bodyyn tulevan kuvasuurennuksen. native: koko näytön tila
+     * on päällä, joten sen päättyminen (Esc selaimelle) sulkee myös
+     * kerroksen. */
+    const page = document.documentElement;
+
     function setFull(on) {
       if (on === full) return;
       full = on;
       root.classList.toggle("jyu-walk--full", on);
-      document.documentElement.classList.toggle("jw-full-open", on);
+      page.classList.toggle("jw-full-open", on);
       const label = on ? "Sulje koko ruutu (Esc)" : "Koko ruutu";
       fullButton.setAttribute("aria-label", label);
       fullButton.title = label;
       fullButton.setAttribute("aria-pressed", String(on));
       if (on) {
-        root.requestFullscreen?.().then(() => { native = full; }, () => {});
+        page.requestFullscreen?.().then(() => { native = full; }, () => {});
         root.focus({ preventScroll: true });
       } else {
         native = false;
-        if (document.fullscreenElement === root) document.exitFullscreen().catch(() => {});
+        if (document.fullscreenElement === page) document.exitFullscreen().catch(() => {});
         root.scrollIntoView({ block: "start" });
       }
     }
@@ -788,13 +804,25 @@
       speakButton.addEventListener("click", () => setSpeaking(!speaking));
     }
     document.addEventListener("fullscreenchange", () => {
-      if (native && document.fullscreenElement !== root) setFull(false);
+      if (native && document.fullscreenElement !== page) setFull(false);
     });
     zoomButton.addEventListener("click", () => {
       view.toggle();
       if (view.closeUp() && scene.finished()) scene.focusFinished(false);
     });
     stage.addEventListener("click", () => root.focus({ preventScroll: true }));
+    /* Kuvasuurennus vie kohdistuksen bodyyn (teema poistaa sen avatessa), ja
+     * se jää sinne sulkemisen jälkeen: nuolet ja Esc eivät tulisi ohjeelle.
+     * Vaiheen kuvasta avatun suurennuksen sulkeutuessa kohdistus palaa. */
+    root.addEventListener("click", (event) => {
+      if (!event.target.closest("a.glightbox")) return;
+      const closed = new MutationObserver(() => {
+        if (document.body.classList.contains("glightbox-open")) return;
+        closed.disconnect();
+        root.focus({ preventScroll: true });
+      });
+      closed.observe(document.body, { attributeFilter: ["class"] });
+    });
     root.addEventListener("keydown", (event) => {
       if (event.key === "Escape" && full) {
         setFull(false);
@@ -870,6 +898,11 @@
       console.error(`animaatio: kohtausta ei löytynyt: ${name}`);
       return;
     }
+
+    /* Piilotetun sisällön kuva ei avaudu suurena (kuvasuurennus, ks.
+     * enhance): linkki olisi näkymätön sarkainpysäkki ja kuva gallerian
+     * jäsen. Kuva itse jää ruudunlukijalle ja tulosteeseen. */
+    for (const link of root.querySelectorAll("a.glightbox")) link.replaceWith(...link.childNodes);
 
     const shell = document.createElement("div");
     shell.className = "jw-anim";

@@ -1,10 +1,11 @@
 """Vaiheittainen ohje koekirjalla (assets/js/walkthrough.js).
 
 Koesivu osa1/vaiheet.md on SUMMARY.md:n ulkopuolella, jotta muiden testien
-laskemat luvut eivät muutu: kolme vaihetta kahdessa luvussa, kohtaukset
-tiedostossa osa1/images/vaiheet.js. Esitys syntyy vasta selaimessa, joten sivu
-avataan oikeasti, ja jokainen testi saa oman selainkontekstin, koska osoite ja
-esityksen tila muuttuvat.
+laskemat luvut eivät muutu: kuusi vaihetta kolmessa luvussa, kohtaukset
+tiedostossa osa1/images/vaiheet.js. Luvun Kuvat vaiheissa on kuvia, jotka
+avautuvat suurina (koekirjan kirja.toml: kuvasuurennus). Esitys syntyy vasta
+selaimessa, joten sivu avataan oikeasti, ja jokainen testi saa oman
+selainkontekstin, koska osoite ja esityksen tila muuttuvat.
 """
 
 import pytest
@@ -18,7 +19,8 @@ SHOWN = """root => [...root.querySelectorAll(':scope > h2, :scope > .jyu-step')]
   .filter(element => getComputedStyle(element).display !== 'none')
   .map(element => element.querySelector('h3')?.id ?? element.id)"""
 
-EVERYTHING = ["alku", "avaa-sivu", "anna-komento", "loppu", "kirjaudu"]
+EVERYTHING = ["alku", "avaa-sivu", "anna-komento", "loppu", "kirjaudu",
+              "kuvat", "katso-kuvakaappaus", "tallenna-tiedosto", "vertaa-tulosta"]
 
 # Piirrosalustan leveys näyttämön leveyteen verrattuna.
 CANVAS_PER_STAGE = """() => document.querySelector('.jw-canvas').getBoundingClientRect().width
@@ -68,10 +70,10 @@ def test_one_step_is_shown_at_a_time(opened):
     """Luvun otsikot ja muut vaiheet piiloon; luvuista napit, vaiheista aikajana."""
     page, errors = opened()
     assert shown(page) == ["avaa-sivu"]
-    assert page.inner_text(".jw-count") == "Vaihe 1 / 3"
+    assert page.inner_text(".jw-count") == "Vaihe 1 / 6"
     assert page.eval_on_selector_all(
-        ".jw-pill", "buttons => buttons.map(b => b.textContent)") == ["Alku", "Loppu"]
-    assert page.locator(".jw-tick").count() == 3
+        ".jw-pill", "buttons => buttons.map(b => b.textContent)") == ["Alku", "Loppu", "Kuvat"]
+    assert page.locator(".jw-tick").count() == 6
     assert page.is_disabled(".jw-prev")
     assert not page.is_disabled(".jw-next")
     assert not page.is_visible(".jw-zoom")
@@ -112,11 +114,20 @@ def test_the_walkthrough_opens_waiting_for_the_play_button(opened):
 
 
 def test_markdown_inside_a_step_is_converted(opened):
-    """markdown="1": aita ja alertti vaiheen sisällä käännetään kuten muualla."""
+    """markdown="1": vaiheen sisällä käännetään kuten muualla aidat,
+    alertit (myös niiden luettelo ja aita), luettelo, näppäimet, linkit ja
+    kuvat."""
     page, errors = opened()
     page.click(".jw-mode")
-    assert page.locator(".jyu-step pre code").count() == 1
-    assert page.locator(".jyu-step .admonition").count() == 1
+    assert page.locator(".jyu-step pre code").count() == 2
+    assert page.locator(".jyu-step .admonition").count() == 2
+    assert page.locator(".jyu-step .admonition ol > li").count() == 2
+    assert page.locator(".jyu-step .admonition li pre code").count() == 1
+    assert page.locator(".jyu-step ul > li > code").count() == 2
+    assert page.locator(".jyu-step kbd").count() == 2
+    assert page.locator(".jyu-step p a[href='#avaa-sivu']").count() == 1
+    assert page.locator(".jyu-step a[href='../01-hei/']").count() == 1
+    assert page.locator(".jyu-step img").count() == 2
     assert errors == []
 
 
@@ -233,11 +244,20 @@ def test_the_address_follows_the_step(opened):
     page.click(".jw-next")
     assert page.evaluate("location.hash") == "#anna-komento"
     page.evaluate("location.hash = '#kirjaudu'")
-    page.wait_for_function("document.querySelector('.jw-count').textContent === 'Vaihe 3 / 3'")
+    page.wait_for_function("document.querySelector('.jw-count').textContent === 'Vaihe 3 / 6'")
     for fragment, expected in (("#anna-komento", ["anna-komento"]), ("#loppu", ["kirjaudu"])):
         other, other_errors = opened(fragment)
         assert shown(other) == expected, fragment
         assert other_errors == []
+    assert errors == []
+
+
+def test_link_in_a_step_opens_the_other_step(opened):
+    """Vaiheen tekstin linkki toiseen vaiheeseen avaa sen vaiheen."""
+    page, errors = opened("#vertaa-tulosta")
+    page.click(".jyu-step--current a[href='#avaa-sivu']")
+    page.wait_for_function("document.querySelector('.jw-count').textContent === 'Vaihe 1 / 6'")
+    assert shown(page) == ["avaa-sivu"]
     assert errors == []
 
 
@@ -439,6 +459,71 @@ def test_without_scenes_the_walkthrough_stays_text(opened):
     assert shown(page) == EVERYTHING
 
 
+# --- Kuvasuurennus (koekirjan kirja.toml: kuvasuurennus) ----------------------
+# Luvun Kuvat kahdessa vaiheessa on kuva. Teema lataa GLightboxin unpkg.com:sta.
+
+LIGHTBOX = ".glightbox-container .gslide.current img"
+
+# Onko ikkunan keskellä päällimmäisenä suurennus.
+LIGHTBOX_ON_TOP = """() => Boolean(document.elementFromPoint(innerWidth / 2, innerHeight / 2)
+  ?.closest('.glightbox-container'))"""
+
+
+def open_image(page):
+    page.click(".jyu-step--current a.glightbox")
+    page.wait_for_selector(LIGHTBOX)
+
+
+def close_image(page):
+    page.keyboard.press("Escape")
+    page.wait_for_selector(".glightbox-container", state="detached")
+
+
+def test_image_in_a_step_opens_large(opened):
+    """Vaiheen kuva avautuu suurena päällimmäiseksi. Galleriassa on vain
+    vaiheen oma kuva, ei toisen vaiheen piilossa olevaa. Nuolet eivät vaihda
+    vaihetta suurennuksen ollessa auki, ja Esc sulkee vain suurennuksen.
+    Sulkemisen jälkeen nuolet vaihtavat taas vaihetta."""
+    page, errors = opened("#katso-kuvakaappaus")
+    open_image(page)
+    assert page.evaluate(LIGHTBOX_ON_TOP)
+    assert page.locator(".glightbox-container .gslide").count() == 1
+    page.keyboard.press("ArrowRight")
+    page.keyboard.press("ArrowLeft")
+    assert shown(page) == ["katso-kuvakaappaus"]
+    close_image(page)
+    assert shown(page) == ["katso-kuvakaappaus"]
+    page.keyboard.press("ArrowRight")
+    assert shown(page) == ["tallenna-tiedosto"]
+    assert errors == []
+
+
+def test_image_opens_large_in_full_screen(opened):
+    """Koko ruudussa suurennus tulee ohjeen päälle: selaimen koko näytön
+    tilassa on koko sivu, koska pelkkä ohje piilottaisi bodyyn tulevan
+    suurennuksen. Esc sulkee ensin suurennuksen ja sitten koko ruudun."""
+    page, errors = opened("#katso-kuvakaappaus")
+    page.click(".jw-full")
+    open_image(page)
+    assert page.evaluate(LIGHTBOX_ON_TOP)
+    close_image(page)
+    assert "jyu-walk--full" in page.get_attribute(".jyu-walk", "class")
+    page.keyboard.press("Escape")
+    page.wait_for_function(
+        "!document.querySelector('.jyu-walk').classList.contains('jyu-walk--full')")
+    assert errors == []
+
+
+def test_image_opens_large_on_a_phone(opened):
+    """Puhelimessa ohje on tekstinä, ja vaiheen kuvan saa suureksi."""
+    page, errors = opened(viewport=PHONE, ready=False)
+    page.wait_for_selector(".jyu-walk--text")
+    page.locator(".jyu-step a.glightbox").first.tap()
+    page.wait_for_selector(LIGHTBOX)
+    assert page.evaluate(LIGHTBOX_ON_TOP)
+    assert errors == []
+
+
 # --- Yksittäinen animaatio (<animation>, walkthrough.js: enhanceAnimation) ----
 # Koesivun lopussa toisella välilehdellä listan kohdassa, varakuvana kuva.png.
 
@@ -546,9 +631,21 @@ def test_printed_animation_shows_its_content(opened):
     assert errors == []
 
 
+def test_hidden_animation_content_has_no_image_link(opened):
+    """Kohtauksen tilalle piilotetun varasisällön kuva ei avaudu suurena:
+    linkki olisi näkymätön sarkainpysäkki. Kuva jää ruudunlukijalle ja
+    tulosteeseen."""
+    page, errors = opened()
+    page.wait_for_selector(".jyu-anim--live", state="attached")
+    assert page.locator(".jyu-anim a").count() == 0
+    assert page.locator(".jyu-anim img").count() == 1
+    assert errors == []
+
+
 def test_without_scenes_the_animation_shows_its_content(opened):
-    """Kohtaustiedosto ei latautunut: animaatiota ei tehdä, ja varakuva näkyy."""
+    """Kohtaustiedosto ei latautunut: animaatiota ei tehdä, ja varakuva näkyy
+    ja avautuu suurena kuten muutkin kuvat."""
     page, _ = opened(block="**/images/vaiheet.js", ready=False)
     page.click(".tabbed-labels label:has-text('Toka')")
     assert page.locator(".jyu-anim--live").count() == 0
-    assert page.is_visible(".jyu-anim img")
+    assert page.is_visible(".jyu-anim a.glightbox img")

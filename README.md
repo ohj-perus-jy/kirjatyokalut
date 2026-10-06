@@ -74,7 +74,7 @@ Kielet: `csharp`, `java`, `javascript` (korostetut rivit: `csharp`, `java`).
 | Alatunniste: edellinen/seuraava, tekijät ja lisenssi, "Muokkaa", "Muutoshistoria", "Ilmoita ongelma" | copyright.html |
 | Alaviitteet ja `title`-attribuutit tooltipeinä | mkdocs-pohja.yml, typography.css |
 | Koko sivun ääneenluku (`kirja.toml`: `[puhe] sivut`): kaiutin yläpalkissa, soitinpalkki (nopeus 1–2×, jää muistiin), luettava kappale korostettuna; koodista, taulukosta ja kaaviosta vain ilmoitus, välilehdistä lukijan valitsema | `speech_units`, `mark_speech`, puhe.js/css, header.html, `puhe.py` |
-| Kuvan klikkaus avaa sen täysikokoisena (`kirja.toml`: `kuvasuurennus`, kokeilussa ohj2:ssa); kuvan saa pois merkinnällä `{ .off-glb }` | `build_base`, Zensicalin GLightbox |
+| Kuvan klikkaus avaa sen täysikokoisena (`kirja.toml`: `kuvasuurennus`, kokeilussa ohj2:ssa); kuvan saa pois merkinnällä `{ .off-glb }`. Vaiheittaisessa ohjeessa vaiheen kuvat ovat oma galleriansa, ja animaation varakuva ei avaudu | `build_base`, Zensicalin GLightbox, walkthrough.js |
 | Taulukoiden, koodin ja nappirivin tyyli | tables.css, code.css, codebuttons.css |
 
 ### Ylläpito

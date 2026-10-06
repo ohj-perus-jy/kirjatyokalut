@@ -2,6 +2,10 @@
 # tiedosto on kirjan zensical/-hakemistossa; avaimet: README.md, "Kirjan asetukset".
 nimi = "koekirja"
 
+# Kuvan klikkaus avaa sen suurena (tests/test_walkthrough.py: kuvat
+# vaiheittaisessa ohjeessa ja animaation varasisältönä).
+kuvasuurennus = true
+
 # Koko sivun ääneenluvun koesivu (tests/test_puhe.py). Varaston täyttää
 # conftest.py: copy_book valeäänillä, ei repoa.
 [puhe]
