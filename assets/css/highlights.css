@@ -6,12 +6,12 @@
  * erotu puna-vihersokealle.
  *
  * Kirkkaus riippuu sävystä, koska näytön keltainen on luonnostaan kirkas ja
- * punainen tumma. Keltainen on vaaleassa teemassa koodin taustaa vaaleampi
- * ja tummassa tummempi: taustan kirkkaudessa se jäisi vaaleassa harmaaseen
- * sulautuvaksi pastelliksi ja tummassa oliiviksi. Kumpikin suunta kasvattaa
- * syntaksivärien kontrastia. Vihreä ja punainen ovat vaaleassa taustaa
- * tummempia, koska taustan kirkkaudessa punainen olisi lähes valkoinen;
- * niiden riveillä syntaksivärit tummennetaan (alempana). */
+ * punainen tumma. Keltainen on kummassakin teemassa koodin taustaa
+ * vaaleampi: taustan kirkkaudessa se jäisi vaaleassa harmaaseen sulautuvaksi
+ * pastelliksi ja tummassa ruskeaksi. Vihreä ja punainen ovat vaaleassa
+ * taustaa tummempia, koska taustan kirkkaudessa punainen olisi lähes
+ * valkoinen. Kun korostus vie kontrastia, rivin teksti tummennetaan tai
+ * vaalennetaan (alempana). */
 
 :root {
   --jyu-hl-green: hsl(130, 75%, 90%);
@@ -22,13 +22,12 @@
   --jyu-hl-red-edge: hsl(5, 70%, 50%);
 }
 
-/* Tummassa teemassa samat sävyt koodin taustan (code.css) kirkkaudessa,
- * keltainen tummempana (ks. yllä) ja sen palkki kirkkaana, koska tumma
- * keltainen tausta erottuu yksin vähiten. */
+/* Tummassa teemassa vihreä ja punainen koodin taustan (code.css)
+ * kirkkaudessa, keltainen vaaleampana (ks. yllä). */
 [data-md-color-scheme="slate"] {
   --jyu-hl-green: hsl(130, 70%, 11%);
   --jyu-hl-green-edge: hsl(130, 50%, 45%);
-  --jyu-hl-yellow: hsl(50, 100%, 6%);
+  --jyu-hl-yellow: hsl(48, 74%, 16%);
   --jyu-hl-yellow-edge: hsl(48, 90%, 50%);
   --jyu-hl-red: hsl(5, 70%, 17%);
   --jyu-hl-red-edge: hsl(5, 70%, 58%);
@@ -76,6 +75,27 @@
   --md-code-hl-constant-color: color-mix(in srgb, #6e59d9 88%, black);
   --md-code-hl-keyword-color: color-mix(in srgb, #3f6ec6 88%, black);
   --md-code-hl-string-color: color-mix(in srgb, #1c7d4d 88%, black);
+}
+
+/* Tummassa keltaisella rivillä teksti vaaleampana, jotta se on yhtä
+ * kontrastista kuin muualla koodissa: syntaksivärit 35 % kohti valkoista,
+ * nimet ja muu teksti teeman 80 %:n sijaan 90 %, ja kommentit ja välimerkit
+ * 62 %:n sijaan 72 % peittävinä (typography.css). Värit ovat teeman tumman
+ * teeman arvot (Zensicalin palette.css), samasta syystä kuin yllä. */
+[data-md-color-scheme="slate"] .md-typeset .highlight .hl-yellow {
+  --md-code-hl-number-color: color-mix(in srgb, #e6695b 65%, white);
+  --md-code-hl-special-color: color-mix(in srgb, #f06090 65%, white);
+  --md-code-hl-function-color: color-mix(in srgb, #c973d9 65%, white);
+  --md-code-hl-constant-color: color-mix(in srgb, #9383e2 65%, white);
+  --md-code-hl-keyword-color: color-mix(in srgb, #6791e0 65%, white);
+  --md-code-hl-string-color: color-mix(in srgb, #2fb170 65%, white);
+  --md-code-hl-name-color: hsla(var(--md-hue), 20%, 90%, 1);
+  --md-code-hl-operator-color: hsla(var(--md-hue), 15%, 90%, 0.72);
+  --md-code-hl-punctuation-color: hsla(var(--md-hue), 15%, 90%, 0.72);
+  --md-code-hl-comment-color: hsla(var(--md-hue), 15%, 90%, 0.72);
+  --md-code-hl-generic-color: hsla(var(--md-hue), 15%, 90%, 0.72);
+  --md-code-hl-variable-color: hsla(var(--md-hue), 15%, 90%, 0.72);
+  color: hsla(var(--md-hue), 20%, 90%, 1);
 }
 
 /* Nappirivin alla oleva pinta (codebuttons.css) peittää ensimmäisen näkyvän
