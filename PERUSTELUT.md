@@ -16,10 +16,12 @@ Ulkoasu tulee teemalta.
 ## Ansat
 
 - **`markdown_extensions` korvaa Zensicalin koko oletuslistan**
-  (`zensical/config.py`) eikä täydennä sitä, oli lohko sitten pohjassa tai
-  kirjan `mkdocs.yml`:ssä. Yhden rivin lisäys pudottaa pois mm.
-  `pymdownx.tabbed`in, `admonition`in ja `md_in_html`in. Kaikki tarvittava on
-  jo oletuslistalla.
+  (`zensical/config.py`: `DEFAULT_MARKDOWN_EXTENSIONS`) eikä täydennä sitä,
+  oli lohko sitten pohjassa tai kirjan `mkdocs.yml`:ssä. Siksi
+  `mkdocs-pohja.yml`:ssä on koko oletuslista, johon on lisätty vain `toc`:n
+  `permalink_title` (otsikon ¶-linkin vihje suomeksi). Uusi laajennus
+  lisätään pohjan listaan. Kirjan oma `markdown_extensions` pudottaisi pois
+  mm. `pymdownx.tabbed`in, `admonition`in ja `md_in_html`in.
 - **Raaka HTML ja Python-Markdown.** Raa'an HTML-lohkon sisältö jäsennetään
   vain `markdown`-attribuutilla (`md_in_html`). Attribuutti ei etene
   sisempiin lohkoihin, jos uloin lohko on käsittelemätön, ja tyhjä rivi
@@ -33,6 +35,11 @@ Ulkoasu tulee teemalta.
   latautuessa ajettava skripti ei näe koottuja lukuja. Uuden ominaisuuden on
   kuunneltava `jyu-print-assembled`-tapahtumaa, kuten piilorivit, korostukset
   ja nauhoitukset tekevät (`print.js`).
+- **Napin vihje tulee `title`-attribuutista.** `tooltips.js` tekee
+  jokaisesta `button[title]`-napista teeman tyylisen vihjeen, myös skriptin
+  myöhemmin lisäämästä, eikä selaimen oma vihje tule sen rinnalle. Omaa
+  vihjettä ei siis tehdä. Valikon avaava nappi (`aria-expanded`) hoitaa
+  kohdistuksensa itse kuten `sitemenu.js` ja `fontmenu.js`.
 
 ## Zensicalin päivitys
 
@@ -42,6 +49,13 @@ Kun Zensicalin versio vaihtuu, tarkista käsin:
   `javascripts/content.html` ovat kopioita teeman malleista. Vertaa ne teeman
   uusiin versioihin. `content.html` nojaa lisäksi teeman sisäiseen
   `data-md-switching`-lippuun.
+- `mkdocs-pohja.yml`:n `markdown_extensions` on kopio oletuslistasta (ks.
+  Ansat). Vertaa sitä uuteen `DEFAULT_MARKDOWN_EXTENSIONS`iin, ettei
+  uusi tai muuttunut oletus jää pois.
+- `search.css` käyttää teeman minifioituja luokkanimiä, ja `tooltips.js`
+  jäljittelee teeman vihjettä (`.md-tooltip2`, elementit, joille teema tekee
+  vihjeen). Muutokset tulevat esiin testeissä `test_search.py` ja
+  `test_tooltips.py`.
 - `layout.css` kumoaa `!important`illa inline-tyylit, jotka Zensicalin
   skripti kirjoittaa sivupalkille. Tiedostossa on myös kopio teeman
   hiusviivojen geometriasta. Jos valikko tai viivat hajoavat, katso tämä
@@ -86,6 +100,11 @@ merkitsee, `puhe.py` tekee leikkeet, `puhe.js` soittaa, ja kirjan
   (`speech_clip`). Korjaus syntetisoi uudelleen vain muuttuneen kappaleen, ja
   sama teksti eri sivuilla on yksi tiedosto. Äänen tai muodon vaihto vaihtaa
   nimet itsestään, joten luetteloa ei tarvita: leike on olemassa tai ei.
+- **Merkinnän vaihto ei saa muuttaa luettavaa tekstiä.** Kun lähde
+  kirjoitetaan uusin merkinnöin (YHTENAISTYS.md), jokainen muuttunut
+  kappale olisi uusi leike, joka maksetaan Azurelle uudelleen. Siksi
+  esimerkiksi kuvakkeen lyhytkoodi ohitetaan samoin kuin valmis SVG-kuvake
+  (`SPEECH_ICON_RE`).
 - **Leikkeet ovat erillisessä repossa (`[puhe] repo`).** Koko kirja on
   arviolta 100 Mt, ja jokainen korjaus jättäisi kirjan historiaan vanhan
   version. Saman repon orpo haara tulisi silti jokaiseen `git clone`en.

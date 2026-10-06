@@ -2,7 +2,8 @@
 
 Ohjelmointikurssien kirjojen ([ohj1](https://github.com/ohj-perus-jy/ohj1),
 [ohj2](https://github.com/ohj-perus-jy/ohj2),
-[jypelidocs](https://github.com/ohj-perus-jy/jypelidocs)) yhteinen
+[jypelidocs](https://github.com/ohj-perus-jy/jypelidocs),
+[containerapps](https://github.com/ohj-perus-jy/containerapps)) yhteinen
 työkaluketju, joka muuntaa markdownilla kirjoitetun lähdeaineiston
 [Zensical](https://zensical.org)-sivustoksi. Kirja käyttää tätä repoa
 git-submodulena, jotta kaikista kirjoista saadaan yhtenäisen näköiset ja ominaisuuksiltaan samanlaiset.
