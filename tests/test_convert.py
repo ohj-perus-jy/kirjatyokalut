@@ -1845,3 +1845,14 @@ def test_build_base_points_the_theme_to_the_tools(tmp_path, monkeypatch):
     assert "extra_css:" in base and "extra_javascript:" in base
     # nav: ja extra: tulevat perään (build_nav, build_extra), eivät pohjasta.
     assert not re.search(r"^(nav|extra):", base, re.MULTILINE)
+
+
+@pytest.mark.parametrize("zoom", [False, True])
+def test_build_base_adds_image_zoom_only_when_the_book_asks(monkeypatch, zoom):
+    """kirja.toml: kuvasuurennus = true lisää GLightboxin pohjan
+    laajennuslistaan; muut kirjat saavat pohjan sellaisenaan."""
+    monkeypatch.setattr(convert, "IMAGE_ZOOM", zoom)
+    base = convert.build_base()
+    extensions = base.split("\nmarkdown_extensions:\n", 1)[1]
+    assert extensions.startswith("  zensical.extensions.glightbox: {}\n") == zoom
+    assert ("glightbox" in base) == zoom

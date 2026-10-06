@@ -97,6 +97,11 @@ SPEECH_REPO: str | None = SPEECH_CONFIG.get("repo")
 SPEECH_DEFAULT_VOICE = "fi-FI-HarriNeural"
 SPEECH_VOICE: str = SPEECH_CONFIG.get("aani", SPEECH_DEFAULT_VOICE)
 
+# Kuvan klikkaus avaa sen täysikokoisena (Zensicalin GLightbox-laajennus,
+# ks. build_base). Kirjakohtainen, koska sitä kokeillaan ensin ohj2:ssa.
+# kirja.toml: kuvasuurennus = true.
+IMAGE_ZOOM: bool = CONFIG.get("kuvasuurennus", False)
+
 # Otsikko, jonka edessä on 1-3 välilyöntiä: CommonMark (mdBook) sallii sen,
 # Python-Markdown ei, vaan jättää risuaidat näkyviin. Ks. dedent_headings.
 INDENTED_HEADING_RE = re.compile(r"^ {1,3}(?=#{1,6}\s)")
@@ -453,8 +458,12 @@ def build_base() -> str:
     Kirjan mkdocs.yml perii nav.yml:n (INHERIT), joten sinne jäävät vain
     kirjan omat rivit. Pohjan TYOKALUT on polku kirjan hakemistosta tähän
     hakemistoon: Zensical ratkaisee custom_dirin mkdocs.yml:n sijainnista.
+    IMAGE_ZOOM lisää laajennuslistaan GLightboxin.
     """
     base = (TOOL / "mkdocs-pohja.yml").read_text(encoding="utf-8")
+    if IMAGE_ZOOM:
+        base = base.replace("\nmarkdown_extensions:\n", "\nmarkdown_extensions:\n"
+                            "  zensical.extensions.glightbox: {}\n")
     tool = Path(os.path.relpath(TOOL, BOOK)).as_posix()
     return ("# Generoitu (convert.py): mkdocs-pohja.yml + navigaatio. Älä muokkaa.\n"
             + base.replace("custom_dir: TYOKALUT/", f"custom_dir: {tool}/") + "\n")
