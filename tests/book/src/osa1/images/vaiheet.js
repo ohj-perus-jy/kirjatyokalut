@@ -25,6 +25,22 @@
         + "<div style=\"height:40px\">Yksi</div><div style=\"height:40px\">Kaksi</div></div></div>",
     }),
 
+    /* Luku Kuvat: vaiheiden tekstissä on kuvia (kuvasuurennus). */
+    kuvakaappaus: () => ui.window({
+      title: "Kuvakaappaus",
+      body: '<p><span class="jw-btn koe-sininen" data-click data-ring>Sininen</span></p>',
+    }),
+
+    tallennus: () => ui.window({
+      title: "Tallennus",
+      body: '<p class="koe-tallennettu" data-show>Tallennettu</p>',
+    }),
+
+    tarkistus: () => ui.window({
+      title: "Tarkistus",
+      body: '<p class="koe-tarkistus" data-type>Sama kuin kuvassa</p>',
+    }),
+
     /* Yksittäinen animaatio (<animation>) samalla sivulla. Hidastettu:
      * merkin viive (data-type) ja tauko kirjoituksen jälkeen (data-wait). */
     animaatio: () => ui.window({
