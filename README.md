@@ -12,7 +12,7 @@ ym.), koska kirjat kirjoitettiin alun perin mdBookille.
 
 - Miksi mikin ratkaisu on tehty: [PERUSTELUT.md](PERUSTELUT.md).
 - Mitä työkalut tarjoavat: [Ominaisuudet](#ominaisuudet) alla.
-- Mistä ominaisuudet tulivat (koeputken vanha README): [TAUSTA.md](TAUSTA.md).
+- Mistä ominaisuudet tulivat (mdBook, ohj1, siirron jälkeen): [TAUSTA.md](TAUSTA.md).
 - Mikä mdBookin merkintä on vielä käytössä, mikä on sen Zensical-vastine ja
   mitkä omat merkinnät jäävät; avoimet kysymykset: [YHTENAISTYS.md](YHTENAISTYS.md).
 
