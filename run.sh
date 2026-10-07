@@ -92,14 +92,21 @@ EOF
 if [[ $port != "$want" ]]; then
     echo "Portti $want on varattu, käytetään porttia $port."
 fi
-echo "Kirja: http://localhost:$port"
+line="Kirja näkyvissä osoitteessa http://localhost:$port"
 if [[ -f /.dockerenv || -f /run/.containerenv ]]; then
-    echo "Dev containerissa koneen osoite voi olla eri: katso VS Coden Ports-välilehti."
+    line+=" (dev containerissa osoite voi olla eri, ks. VS Coden Ports-välilehti)"
 fi
+echo "$line. Lopeta Ctrl-C."
 
 # Vahti palvelimen rinnalle: `zensical serve` seuraa docs/:ia, ei ../src:iä
 # (convert.py: watch). Palvelinta ei exec:ata, jotta trap ehtii lopettaa vahdin.
 python3 "$TOOL/convert.py" --watch &
 watcher=$!
 trap 'kill "$watcher" 2>/dev/null' EXIT INT TERM
-.venv/bin/zensical serve --dev-addr "0.0.0.0:$port"
+# Palvelimen vakiorivit pois: osoite kerrottiin jo (0.0.0.0 ei edes toimi
+# selaimessa), ja "No issues found" tulee joka muunnoksesta, jonka vahti jo
+# kertoo. Muu tuloste (virheet, varoitukset) jää näkyviin. grep ei saa
+# kaataa skriptiä, kun kaikki rivit suodattuvat.
+.venv/bin/zensical serve --dev-addr "0.0.0.0:$port" 2>&1 |
+    { grep --line-buffered -v -e '^Serving .* on http://' -e '^Build started$' \
+           -e '^No issues found$' || true; }

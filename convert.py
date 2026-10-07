@@ -24,7 +24,6 @@ import filecmp
 import fnmatch
 import functools
 import hashlib
-import io
 import json
 import math
 import os
@@ -2959,8 +2958,6 @@ def main(strict: bool = False) -> int:
             names = ", ".join(scenes[:5]) + (", ..." if len(scenes) > 5 else "")
             print(f"varoitus: {source_path}: {len(scenes)} vaiheen ääni puuttuu ({names});"
                   f" aja ./run.sh puhe ../src/{source_path}", file=sys.stderr)
-    print(f"kopioitu {len(list(DOCS.rglob('*.md')))} markdown-tiedostoa -> {DOCS}"
-          + (f", {len(stale)} jäänyttä tiedostoa pois" if stale else ""))
     # --strict: julkaisussa puuttuva kaavio on virhe, ei varoitus. Paikallisesti
     # pehmeä riippuvuus säilyy, ks. svgbob_svg.
     if strict and FAILED:
@@ -3030,25 +3027,14 @@ def watch_label(changed: list[str]) -> str:
     return name if len(changed) == 1 else f"{name} (+{len(changed) - 1})"
 
 
-def run_quietly() -> int:
-    """main ilman kopiointiriviä. -> paluuarvo.
-
-    Vahdin tulostus kulkee palvelimen lokin seassa. Varoitukset menevät
-    stderriin, joten vaimennus ei piilota niitä.
-    """
-    with only_one_run(), contextlib.redirect_stdout(io.StringIO()):
-        return main()
-
-
 def watch() -> int:
     """Aja muunnos aina kun lähdepuu tai assetit muuttuvat. -> paluuarvo.
 
     Ensimmäistä muunnosta ei tehdä: run.sh ajaa sen ennen vahtia, jotta
-    `zensical serve` näkee valmiin docs/:n heti.
+    `zensical serve` näkee valmiin docs/:n heti. Käynnistyksestä ei tulosteta
+    mitään: run.sh kertoo osoitteen ja Ctrl-C:n, ja jokainen muunnos tulostaa
+    oman rivinsä.
     """
-    print(f"Vahti käynnissä: tallennus hakemistoon {repo_relative(SRC)}/ tai "
-          f"{repo_relative(ASSETS)}/ muuntaa kirjan uudelleen, ja palvelin "
-          "päivittää selaimen. Lopeta Ctrl-C.", flush=True)
     state = snapshot()
     try:
         while True:
@@ -3067,7 +3053,8 @@ def watch() -> int:
             changed = changed_files(state, fresh)
             started = time.monotonic()
             try:
-                status = run_quietly()
+                with only_one_run():
+                    status = main()
             except Exception:
                 # Virhe ei saa tappaa vahtia; se näkyy ja seuraava tallennus
                 # yrittää uudelleen.
