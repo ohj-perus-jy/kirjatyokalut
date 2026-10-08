@@ -60,6 +60,59 @@ Kun Zensicalin versio vaihtuu, tarkista käsin:
   skripti kirjoittaa sivupalkille. Tiedostossa on myös kopio teeman
   hiusviivojen geometriasta. Jos valikko tai viivat hajoavat, katso tämä
   tiedosto ensimmäisenä.
+- `mkdocs-pohja.yml`:n `theme.font: false` nojaa siihen, että `base.html`
+  jättää silloin pois sekä Google Fontsin linkin että muuttujat
+  `--md-text-font` ja `--md-code-font` (0.0.68: `{% block fonts %}`, rivit
+  70–80), jotka `assets/css/fonts.css` asettaa. Tarkista uudesta
+  `base.html`:stä, että ehto on yhä `config.theme.font != false` ja että
+  teeman CSS johtaa `--md-text-font-family`n yhä muuttujasta
+  `--md-text-font`. `overrides/main.html` korvaa teeman `main.html`:n, joka
+  on ollut pelkkä `{% extends "base.html" %}`; jos siihen tulee sisältöä, se
+  on tuotava omaan kopioon. `tests/test_fonts.py` huomaa, jos kirjasimet
+  eivät enää lataudu sivustolta.
+
+## Kirjasimet
+
+Kirjasintiedostot (Source Serif 4, Source Sans 3, JetBrains Mono, Literata,
+Atkinson Hyperlegible Next) ovat repossa `assets/fonts/`-hakemistossa ja
+tulevat sivustolle sen omasta osoitteesta (`assets/css/fonts.css`), eivät
+Google Fontsista.
+
+- **Ei ulkoista riippuvuutta.** Kirja näyttää samalta ilman yhteyttä Googleen:
+  vahdissa ilman verkkoa, verkoissa ja selaimissa, joista Google Fonts on
+  estetty. Aiemmin kirjasimet vaihtuivat silloin hiljaa varakirjasimiin.
+- **Nopeampi ensimmäinen lataus.** Googlen reitti oli kolme peräkkäistä
+  pyyntöä kahteen vieraaseen osoitteeseen (`typography.css` → Googlen CSS →
+  tiedosto). Selainten välimuisti on sivustokohtainen, joten muiden
+  sivustojen lataamista Google-kirjasimista ei ollut hyötyä. Nyt tiedosto
+  tulee samasta osoitteesta kuin sivu, ja leipätekstin tiedosto esiladataan
+  (`overrides/main.html`).
+- **Tiedostot vaihtuvat vain commitilla.** Google päivittää kirjasimia omaan
+  tahtiinsa, jolloin ulkoasu ja mitat saattoivat muuttua ilman muutosta
+  tässä repossa; svgbob-kaaviot nojaavat JetBrains Monon merkkileveyteen
+  (`diagrams.css`). Päivitys tehdään ajamalla `skriptit/fontit.py`, ja
+  muutos näkyy diffissä. Testit ajetaan samoilla tiedostoilla kuin julkaisu.
+- **Tietosuoja.** Lukijan IP-osoite ei enää mene Googlelle jokaisella
+  sivulatauksella, eikä kolmatta osapuolta tarvitse mainita
+  tietosuojaselosteessa.
+- **Samat tiedostot kuin Googlelta.** Skripti hakee tiedostot Google Fontsin
+  CSS-rajapinnasta samoilla perheillä, akseleilla ja merkistöillä (latin,
+  latin-ext) kuin ennen, joten ulkoasu ei muuttunut. Google valitsee
+  tiedoston selaimen mukaan: Chrome ja Firefox saavat samat tiedostot,
+  Safari omansa; repossa on Chromen versio kaikille.
+- **Lisenssi.** Kaikki viisi perhettä ovat SIL OFL 1.1 -lisensoituja, joka
+  sallii jakelun ohjelmiston mukana, kun tekijänoikeusilmoitus ja lisenssi
+  kulkevat mukana: perheen `OFL.txt` on tiedostojen vieressä ja kopioituu
+  sivustolle (`tests/test_fonts.py` tarkistaa). Source Sans 3:lla on
+  varattu nimi (Reserved Font Name "Source"), joka OFL:n mukaan koskee
+  muokatun version "ensisijaista käyttäjälle esitettyä nimeä"; tiedostot
+  ovat Googlen jakamat merkistöittäin pilkotut versiot alkuperäisellä
+  nimellään, eikä CSS:n `font-family` ole käyttäjälle esitetty nimi.
+- **Koko.** 20 tiedostoa, noin 1,1 MiB repossa ja sivustolla; lukija lataa
+  vain käyttämänsä (leipäteksti noin 120 KiB). Hylätty vaihtoehto:
+  tiedostot perheiden omista julkaisuista (Adobe, JetBrains): koko merkistö
+  yhdessä tiedostossa on isompi, eivätkä tiedostot olisi samat, joilla sivut
+  on tähän asti näytetty.
 
 ## Muunnosaskel: vahti (vaihtoehto A)
 

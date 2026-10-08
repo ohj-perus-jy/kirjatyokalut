@@ -1,0 +1,15 @@
+{#-
+  Teeman main.html:n tilalle. Zensicalin oma main.html (0.0.68) on pelkkä
+  {% extends "base.html" %}, joten tässä ei jää teemasta mitään pois.
+-#}
+{% extends "base.html" %}
+
+{#- Leipätekstin kirjasimen (typography.css: Source Serif 4, latin) esilataus:
+    selain hakee tiedoston heti HTML:n alusta eikä vasta, kun fonts.css on
+    luettu ja teksti asemoitu. Polku on skriptit/fontit.py:n kirjoittama
+    (assets/css/fonts.css). crossorigin on pakollinen myös omalle osoitteelle:
+    ilman sitä selain lataisi tiedoston toisen kerran. tests/test_fonts.py
+    tarkistaa, että esiladattu tiedosto on olemassa ja haetaan vain kerran. -#}
+{% block extrahead %}
+  <link rel="preload" href="{{ 'assets/fonts/source-serif-4/normal-latin.woff2' | url }}" as="font" type="font/woff2" crossorigin>
+{% endblock %}

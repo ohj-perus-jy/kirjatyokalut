@@ -67,7 +67,8 @@ Kielet: `csharp`, `java`, `javascript` (korostetut rivit: `csharp`, `java`).
 | Sisällysluettelo kapealla näytöllä alakulman napista; kohdan tai ulkopuolen napautus sulkee sen | toc.js |
 | Sisällysluettelo seuraa lukukohtaa (`toc.follow`); oma vierityspalkki vain osoittimella, häivytys ylä- ja alareunassa kertoo, että listaa on lisää | mkdocs-pohja.yml, layout.css, toc.js |
 | Sivustovalikko kurssin nimen vieressä (`extra.sites`) | header.html, sitemenu.js/css |
-| Leipätekstin kirjasin- ja kokovalikko: Source Serif 4, Atkinson Hyperlegible Next, Literata; koko 90–175 %, lukukohta pysyy paikallaan. Perustaso 10 % teeman kokoa suurempi (--jyu-text-base) | header.html, fontmenu.js/css, typography.css |
+| Leipätekstin kirjasin- ja kokovalikko: Source Serif 4, Atkinson Hyperlegible Next, Literata; koko 90–175 %, lukukohta pysyy paikallaan. Perustaso 10 % teeman kokoa suurempi (--jyu-text-base) | header.html, fontmenu.js/css, typography.css, fonts.css |
+| Kirjasimet sivuston omasta `assets/fonts/`-hakemistosta, ei Google Fontsista: sivu näyttää samalta ilman verkkoa ja verkoissa, joista Googleen ei pääse, eikä lukijan osoite mene Googlelle; leipätekstin kirjasin esiladataan | fonts.css, main.html, `skriptit/fontit.py` |
 | Vaalea ja tumma teema käyttöjärjestelmän mukaan, vaihdin yläpalkissa | mkdocs-pohja.yml |
 | Haku; hakuikkunan teksti leipätekstin portaissa, kentän paikkamerkki "Hae" | search.js/css |
 | Tulosta: koko kirja yhdeksi PDF:ksi | `build_print_page`, print.js/css |
@@ -87,6 +88,7 @@ Kielet: `csharp`, `java`, `javascript` (korostetut rivit: `csharp`, `java`).
 | Tiedostoja pois sivuista, ääneenluku, linkkitarkistuksen TIM-kansiot | `kirja.toml` |
 | Ulkoisten linkkien ja ankkurien tarkistus, myös kurssin TIM-sivuilta | `linkit/` |
 | Testit koekirjalla ja kirjan omalla materiaalilla | `tests/`, `./zensical/run.sh test` |
+| Kirjasintiedostojen päivitys hallitusti: `python3 skriptit/fontit.py` hakee Google Fontsin nykyiset tiedostot, ja muutos näkyy diffissä | `skriptit/fontit.py`, `assets/fonts/`, fonts.css |
 
 ## Rakenne
 
@@ -114,12 +116,13 @@ ylähakemisto) ja lukee materiaalin sen viereisestä `src/`:stä.
 | `convert.py` | `../src` → `docs/` ja `nav.yml`; `--watch` vahtii, `--strict` kaatuu puuttuvaan kaavioon (julkaisu) |
 | `mkdocs-pohja.yml` | kirjojen yhteiset Zensical-asetukset: teema, tyylit, skriptit |
 | `assets/`, `overrides/`, `icons/` | tyylit ja skriptit, teeman mallit, kuvakkeiden glyfit |
+| `assets/fonts/` | kirjasintiedostot (woff2) ja niiden lisenssit (OFL.txt) perheittäin; `skriptit/fontit.py` hakee ne ja kirjoittaa `assets/css/fonts.css`:n |
 | `puhe.py` | ääneenluvun leikkeet (Azure Speech) äänivarastoon, myös vaiheittaisen ohjeen vaiheiden; `--teksti` näyttää luettavan ja hinta-arvion |
 | `run.sh`, `setup.sh` | ajo ja asennus kirjan hakemistosta käsin; `vaihe.sh` näyttää asennuksen etenemisen |
 | `requirements.txt` | kiinnitetty Zensical-versio; `requirements-dev.txt` lisää testien riippuvuudet |
 | `tests/` | testit ja koekirja (`tests/book/`) |
 | `linkit/` | ulkoisten linkkien tarkistus (GitHub Action, lychee) |
-| `skriptit/` | kaikkien kirjojen päivitys ja työkalujen kiinnitys (`pull-all.sh`, `pin-tools.sh`), ks. [Kaikki kirjat kerralla](#kaikki-kirjat-kerralla) |
+| `skriptit/` | kaikkien kirjojen päivitys ja työkalujen kiinnitys (`pull-all.sh`, `pin-tools.sh`), ks. [Kaikki kirjat kerralla](#kaikki-kirjat-kerralla); kirjasintiedostojen haku ja päivitys (`fontit.py`) |
 | `CLAUDE.md` | kirjojen yhteiset kirjoitusohjeet Claudelle |
 
 ## Kirjan asetukset: kirja.toml
