@@ -54,6 +54,14 @@
   height: auto;
 }
 
+/* Luokan jäsenet ovat koodikirjasimella (.mono, font-size="11"). beautiful-
+ * mermaid 1.1.3 mitoittaa laatikon 0,567 em:n merkillä, mutta JetBrains Mono
+ * on 0,6 em, joten pitkä jäsen ylittäisi oikean reunan (myös piirtäjän omilla
+ * kirjasimilla); 11 px × 0,567 / 0,6 = 10,4 px osuu mitoitukseen. */
+.md-typeset .jyu-mermaid text.mono[font-size="11"] {
+  font-size: 10.4px;
+}
+
 /* Nuolenpäät ovat piirtäjän oletuksella 1,5 px:n viivaa eli ohuempia kuin
  * viivat; sama paksuus kuin luokan reunalla. */
 .md-typeset .jyu-mermaid marker polyline,
