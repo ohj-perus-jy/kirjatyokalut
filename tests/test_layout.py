@@ -216,10 +216,22 @@ def test_contents_follows_smoothly(browser, chapter_url, motion, behavior):
 def test_a_heading_in_a_closed_box_is_passed_with_the_box(browser, chapter_url):
     """Suljetun <details>-laatikon otsikko on sisällysluettelossa. Chromium
     antoi sille sijainnin kauempana sivulla, joten luettelo merkitsi sen
-    ohitetuksi liian myöhään; nyt sen paikka on laatikon paikka."""
+    ohitetuksi liian myöhään; nyt sen paikka on laatikon paikka. Otsikon
+    teksti pysyy silti aseteltuna, jotta selaimen Ctrl+F löytää sen: Chromium
+    hakee suljetun laatikon sisällöstä, mutta vain tekstistä, jolla on
+    asettelu (display: none pudotti otsikon haun piiristä). Hakua itseään ei
+    pääse Playwrightista käyttämään, joten tarkistetaan sen edellytys."""
     context = browser.new_context(viewport={"width": 1280, "height": 300})
     page = context.new_page()
     page.goto(chapter_url.replace("/osa1/01-hei/", "/osa2/02-huomiot/"), wait_until="load")
+    heading = "document.getElementById('otsikko-laatikossa')"
+    assert not page.evaluate(f"{heading}.closest('details').open")
+    assert page.evaluate(f"""() => {{
+        const range = document.createRange()
+        range.selectNodeContents({heading})
+        return range.getClientRects().length
+    }}""") > 0
+    assert page.evaluate(f"{heading}.getClientRects().length") == 0
     link = f"{TOC} a[href='#otsikko-laatikossa']"
     page.evaluate("document.getElementById('ennen-laatikkoa').scrollIntoView()")
     page.wait_for_selector(f"{TOC} a.md-nav__link--active[href='#ennen-laatikkoa']", timeout=2000)

@@ -518,15 +518,21 @@
   }
 }
 
-/* Suljetun <details>-laatikon otsikot pois asettelusta. Ne eivät näy
+/* Suljetun <details>-laatikon otsikot ilman omaa laatikkoa. Ne eivät näy
  * muutenkaan, mutta Chromium antaa suljetun laatikon sisällölle sijainnin,
  * joka voi olla kaukana laatikon alapuolella. Teema lukee sisällysluettelon
- * kohtien paikat otsikoiden offsetTopista ja käyttää piilotetulle otsikolle
+ * kohtien paikat otsikoiden offsetTopista ja käyttää laatikottomalle otsikolle
  * (0) lähimmän näkyvän vanhemman eli laatikon paikkaa; ilman tätä kohta
  * merkittiin ohitetuksi vasta paljon laatikon jälkeen. Kun laatikko avataan,
- * sivun korkeus muuttuu ja teema laskee paikat uudelleen. */
+ * sivun korkeus muuttuu ja teema laskee paikat uudelleen.
+ *
+ * display: contents eikä none: Chromium hakee Ctrl+F:llä myös suljetun
+ * laatikon sisällöstä ja avaa laatikon osuman kohdalla, mutta vain tekstistä,
+ * jolla on asettelu. display: none pudotti otsikon haun piiristä, vaikka
+ * laatikon muu teksti löytyi (issue #5). contents jättää otsikon tekstin
+ * asetelluksi laatikon sisältöön, ja otsikolla itsellään ei ole paikkaa. */
 details:not([open]) :is(h1, h2, h3, h4, h5, h6):not(summary *) {
-  display: none;
+  display: contents;
 }
 
 /* Teema pitää valikon laatikkona 1220 px:iin asti, joten välillä 1180–1219 px

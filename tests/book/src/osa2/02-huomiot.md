@@ -20,6 +20,7 @@ Otsikko suljetussa laatikossa näkyy sisällysluettelossa, ja luettelo merkitsee
 sen ohitetuksi laatikon kohdalla (layout.css). Laatikossa on tekstiä ennen
 otsikkoa, koska Chromium sijoittaa suljetun laatikon sisällön kuin laatikko
 olisi auki: otsikon näennäinen paikka osuu laatikon jälkeisen otsikon ohi.
+Selaimen haku (Ctrl+F) löytää otsikon suljetustakin laatikosta ja avaa sen.
 
 <details><summary>Lisätietoa</summary>
 
