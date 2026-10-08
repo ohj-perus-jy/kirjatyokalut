@@ -24,6 +24,13 @@ fi
 vaihe "Päivitetään pip" .venv/bin/pip install --upgrade pip
 vaihe "Asennetaan Zensical" .venv/bin/pip install -r "$TOOL/requirements.txt"
 
+# Mermaid-kaavioiden piirtäjä (convert.py: mermaid_svg) on Node-paketti. Ilman
+# npm:ää se jää pois: valmiit kaaviot ovat versionhallinnassa, ja convert.py
+# asentaa paketin itse, kun uusi kaavio sitä ensi kerran tarvitsee.
+if command -v npm >/dev/null 2>&1; then
+    vaihe "Asennetaan mermaid-piirtäjä" npm ci --prefix "$TOOL/mermaid" --no-audit --no-fund
+fi
+
 # run.sh (--run) jatkaa itse käynnistykseen, joten ohje vain suoraan ajettaessa.
 if [[ ${1:-} != --run ]]; then
     echo

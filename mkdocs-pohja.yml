@@ -98,10 +98,9 @@ markdown_extensions:
   pymdownx.magiclink: {}
   pymdownx.mark: {}
   pymdownx.smartsymbols: {}
-  pymdownx.superfences:
-    custom_fences:
-      - name: mermaid
-        class: mermaid
+  # Mermaid-aidat piirtää convert.py (convert_mermaid), ei teeman mermaid.js,
+  # joten custom_fences-kohtaa ei ole: piirtämättä jäänyt aita näkyy koodina.
+  pymdownx.superfences: {}
   pymdownx.tabbed:
     alternate_style: true
     combine_header_slug: true
@@ -142,7 +141,7 @@ extra_css:
   # Harjoitustyön vaatimusnumerot CSS-laskurista.
   - assets/css/requirements.css
 
-  # Luokkakaaviot (convert.py).
+  # Kaaviot (convert.py: mermaid, svgbob, plantuml).
   - assets/css/diagrams.css
 
   # Koodilohkon nappirivin pohja; ennen playground.css:ää ja hidelines.css:ää,

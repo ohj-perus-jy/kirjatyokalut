@@ -34,3 +34,29 @@
 .md-typeset .svgbob text {
   font-size: calc(8px / .6);
 }
+
+
+/* Mermaid-kaaviot (```mermaid) upotetaan SVG:nä (convert.py: convert_mermaid,
+ * piirtäjä mermaid/render.mjs). beautiful-mermaid johtaa kaikki värinsä
+ * kahdesta muuttujasta, --bg ja --fg, jotka tässä sidotaan teemaan: tumma
+ * teema vaihtuu ilman uudelleenpiirtoa. Piirtäjän omat värit riisutaan
+ * SVG:stä (mermaid_clean), koska attribuutti voittaisi tämän säännön.
+ * Kirjasimet tulevat kaavion omasta <style>-lohkosta teeman muuttujilla.
+ * SVG:llä on viewBox ja kiinteä koko: kapealla näytöllä se kutistuu
+ * (teeman max-width: 100%), ja height: auto pitää mittasuhteen. */
+.md-typeset .jyu-mermaid {
+  margin: 1em 0;
+}
+
+.md-typeset .jyu-mermaid > svg {
+  --bg: var(--md-default-bg-color);
+  --fg: var(--md-default-fg-color);
+  height: auto;
+}
+
+/* Nuolenpäät ovat piirtäjän oletuksella 1,5 px:n viivaa eli ohuempia kuin
+ * viivat; sama paksuus kuin luokan reunalla. */
+.md-typeset .jyu-mermaid marker polyline,
+.md-typeset .jyu-mermaid marker polygon {
+  stroke-width: 2;
+}

@@ -114,21 +114,27 @@ def test_every_include_is_expanded(printed):
 def test_every_diagram_is_drawn(printed):
     """Kaaviot ovat kuvia, eivät lähdekoodia (kohta 15). "@startuml" esiintyy
     vain plantuml-aidan alussa, joten sivulla näkyvä tarkoittaa kääntämättä
-    jäänyttä aitaa. Lukumäärää ei väitetä, koska se muuttuu materiaalin
+    jäänyttä aitaa; piirtämättä jäänyt mermaid-aita on koodilohko, jolla on
+    kielen luokka. Lukumäärää ei väitetä, koska se muuttuu materiaalin
     mukana."""
     diagrams = printed.evaluate("""() => ({
       startuml: (document.body.textContent.match(/@startuml/g) || []).length,
       uml: document.querySelectorAll('img.uml').length,
       svgbob: document.querySelectorAll('div.svgbob').length,
-      emptyBob: [...document.querySelectorAll('div.svgbob')]
+      mermaid: document.querySelectorAll('div.jyu-mermaid').length,
+      mermaidCode: document.querySelectorAll('.language-mermaid, pre.mermaid').length,
+      empty: [...document.querySelectorAll('div.svgbob, div.jyu-mermaid')]
         .filter(d => !d.querySelector('svg')).length,
     })""")
     assert diagrams["startuml"] == 0
+    assert diagrams["mermaidCode"] == 0
     if source_uses(r"^\s*```plantuml"):
         assert diagrams["uml"] > 0
     if source_uses(r"^\s*```bob"):
         assert diagrams["svgbob"] > 0
-    assert diagrams["emptyBob"] == 0
+    if source_uses(r"^\s*```mermaid"):
+        assert diagrams["mermaid"] > 0
+    assert diagrams["empty"] == 0
 
 
 def test_diagram_text_fits_the_svgbob_grid(printed):

@@ -1,0 +1,9 @@
+{
+  "name": "kirjatyokalut-mermaid",
+  "private": true,
+  "description": "Mermaid-kaavioiden piirtäjä convert.py:lle (beautiful-mermaid), ks. render.mjs.",
+  "type": "module",
+  "dependencies": {
+    "beautiful-mermaid": "1.1.3"
+  }
+}

@@ -750,6 +750,172 @@ def test_svgbob_svg_warns_without_cargo(cargo, monkeypatch):
     assert cargo == [] and convert.FAILED == {"svgbob"}
 
 
+# --- Mermaid-kaaviot ---------------------------------------------------------
+
+def test_convert_mermaid_wraps_the_diagram_in_a_div(monkeypatch):
+    """Aita -> div.jyu-mermaid, jossa piirtäjän SVG; käytetty tiedosto on
+    lähteen sha1. Tyhjät rivit pois kuten svgbobissa."""
+    monkeypatch.setattr(convert, "mermaid_svg",
+                        lambda source: "<svg>\n\n<text>a</text>\n</svg>")
+    converted, diagrams, used = convert.convert_mermaid(
+        "ennen\n\n```mermaid\nclassDiagram\nA <|-- B\n```\n\njälkeen\n")
+    assert converted == ('ennen\n\n<div class="jyu-mermaid">\n<svg>\n<text>a</text>\n'
+                         "</svg>\n</div>\n\njälkeen\n")
+    assert diagrams == 1
+    assert used == {convert.hashlib.sha1(b"classDiagram\nA <|-- B\n").hexdigest() + ".svg"}
+
+
+def test_convert_mermaid_strips_the_fence_indent(monkeypatch):
+    """Sisennetty aita (esim. luettelon kohdassa): sisennys pois lähteestä,
+    jotta sama kaavio on sama tiedosto, ja takaisin SVG:n riveille."""
+    sources = []
+    monkeypatch.setattr(convert, "mermaid_svg",
+                        lambda source: sources.append(source) or "<svg/>")
+    converted, _, _ = convert.convert_mermaid("    ```mermaid\n    graph TD\n    A\n    ```\n")
+    assert sources == ["graph TD\nA\n"]
+    assert converted == '    <div class="jyu-mermaid">\n    <svg/>\n    </div>\n'
+
+
+def test_convert_mermaid_gives_every_diagram_its_own_ids(monkeypatch):
+    """beautiful-mermaid kirjoittaa joka kaavioon samat nuolenkärjet
+    (id="cls-arrow"), joten saman sivun kaaviot saavat etuliitteen."""
+    monkeypatch.setattr(
+        convert, "mermaid_svg",
+        lambda source: '<svg><marker id="cls-arrow"/><path marker-end="url(#cls-arrow)"/></svg>')
+    converted, _, _ = convert.convert_mermaid(
+        "```mermaid\na\n```\n\n```mermaid\nb\n```\n")
+    assert 'id="mm1-cls-arrow"' in converted and "url(#mm1-cls-arrow)" in converted
+    assert 'id="mm2-cls-arrow"' in converted and "url(#mm2-cls-arrow)" in converted
+
+
+def test_convert_mermaid_keeps_the_fence_without_the_renderer(monkeypatch):
+    """Kaaviot ovat välimuistissa; ilman piirtäjää aita jää ennalleen eikä
+    käännös kaadu (--strict kaataa, ks. FAILED)."""
+    monkeypatch.setattr(convert, "mermaid_svg", lambda source: None)
+    text = "```mermaid\nclassDiagram\n```\n"
+    assert convert.convert_mermaid(text) == (text, 0, set())
+
+
+def test_convert_mermaid_leaves_an_unclosed_fence_alone(monkeypatch):
+    monkeypatch.setattr(convert, "mermaid_svg", lambda source: "<svg/>")
+    text = "```mermaid\nclassDiagram\n"
+    assert convert.convert_mermaid(text) == (text, 0, set())
+
+
+# beautiful-mermaid 1.1.3:n tuloste olennaisilta osiltaan.
+MERMAID_RAW = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 236" width="200" height="236" style="--bg:#FFFFFF;--fg:#27272A">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&amp;display=swap');
+  text { font-family: 'Inter', system-ui, sans-serif; }
+  .mono { font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', ui-monospace, monospace; }
+  svg {
+    --_text:          var(--fg);
+  }
+</style>
+<text x="48" y="94" class="mono"><tspan fill="a">- </tspan><tspan fill="b">kortit</tspan><tspan fill="c">: </tspan><tspan fill="d">List~Kortti~</tspan></text>
+<text x="48" y="114" class="mono" font-style="italic"><tspan fill="a">+ </tspan><tspan fill="b">huolla()</tspan><tspan fill="c">: </tspan><tspan fill="d">* boolean</tspan></text>
+<text x="48" y="134" class="mono" font-style="italic"><tspan fill="a">+ </tspan><tspan fill="b">puhdista()</tspan><tspan fill="c">: </tspan><tspan fill="d">*</tspan></text>
+<text x="48" y="154" class="mono" text-decoration="underline"><tspan fill="a">+ </tspan><tspan fill="b">laske()</tspan><tspan fill="c">: </tspan><tspan fill="d">$ int</tspan></text>
+</svg>
+"""
+
+
+def test_mermaid_clean_takes_fonts_and_colors_from_the_page():
+    """Google Fontsin @import-rivit pois, kirjasimet teeman muuttujiksi ja
+    juuren värit (style-attribuutti) pois: diagrams.css antaa --bg:n ja --fg:n,
+    eikä attribuutti saa voittaa sitä."""
+    cleaned = convert.mermaid_clean(MERMAID_RAW)
+    assert "@import" not in cleaned and "googleapis" not in cleaned
+    assert "  text { font-family: var(--md-text-font-family); }\n" in cleaned
+    assert "  .mono { font-family: var(--md-code-font-family); }\n" in cleaned
+    assert cleaned.startswith('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 236"'
+                              ' width="200" height="236">\n<style>\n  text {')
+    assert "--_text:          var(--fg);" in cleaned
+
+
+def test_mermaid_clean_writes_members_in_uml_notation():
+    """Geneerinen tyyppi kulmasulkeisiin (XML-koodattuna) ja abstraktin tai
+    staattisen jäsenen merkki pois tekstistä; kursiivi ja alleviivaus jäävät.
+    Ilman paluutyyppiä myös kaksoispiste pois."""
+    cleaned = convert.mermaid_clean(MERMAID_RAW)
+    texts = [re.sub(r"<[^>]+>", "", t) for t in re.findall(r"<text[^>]*>.*?</text>", cleaned)]
+    assert texts == ["- kortit: List&lt;Kortti&gt;", "+ huolla(): boolean",
+                     "+ puhdista()", "+ laske(): int"]
+    assert cleaned.count('font-style="italic"') == 2
+    assert cleaned.count('text-decoration="underline"') == 1
+
+
+@pytest.fixture
+def npm(monkeypatch, tmp_path):
+    """node ja npm ovat, piirtäjän paketit (node_modules) puuttuvat. Asennus
+    luo hakemiston. -> ajetut komennot."""
+    calls = []
+    modules = tmp_path / "node_modules"
+
+    def run(command, **kwargs):
+        calls.append(command)
+        if command[1:2] == ["ci"]:
+            modules.mkdir()
+        return subprocess.CompletedProcess(command, 0, stdout="<svg/>")
+
+    monkeypatch.setattr(convert.shutil, "which", lambda name, path=None:
+                        f"/usr/bin/{name}" if name in ("node", "npm") else None)
+    monkeypatch.setattr(convert.subprocess, "run", run)
+    monkeypatch.setattr(convert, "MERMAID_MODULES", modules)
+    monkeypatch.setattr(convert, "MERMAID_DIR", tmp_path / "cache")
+    monkeypatch.setattr(convert, "FAILED", set())
+    convert.install_mermaid.cache_clear()
+    yield calls
+    convert.install_mermaid.cache_clear()
+
+
+def test_mermaid_svg_installs_the_packages_for_a_new_diagram(npm, tmp_path):
+    """Uusi kaavio ilman paketteja: npm ci kerran, sitten piirto; toinen kaavio
+    piirtyy ilman asennusta ja tulos jää välimuistiin."""
+    assert convert.mermaid_svg("a") == "<svg/>"
+    assert convert.mermaid_svg("b") == "<svg/>"
+    render = ["/usr/bin/node", str(convert.MERMAID_RENDER)]
+    assert npm == [["/usr/bin/npm", "ci", "--no-audit", "--no-fund"], render, render]
+    assert sorted(p.name for p in (tmp_path / "cache").iterdir()) == sorted(
+        convert.hashlib.sha1(s.encode()).hexdigest() + ".svg" for s in "ab")
+    assert convert.FAILED == set()
+
+
+def test_mermaid_svg_reads_the_cache_without_the_renderer(npm, tmp_path):
+    (tmp_path / "cache").mkdir()
+    (tmp_path / "cache" / (convert.hashlib.sha1(b"a").hexdigest() + ".svg")).write_text("<svg>x</svg>")
+    assert convert.mermaid_svg("a") == "<svg>x</svg>"
+    assert npm == []
+
+
+def test_mermaid_svg_does_not_install_in_strict_mode(npm, monkeypatch):
+    """Julkaisussa kaavion kuuluu olla jo välimuistissa; puute on virhe."""
+    monkeypatch.setattr(convert, "STRICT", True)
+    assert convert.mermaid_svg("a") is None
+    assert npm == [] and convert.FAILED == {"mermaid"}
+
+
+def test_mermaid_svg_warns_without_node(npm, monkeypatch):
+    monkeypatch.setattr(convert.shutil, "which", lambda name, path=None: None)
+    assert convert.mermaid_svg("a") is None
+    assert npm == [] and convert.FAILED == {"mermaid"}
+
+
+def test_mermaid_svg_reports_a_broken_diagram(npm, monkeypatch, capsys):
+    """Piirtäjän virhe (syntaksi, tyhjä kaavio): aita jää, varoitus kertoo
+    syyn, eikä välimuistiin jää mitään."""
+    convert.MERMAID_MODULES.mkdir()
+
+    def run(command, **kwargs):
+        raise subprocess.CalledProcessError(1, command, stderr="rivi 2: odottamaton merkki\n")
+    monkeypatch.setattr(convert.subprocess, "run", run)
+    assert convert.mermaid_svg("a") is None
+    assert convert.FAILED == {"mermaid"}
+    assert "mermaid-kaavio ei piirry: rivi 2: odottamaton merkki" in capsys.readouterr().err
+    assert not convert.MERMAID_DIR.exists()
+
+
 @pytest.mark.parametrize("art, svg, problem", [
     # svgbob 0.7.6:n oikea tuloste: palat menevät päällekkäin, ä ja n puuttuvat.
     ("| Käännä |\n", '<text x="18" y="12">Kän</text><text x="34" y="12">änä</text>',

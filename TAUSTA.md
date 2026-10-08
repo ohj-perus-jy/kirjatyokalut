@@ -33,7 +33,7 @@ Koeputken tarkistuslista: mdBookin ominaisuus ja sen vastine.
 | `//-` piilorivit | `hide_lines`, hidelines.js: silmänappi; ajoon rivit menevät |
 | `HIGHLIGHT_*_BEGIN/END` | `mark_highlights`, highlights.js |
 | `// FILE:` monitiedostolohkot | `convert_files`: tiedosto per välilehti |
-| plantuml, bob, mermaid | `convert_plantuml` (kuva), `convert_svgbob` (upotettu SVG); mermaid toimi itsestään |
+| plantuml, bob, mermaid | `convert_plantuml` (kuva), `convert_svgbob` (upotettu SVG); mermaid toimi aluksi teeman mermaid.js:llä, nyt `convert_mermaid` (beautiful-mermaid, upotettu SVG, 2026-10-08) |
 | `<asciinema>` | asciinema.js; soitin vain sivuille, joilla on nauhoitus |
 | `<i class="bi …">`, `<i class="fa …">` | `convert_icons`: teeman glyfit ja valikkopolun › |
 | bonusmerkki `<i class="bi bi-stars">` | `convert_bonus_marks`; nyt oma merkintä `<i class="jyu-star"></i>` (2026-10-04) |

@@ -74,7 +74,7 @@ Vastinetta ei ole, tai se vaatisi laskemaan käsin. Perustelut:
 | `<task>`, `<task-title>`, `<points>` | `convert_tasks` | kortti on HTML-kehys, jota ei kirjoiteta käsin |
 | `<i class="jyu-star"></i>` | `convert_bonus_marks`, `convert_tasks` | lyhytkoodi vaatisi `<summary>`-rivillä `markdown="span"`:n; muunnos nimeää merkin ruudunlukijalle |
 | `<visa>`, `<walkthrough>`, `<animation>` | `convert_quizzes`, `convert_walkthroughs`, `convert_animations` | omia ominaisuuksia |
-| ` ```plantuml `, ` ```bob ` | `convert_plantuml`, `convert_svgbob` | piirto ei ole teeman ominaisuus |
+| ` ```plantuml `, ` ```bob `, ` ```mermaid ` | `convert_plantuml`, `convert_svgbob`, `convert_mermaid` | piirto ei ole teeman ominaisuus; teeman mermaid.js piirsi selaimessa eikä seurannut teemaa |
 | suoraan kirjoitettu `›` | `convert_icons` | valikkopolun nuoli vaimealla värillä |
 | (koko kirja) | `build_print_page`, `build_extra`, `mark_speech` | tulostussivu, muokkauslinkit, välilehtimuisti, ääneenluku |
 
