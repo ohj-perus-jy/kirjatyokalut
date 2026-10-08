@@ -6,6 +6,8 @@ document.fonts-rajapinnasta. Oikean kirjan sivusto tarkistetaan erikseen
 (tests/test_book.py), koska kirjan oma theme.font toisi Google Fontsin takaisin.
 """
 
+import re
+
 import pytest
 
 from conftest import GOOGLE_FONTS, google_font_references
@@ -93,23 +95,35 @@ def test_the_body_font_is_preloaded_once(browser, base_url):
     page.goto(base_url, wait_until="load")
     page.evaluate("document.fonts.ready")
     preloaded = page.get_attribute(PRELOAD, "href")
-    assert preloaded and preloaded.endswith("/source-serif-4/normal-latin.woff2")
+    assert preloaded and preloaded.endswith("/source-serif-4/normal.woff2")
     assert page.get_attribute(PRELOAD, "crossorigin") is not None
     assert page.evaluate("f => document.fonts.check(f)", '1em "Source Serif 4"')
     assert [status for url, status in fonts
-            if url.endswith("/source-serif-4/normal-latin.woff2")] == [200]
+            if url.endswith("/source-serif-4/normal.woff2")] == [200]
     context.close()
 
 
 def test_every_family_ships_its_license(book):
     """OFL vaatii lisenssin jokaisen kopion mukaan: perheen OFL.txt on
-    sivustolla tiedostojen vieressä, ja sen alku nimeää OFL 1.1:n."""
-    fonts = book.site / "assets" / "fonts"
+    sivustolla tiedostojen vieressä ja nimeää OFL 1.1:n. Adoben Source-perheet
+    ovat alkuperäisversioita (varattu nimi "Source"), joten niiden lisenssi
+    on Adoben oma; jokainen fonts.css:n tiedosto on olemassa, eikä
+    hakemistoissa ole muuta."""
+    site = book.site
+    css = (site / "assets" / "css" / "fonts.css").read_text(encoding="utf-8")
+    sources = re.findall(r'url\("\.\./fonts/([^"]+)"\)', css)
+    assert len(sources) == 4 + 12
+    fonts = site / "assets" / "fonts"
+    for source in sources:
+        assert (fonts / source).read_bytes()[:4] == b"wOF2", source
     families = sorted(path.name for path in fonts.iterdir() if path.is_dir())
-    assert len(families) == 5
+    assert families == ["atkinson-hyperlegible-next", "jetbrains-mono", "literata",
+                        "source-sans-3", "source-serif-4"]
     for family in families:
         license_text = (fonts / family / "OFL.txt").read_text(encoding="utf-8")
         assert "SIL Open Font License, Version 1.1" in license_text
-        assert sorted(path.name for path in (fonts / family).glob("*.woff2")) == [
-            "italic-latin-ext.woff2", "italic-latin.woff2",
-            "normal-latin-ext.woff2", "normal-latin.woff2"]
+        if family.startswith("source-"):
+            assert "Reserved Font Name" in license_text and "Adobe" in license_text
+        files = sorted(path.name for path in (fonts / family).iterdir())
+        assert files == sorted(["OFL.txt"] + [
+            source.split("/")[1] for source in sources if source.startswith(family + "/")])

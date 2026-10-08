@@ -1,12 +1,13 @@
 /* Kirjasimet sivuston omasta assets/fonts/-hakemistosta.
  *
  * GENEROITU: skriptit/fontit.py kirjoittaa tämän tiedoston, älä muokkaa käsin.
- * Tiedostot ja säännöt ovat samat, jotka Google Fonts palvelisi (perheet,
- * akselit ja merkistöt skriptissä); vain polut ovat paikallisia.
- * Google Fontsin versiot: Source Sans 3 v20, Source Serif 4 v15, Literata
- * v40, Atkinson Hyperlegible Next v7, JetBrains Mono v24.
+ * Source Sans 3 ja Source Serif 4 ovat Adoben omat muuttuvat tiedostot
+ * (koko merkistö), muut Google Fontsin palvelemat tiedostot merkistöittäin
+ * (latin, latin-ext); miksi näin, ks. skriptin alku ja PERUSTELUT.md.
+ * Versiot: Source Sans 3 3.052R (Adobe), Source Serif 4 4.005R (Adobe),
+ * Literata v40 (Google Fonts), Atkinson Hyperlegible Next v7 (Google
+ * Fonts), JetBrains Mono v24 (Google Fonts).
  *
- * Miksi omat tiedostot eikä Google Fonts: PERUSTELUT.md, Kirjasimet.
  * Kaikki perheet ovat SIL OFL 1.1 -lisensoituja; lisenssi on perheen
  * hakemistossa (OFL.txt) ja kopioituu sivustolle tiedostojen mukana.
  *
@@ -16,6 +17,42 @@
  * sisarkirjasin, joten mittasuhteet täsmäävät. Leipäteksti ja
  * kirjasinvalikon vaihtoehdot ovat typography.css:ssä. Esilataus:
  * overrides/main.html. */
+
+/* Source Sans 3 3.052R: WOFF2/VF/SourceSans3VF-Upright.ttf.woff2 */
+@font-face {
+  font-family: 'Source Sans 3';
+  font-style: normal;
+  font-weight: 200 900;
+  font-display: swap;
+  src: url("../fonts/source-sans-3/normal.woff2") format("woff2");
+}
+
+/* Source Sans 3 3.052R: WOFF2/VF/SourceSans3VF-Italic.ttf.woff2 */
+@font-face {
+  font-family: 'Source Sans 3';
+  font-style: italic;
+  font-weight: 200 900;
+  font-display: swap;
+  src: url("../fonts/source-sans-3/italic.woff2") format("woff2");
+}
+
+/* Source Serif 4 4.005R: WOFF2/VAR/SourceSerif4Variable-Roman.ttf.woff2 */
+@font-face {
+  font-family: 'Source Serif 4';
+  font-style: normal;
+  font-weight: 200 900;
+  font-display: swap;
+  src: url("../fonts/source-serif-4/normal.woff2") format("woff2");
+}
+
+/* Source Serif 4 4.005R: WOFF2/VAR/SourceSerif4Variable-Italic.ttf.woff2 */
+@font-face {
+  font-family: 'Source Serif 4';
+  font-style: italic;
+  font-weight: 200 900;
+  font-display: swap;
+  src: url("../fonts/source-serif-4/italic.woff2") format("woff2");
+}
 
 /* latin-ext */
 @font-face {
@@ -134,86 +171,6 @@
   font-weight: 400 700;
   font-display: swap;
   src: url("../fonts/literata/normal-latin.woff2") format("woff2");
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-
-/* latin-ext */
-@font-face {
-  font-family: 'Source Sans 3';
-  font-style: italic;
-  font-weight: 400 700;
-  font-display: swap;
-  src: url("../fonts/source-sans-3/italic-latin-ext.woff2") format("woff2");
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
-}
-
-/* latin */
-@font-face {
-  font-family: 'Source Sans 3';
-  font-style: italic;
-  font-weight: 400 700;
-  font-display: swap;
-  src: url("../fonts/source-sans-3/italic-latin.woff2") format("woff2");
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-
-/* latin-ext */
-@font-face {
-  font-family: 'Source Sans 3';
-  font-style: normal;
-  font-weight: 400 700;
-  font-display: swap;
-  src: url("../fonts/source-sans-3/normal-latin-ext.woff2") format("woff2");
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
-}
-
-/* latin */
-@font-face {
-  font-family: 'Source Sans 3';
-  font-style: normal;
-  font-weight: 400 700;
-  font-display: swap;
-  src: url("../fonts/source-sans-3/normal-latin.woff2") format("woff2");
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-
-/* latin-ext */
-@font-face {
-  font-family: 'Source Serif 4';
-  font-style: italic;
-  font-weight: 400 700;
-  font-display: swap;
-  src: url("../fonts/source-serif-4/italic-latin-ext.woff2") format("woff2");
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
-}
-
-/* latin */
-@font-face {
-  font-family: 'Source Serif 4';
-  font-style: italic;
-  font-weight: 400 700;
-  font-display: swap;
-  src: url("../fonts/source-serif-4/italic-latin.woff2") format("woff2");
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-
-/* latin-ext */
-@font-face {
-  font-family: 'Source Serif 4';
-  font-style: normal;
-  font-weight: 400 700;
-  font-display: swap;
-  src: url("../fonts/source-serif-4/normal-latin-ext.woff2") format("woff2");
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
-}
-
-/* latin */
-@font-face {
-  font-family: 'Source Serif 4';
-  font-style: normal;
-  font-weight: 400 700;
-  font-display: swap;
-  src: url("../fonts/source-serif-4/normal-latin.woff2") format("woff2");
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 

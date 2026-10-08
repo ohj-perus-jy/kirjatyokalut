@@ -88,7 +88,7 @@ Kielet: `csharp`, `java`, `javascript` (korostetut rivit: `csharp`, `java`).
 | Tiedostoja pois sivuista, ääneenluku, linkkitarkistuksen TIM-kansiot | `kirja.toml` |
 | Ulkoisten linkkien ja ankkurien tarkistus, myös kurssin TIM-sivuilta | `linkit/` |
 | Testit koekirjalla ja kirjan omalla materiaalilla | `tests/`, `./zensical/run.sh test` |
-| Kirjasintiedostojen päivitys hallitusti: `python3 skriptit/fontit.py` hakee Google Fontsin nykyiset tiedostot, ja muutos näkyy diffissä | `skriptit/fontit.py`, `assets/fonts/`, fonts.css |
+| Kirjasintiedostojen päivitys hallitusti: `python3 skriptit/fontit.py` hakee lähteiden nykyiset tiedostot (Adoben perheillä skriptiin kiinnitetty tagi), ja muutos näkyy diffissä | `skriptit/fontit.py`, `assets/fonts/`, fonts.css |
 
 ## Rakenne
 
@@ -116,7 +116,7 @@ ylähakemisto) ja lukee materiaalin sen viereisestä `src/`:stä.
 | `convert.py` | `../src` → `docs/` ja `nav.yml`; `--watch` vahtii, `--strict` kaatuu puuttuvaan kaavioon (julkaisu) |
 | `mkdocs-pohja.yml` | kirjojen yhteiset Zensical-asetukset: teema, tyylit, skriptit |
 | `assets/`, `overrides/`, `icons/` | tyylit ja skriptit, teeman mallit, kuvakkeiden glyfit |
-| `assets/fonts/` | kirjasintiedostot (woff2) ja niiden lisenssit (OFL.txt) perheittäin; `skriptit/fontit.py` hakee ne ja kirjoittaa `assets/css/fonts.css`:n |
+| `assets/fonts/` | kirjasintiedostot (woff2) ja niiden lisenssit (OFL.txt) perheittäin: Source-perheet Adoben julkaisuista, muut Google Fontsista; `skriptit/fontit.py` hakee ne ja kirjoittaa `assets/css/fonts.css`:n |
 | `puhe.py` | ääneenluvun leikkeet (Azure Speech) äänivarastoon, myös vaiheittaisen ohjeen vaiheiden; `--teksti` näyttää luettavan ja hinta-arvion |
 | `run.sh`, `setup.sh` | ajo ja asennus kirjan hakemistosta käsin; `vaihe.sh` näyttää asennuksen etenemisen |
 | `requirements.txt` | kiinnitetty Zensical-versio; `requirements-dev.txt` lisää testien riippuvuudet |
