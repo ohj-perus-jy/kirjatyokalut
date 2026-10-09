@@ -2,9 +2,10 @@
 
 Zensicalin hakuikkuna on shadow DOM:issa, johon sivun CSS ei ulotu, joten
 assets/js/search.js liittää assets/css/search.css:n sinne itse. Tarkistetaan
-selaimessa, että liitos toimii, tulosten teksti on sivun muun tekstin kokoista
-eikä suodatinpaneelia ole. Luokkanimet ovat Zensicalin minifioituja
-(search.css); jos ne vaihtuvat versiossa, nämä testit kertovat.
+selaimessa, että liitos toimii, tulosten teksti on sivun muun tekstin kokoista,
+suodatinpaneelia ei ole ja sulkunappi sulkee ikkunan myös puhelimen
+kokoisella näytöllä. Luokkanimet ovat Zensicalin minifioituja (search.css);
+jos ne vaihtuvat versiossa, nämä testit kertovat.
 """
 
 import pytest
@@ -18,18 +19,20 @@ def base_url(book, serve):
     return serve(book.site)
 
 
-def open_search(browser, url, query):
+def open_search(browser, url, query, viewport=(1600, 900)):
     """Avaa sivun, haun ja odota tuloksia. -> (sivu, skriptivirheet).
 
-    Leveys 1600 px, jolloin sivun rem on 22 px (teema: 137,5 % kun näyttö on
-    vähintään 100 em): silloin kiinteät pikselikoot erottuisivat remillä
-    annetuista.
+    Oletusleveys 1600 px, jolloin sivun rem on 22 px (teema: 137,5 % kun
+    näyttö on vähintään 100 em): silloin kiinteät pikselikoot erottuisivat
+    remillä annetuista. Kapealla näytöllä haun avaa yläpalkin kuvake
+    (header.html: label), leveällä teeman oma nappi.
     """
-    page = browser.new_page(viewport={"width": 1600, "height": 900})
+    width, height = viewport
+    page = browser.new_page(viewport={"width": width, "height": height})
     errors = []
     page.on("pageerror", lambda error: errors.append(str(error)))
     page.goto(url, wait_until="load")
-    page.click(".md-search__button")
+    page.click("label[for=__search]" if width <= 740 else ".md-search__button")
     # Ikkuna kohdistaa kentän vasta avauduttuaan; sitä ennen kirjoitus hukkuu.
     page.wait_for_function(f"{SHADOW}.activeElement?.tagName === 'INPUT'")
     page.keyboard.type(query)
@@ -69,14 +72,44 @@ def test_the_stylesheet_is_attached_and_the_text_is_page_sized(browser, base_url
 
 
 def test_the_filter_panel_and_its_button_are_gone(browser, base_url):
-    """Kenttärivillä on vain hakukuvake ja kenttä; suodatinpaneelia ei näy
-    vaikka sen tila olisi avoin."""
+    """Kenttärivillä näkyvät vain hakukuvake, kenttä ja oma sulkunappi;
+    suodatinpaneelia ei näy vaikka sen tila olisi avoin."""
     page, errors = open_search(browser, base_url, "maailma")
     buttons = page.evaluate(
         f"[...{SHADOW}.querySelectorAll('.k button')]"
-        ".map(b => b.getClientRects().length > 0)")
-    assert buttons == [True, False]
+        ".map(b => [b.className, b.getClientRects().length > 0])")
+    assert buttons == [["r", True], ["r", False], ["r jyu-close", True]]
     assert not is_shown(page, ".a")
+    assert errors == []
+    page.close()
+
+
+@pytest.mark.parametrize("viewport", [(390, 844), (1600, 900)])
+def test_the_close_button_closes_the_window(browser, base_url, viewport):
+    """Puhelimella ikkuna täyttää koko ruudun, eikä Escapea tai napautettavaa
+    taustaa ole: sulkunappi on ikkunan oikeassa yläkulmassa ja sulkee sen.
+    Nappi ei jää kohdistetuksi näkymättömiin, ja ikkuna aukeaa uudestaan
+    nappeineen."""
+    page, errors = open_search(browser, base_url, "maailma", viewport)
+    # Ikkuna aukeaa skaalaten (transition); mitat vasta sen päätyttyä.
+    page.wait_for_function(
+        f"getComputedStyle({SHADOW}.querySelector('.l')).transform === 'none'")
+    window, button = page.evaluate(
+        f"['.l', '.jyu-close'].map(s => {SHADOW}.querySelector(s).getBoundingClientRect().toJSON())")
+    if viewport[0] <= 740:
+        assert (window["width"], window["height"]) == viewport
+    assert button["right"] > window["right"] - 20
+    assert button["top"] < window["top"] + 20
+    assert page.evaluate(f"{SHADOW}.querySelector('.jyu-close').ariaLabel") == "Sulje haku"
+
+    page.evaluate(f"{SHADOW}.querySelector('.jyu-close').click()")
+    page.wait_for_function(f"{SHADOW}.querySelector('.l').classList.contains('d')")
+    page.wait_for_function(f"{SHADOW}.activeElement === null")
+
+    page.click("label[for=__search]" if viewport[0] <= 740 else ".md-search__button")
+    page.wait_for_function(f"{SHADOW}.activeElement?.tagName === 'INPUT'")
+    assert not page.evaluate(f"{SHADOW}.querySelector('.l').classList.contains('d')")
+    assert page.evaluate(f"{SHADOW}.querySelectorAll('.jyu-close').length") == 1
     assert errors == []
     page.close()
 

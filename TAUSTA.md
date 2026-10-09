@@ -65,8 +65,8 @@ ohj1 lisäsi ohj2:n koeputkeen seuraavat:
 - svgbob 0.7.6:n kiertotiet: `svgbob_problems` varoittaa ääkkösistä ja
   sulkeista, jotka piirtyvät väärin ilman lainausmerkkejä, ja
   `svgbob_fit_text` kasvattaa kuvaa, ettei lainattu teksti leikkaudu.
-- Hakuikkunan tekstikoot ja tyhjän suodatinpaneelin piilotus (search.js/css;
-  ikkuna on shadow DOM:issa).
+- Hakuikkunan tekstikoot, tyhjän suodatinpaneelin piilotus ja sulkunappi
+  (search.js/css; ikkuna on shadow DOM:issa).
 - Vaiheittainen ohje (`<walkthrough>`, `<step>`) ja yksittäinen animaatio
   (`<animation>`) Git-ohjeeseen; vaiheiden ääneenluku Azure Speechillä
   (`puhe.py`).

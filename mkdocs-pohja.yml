@@ -202,8 +202,8 @@ extra_javascript:
   # Sivustovalikon avaus ja sulkeminen.
   - assets/js/sitemenu.js
 
-  # Hakuikkunan tyyli (assets/css/search.css) shadow DOM:iin ja kentän
-  # paikkamerkki suomeksi.
+  # Hakuikkunan tyyli (assets/css/search.css) shadow DOM:iin, kentän
+  # paikkamerkki suomeksi ja sulkunappi.
   - assets/js/search.js
 
   # Ohjelmien ajonapit (mdBookin theme/playground_ext.js).

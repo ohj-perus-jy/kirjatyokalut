@@ -70,7 +70,7 @@ Kielet: `csharp`, `java`, `javascript` (korostetut rivit: `csharp`, `java`).
 | Leipätekstin kirjasin- ja kokovalikko: Source Serif 4, Atkinson Hyperlegible Next, Literata; koko 90–175 %, lukukohta pysyy paikallaan. Perustaso 10 % teeman kokoa suurempi (--jyu-text-base) | header.html, fontmenu.js/css, typography.css, fonts.css |
 | Kirjasimet sivuston omasta `assets/fonts/`-hakemistosta, ei Google Fontsista: sivu näyttää samalta ilman verkkoa ja verkoissa, joista Googleen ei pääse, eikä lukijan osoite mene Googlelle; leipätekstin kirjasin esiladataan | fonts.css, main.html, `skriptit/fontit.py` |
 | Vaalea ja tumma teema käyttöjärjestelmän mukaan, vaihdin yläpalkissa | mkdocs-pohja.yml |
-| Haku; hakuikkunan teksti leipätekstin portaissa, kentän paikkamerkki "Hae" | search.js/css |
+| Haku; hakuikkunan teksti leipätekstin portaissa, kentän paikkamerkki "Hae", sulkunappi kenttärivin päässä (puhelimella ikkuna täyttää ruudun eikä Escapea tai taustaa ole) | search.js/css |
 | Tulosta: koko kirja yhdeksi PDF:ksi | `build_print_page`, print.js/css |
 | Alatunniste: edellinen/seuraava, tekijät ja lisenssi, "Muokkaa", "Muutoshistoria", "Ilmoita ongelma" | copyright.html |
 | Alaviitteet ja `title`-attribuutit tooltipeinä | mkdocs-pohja.yml, typography.css |

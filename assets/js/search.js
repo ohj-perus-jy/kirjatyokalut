@@ -9,7 +9,12 @@
  * hiiren alla korostus hyppisi vierityksen mukana riviltä toiselle.
  *
  * Myös hakukentän paikkamerkki suomeksi: bundle.js:ssä se on kiinteästi
- * "Search" eikä tule teeman käännöksistä (language: fi). */
+ * "Search" eikä tule teeman käännöksistä (language: fi).
+ *
+ * Ja sulkunappi (×) kenttärivin oikeaan päähän: puhelimella ikkuna täyttää
+ * koko ruudun, eikä Escape-näppäintä tai napautettavaa taustaa ole. Zensicalin
+ * oma sulkija on rivin ensimmäinen nappi, mutta sen kuvake on suurennuslasi,
+ * josta sulkemista ei arvaa. */
 
 (() => {
   "use strict";
@@ -36,18 +41,48 @@
     }, true);
   };
 
-  /* Kenttä on olemassa ennen ikkunan avaamista ja säilyy sulkemisen yli, eikä
-   * Zensical kirjoita muuttumatonta paikkamerkkiä uudelleen, joten kerta
-   * riittää; MutationObserver on varalla, jos kenttää ei vielä ole. */
-  const translate = (root) => {
-    const rename = () => {
+  /* Lucide-kuvake "x", kuten Zensicalin omat kuvakkeet (bundle.js: cp). */
+  const CLOSE_ICON =
+    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"' +
+    ' viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"' +
+    ' stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
+
+  /* Nappi Zensicalin nappien luokkaa (.r, search.css), jotta se näyttää
+   * samalta. Sulkeminen klikkaa yläpalkin hakunappia, jonka klikkausta
+   * Zensical kuuntelee ja joka avaa ja sulkee ikkunan vuorotellen: ikkunan
+   * omaan koodiin ei tarvitse koskea. Kohdistus pois napista, koska suljettu
+   * ikkuna on vain läpinäkyvä (opacity) ja nappi jäisi muuten kohdistetuksi
+   * näkymättömiin. Lisäys kenttäriville ei häiritse Zensicalia: se piirtää
+   * vain omat elementtinsä uudelleen eikä poista vieraita. */
+  const addCloseButton = (controls) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "r jyu-close";
+    button.setAttribute("aria-label", "Sulje haku");
+    button.innerHTML = CLOSE_ICON;
+    button.addEventListener("click", () => {
+      button.blur();
+      document.querySelector(".md-search__button").click();
+    });
+    controls.append(button);
+  };
+
+  /* Kenttä ja kenttärivi ovat olemassa ennen ikkunan avaamista ja säilyvät
+   * sulkemisen yli, eikä Zensical kirjoita muuttumatonta paikkamerkkiä
+   * uudelleen, joten kerta riittää; MutationObserver on varalla, jos ikkunaa
+   * ei vielä ole piirretty (se piirretään vasta hakemiston latauduttua). */
+  const prepare = (root) => {
+    const ready = () => {
       const input = root.querySelector('input[placeholder="Search"]');
-      if (input) input.placeholder = "Hae";
-      return !!input;
+      if (!input) return false;
+      input.placeholder = "Hae";
+      addCloseButton(input.closest(".k"));
+      return true;
     };
-    if (rename()) return;
+    if (ready()) return;
     const observer = new MutationObserver(() => {
-      if (rename()) observer.disconnect();
+      if (ready()) observer.disconnect();
     });
     observer.observe(root, { childList: true, subtree: true });
   };
@@ -58,7 +93,7 @@
     if (!host.shadowRoot.querySelector('link[href*="assets/css/search.css"]'))
       host.shadowRoot.append(link.cloneNode());
     followKeys(host);
-    translate(host.shadowRoot);
+    prepare(host.shadowRoot);
     return true;
   };
 

@@ -9,7 +9,8 @@
  * kertoo, jos ne vaihtuvat.
  *   .e juuri  .l ikkuna  .k kenttärivi  .s kenttä  .a suodatinpaneeli
  *   .B tulosten määrä  .x otsikko  .u ote  .n polku  .E lisärivi
- *   .i tulos (linkki)  .h valittu tulos */
+ *   .i tulos (linkki)  .h valittu tulos  .r nappi (kenttärivin ja oma
+ *   sulkunappi .jyu-close, search.js) */
 
 :host .e {
   --space-1: 0.2rem; /* Zensical: 4 px */
@@ -44,10 +45,11 @@
   font-size: 0.85em;
 }
 
-/* Suodatinpaneeli ("Filters / Tags") ja sen painike (kenttärivin viimeinen)
- * pois: materiaalissa ei ole tageja, joten paneeli on aina tyhjä. */
+/* Suodatinpaneeli ("Filters / Tags") ja sen painike (kentän jälkeinen; rivin
+ * viimeinen on oma sulkunappi) pois: materiaalissa ei ole tageja, joten
+ * paneeli on aina tyhjä. */
 :host .a,
-:host .k > button:last-child {
+:host .k > .s + button {
   display: none;
 }
 
