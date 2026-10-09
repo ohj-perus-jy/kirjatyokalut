@@ -328,6 +328,16 @@ MERMAID_TEXT_RE = re.compile(r"(?<=>)[^<>]+(?=</t)")
 MERMAID_GENERIC_RE = re.compile(r"~(?P<type>[^~<>]+)~")
 MERMAID_MARKER_RE = re.compile(
     r"(?P<colon><tspan[^>]*>: </tspan>)<tspan(?P<attrs>[^>]*)>[*$](?: (?P<rest>[^<]*))?</tspan>")
+# Luokan osastot: beautiful-mermaid 1.1.3 piirtää aina otsikon alle attribuutti-
+# ja metodiosaston, tyhjän 8 px:n korkuisena (CLS.emptySectionHeight), joten
+# jäsenetön luokka näkyy kahtena tyhjänä kaistaleena. Ryhmässä on ulkolaatikko,
+# otsikon tausta ja kaksi osastojen rajaviivaa, kukin omalla rivillään.
+MERMAID_CLASS_RE = re.compile(
+    r'(?P<open><g class="class-node"[^>]*>\n)(?P<body>.*?\n)(?=</g>)', re.DOTALL)
+MERMAID_RECT_RE = re.compile(r'<rect x="[^"]*" y="(?P<y>[^"]*)" width="[^"]*" height="(?P<height>[^"]*)"')
+MERMAID_LINE_RE = re.compile(r'^[ \t]*<line [^>]*\by1="(?P<y>[^"]*)"[^>]*/>\n', re.MULTILINE)
+MERMAID_TEXT_Y_RE = re.compile(r'^(?P<start>[ \t]*<text [^>]*?\by=")(?P<y>[^"]*)(?P<end>"[^>]*>)', re.MULTILINE)
+MERMAID_EMPTY_SECTION = 8
 
 # mermaid_zoom: kuvasuurennus (IMAGE_ZOOM) myös kaavioille. Suurennos on 1,5
 # kertaa piirroksen koko, jolloin 11 px:n jäsenet ovat leipätekstin kokoisia
@@ -1272,8 +1282,49 @@ def mermaid_clean(svg: str) -> str:
     svg = MERMAID_MARKER_RE.sub(
         lambda m: f'{m["colon"]}<tspan{m["attrs"]}>{m["rest"]}</tspan>' if m["rest"] else "",
         svg)
+    svg = MERMAID_CLASS_RE.sub(lambda m: m["open"] + mermaid_hide_empty(m["body"]), svg)
     return MERMAID_TEXT_RE.sub(
         lambda m: MERMAID_GENERIC_RE.sub(r"&lt;\g<type>&gt;", m[0]), svg)
+
+
+def mermaid_hide_empty(body: str) -> str:
+    """Luokan tyhjät osastot pois näkyvistä, ks. MERMAID_CLASS_RE.
+
+    Laatikon koko pysyy, koska viivat päättyvät sen reunaan. Jäsenettömässä
+    luokassa otsikon tausta täyttää laatikon ja nimi on keskellä; jos vain
+    toinen osasto on tyhjä, sen rajaviiva lähtee ja jäsenet siirtyvät puolet
+    tyhjästä tilasta, jolloin ylä- ja alareunaan jää yhtä paljon tilaa.
+    """
+    rects = list(MERMAID_RECT_RE.finditer(body))
+    lines = list(MERMAID_LINE_RE.finditer(body))
+    if len(rects) != 2 or len(lines) != 2:
+        return body
+    top, height = float(rects[0]["y"]), float(rects[0]["height"])
+    header = float(rects[1]["height"])
+    attributes_empty = math.isclose(float(lines[1]["y"]) - float(lines[0]["y"]),
+                                    MERMAID_EMPTY_SECTION, abs_tol=0.01)
+    methods_empty = math.isclose(top + height - float(lines[1]["y"]),
+                                 MERMAID_EMPTY_SECTION, abs_tol=0.01)
+
+    def shift(text: str, mono: bool, amount: float) -> str:
+        """Jäsenten (mono) tai nimen ja stereotyypin tekstit pystysuunnassa."""
+        def move(m: re.Match) -> str:
+            if ('class="mono"' in m[0]) != mono:
+                return m[0]
+            y = f"{float(m['y']) + amount:.3f}".rstrip("0").rstrip(".")
+            return f'{m["start"]}{y}{m["end"]}'
+        return MERMAID_TEXT_Y_RE.sub(move, text)
+
+    if attributes_empty and methods_empty:
+        body = (body[:rects[1].start("height")] + rects[0]["height"]
+                + body[rects[1].end("height"):lines[0].start()]
+                + body[lines[0].end():lines[1].start()] + body[lines[1].end():])
+        return shift(body, mono=False, amount=(height - header) / 2)
+    if attributes_empty or methods_empty:
+        body = body[:lines[1].start()] + body[lines[1].end():]
+        half = MERMAID_EMPTY_SECTION / 2
+        return shift(body, mono=True, amount=-half if attributes_empty else half)
+    return body
 
 
 def mermaid_zoom(svg: str, name: str) -> str:

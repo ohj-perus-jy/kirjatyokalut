@@ -806,6 +806,55 @@ def test_convert_mermaid_links_the_diagram_to_its_zoom(monkeypatch):
         "  </svg>\n  </a>\n  </div>\n")
 
 
+def mermaid_class(attributes: int, methods: int) -> str:
+    """beautiful-mermaid 1.1.3:n luokkaryhmä: otsikko 32 px, jäsenrivi 20 px,
+    osaston pystyväli 8 px ja tyhjä osasto 8 px."""
+    attribute_height = attributes * 20 + 8 if attributes else 8
+    method_height = methods * 20 + 8 if methods else 8
+    method_top = 72 + attribute_height
+    rows = [f'  <text x="48" y="{72 + 14 + i * 20}" class="mono" dy="0.35em">a{i}</text>'
+            for i in range(attributes)]
+    rows.append(f'  <line x1="40" y1="{method_top}" x2="160" y2="{method_top}" />')
+    rows += [f'  <text x="48" y="{method_top + 14 + i * 20}" class="mono" dy="0.35em">m{i}</text>'
+             for i in range(methods)]
+    return "\n".join([
+        '<g class="class-node" data-id="A" data-label="A">',
+        f'  <rect x="40" y="40" width="120" height="{32 + attribute_height + method_height}" />',
+        '  <rect x="40" y="40" width="120" height="32" />',
+        '  <text x="100" y="56" text-anchor="middle" dy="4.55">A</text>',
+        '  <line x1="40" y1="72" x2="160" y2="72" />',
+        *rows, "</g>"])
+
+
+def test_mermaid_clean_fills_a_class_without_members_with_its_name():
+    """Jäsenetön luokka: kaksi tyhjää 8 px:n osastoa pois, otsikon tausta koko
+    laatikkoon ja nimi keskelle. Laatikon koko pysyy, koska viivat päättyvät
+    sen reunaan."""
+    assert convert.mermaid_clean(mermaid_class(0, 0)) == "\n".join([
+        '<g class="class-node" data-id="A" data-label="A">',
+        '  <rect x="40" y="40" width="120" height="48" />',
+        '  <rect x="40" y="40" width="120" height="48" />',
+        '  <text x="100" y="64" text-anchor="middle" dy="4.55">A</text>',
+        "</g>"])
+
+
+@pytest.mark.parametrize(("attributes", "methods", "shift"), [(0, 2, -4), (2, 0, 4)])
+def test_mermaid_clean_drops_one_empty_section(attributes, methods, shift):
+    """Toinen osasto tyhjä: sen rajaviiva pois ja jäsenet puolet tyhjästä
+    tilasta kohti sitä, jolloin ylä- ja alareunaan jää yhtä paljon tilaa."""
+    cleaned = convert.mermaid_clean(mermaid_class(attributes, methods))
+    assert cleaned.count("<line") == 1 and 'y1="72"' in cleaned
+    rows = [float(y) for y in re.findall(r'y="([^"]*)" class="mono"', cleaned)]
+    first = 72 + 14 if attributes else 80 + 14
+    assert rows == [first + shift, first + 20 + shift]
+    assert 'y="56"' in cleaned
+
+
+def test_mermaid_clean_keeps_a_class_with_both_sections():
+    group = mermaid_class(1, 1)
+    assert convert.mermaid_clean(group) == group
+
+
 def test_convert_mermaid_keeps_the_fence_without_the_renderer(monkeypatch):
     """Kaaviot ovat välimuistissa; ilman piirtäjää aita jää ennalleen eikä
     käännös kaadu (--strict kaataa, ks. FAILED)."""
