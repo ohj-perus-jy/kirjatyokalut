@@ -85,6 +85,7 @@ Kielet: `csharp`, `java`, `javascript` (korostetut rivit: `csharp`, `java`).
 | `./zensical/run.sh`: vahti, joka muuntaa tallennetun sivun ja päivittää selaimen | `convert.py --watch` |
 | `--strict`: julkaisu kaatuu puuttuvaan kaavioon tai äänivarastoon | `convert.py`, kirjan pages.yml |
 | Varoitukset: puuttuva `{{#include}}`-kohde, virheellinen visa, tuntematon korostusväri, väärin piirtyvä bob-kaavio, vanhentunut tai puuttuva ääni | `convert.py` |
+| Ilmoitus piirretyistä ja poistetuista kaavioista: `cache/` on versionhallinnassa, joten ne pitää committoida (`--strict` ei piirrä) | `convert.py` (`report_diagrams`) |
 | Tiedostoja pois sivuista, ääneenluku, linkkitarkistuksen TIM-kansiot | `kirja.toml` |
 | Ulkoisten linkkien ja ankkurien tarkistus, myös kurssin TIM-sivuilta | `linkit/` |
 | Testit koekirjalla ja kirjan omalla materiaalilla | `tests/`, `./zensical/run.sh test` |

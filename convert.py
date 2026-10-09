@@ -18,6 +18,7 @@ Kirjoitetaan vain muuttunut (write_if_changed) ja yksi ajo kerrallaan
 Generoitu docs/ on kertakäyttöinen — tämä skripti on totuus.
 """
 
+import collections
 import contextlib
 import fcntl
 import filecmp
@@ -447,6 +448,12 @@ LOCK = BOOK / ".convert.lock"
 # tyhjentää ajon aluksi. prune_diagrams ei saa siivota vajaan käytettyjen joukon
 # perusteella. Moduulitason joukko, koska testit nojaavat paluuarvojen muotoon.
 FAILED: set[str] = set()
+
+# Tässä ajossa piirretyt kaaviot piirtäjittäin; main tyhjentää ajon aluksi ja
+# kertoo lopuksi, koska cache/ on versionhallinnassa: uudet tiedostot pitää
+# committoida (--strict ei piirrä), ja piirtäjän muutos piirtää kaikki
+# uusiksi, jolloin ne kannattaa katsoa läpi.
+RENDERED: collections.Counter[str] = collections.Counter()
 
 # --strict (julkaisu): puuttuvia piirtäjiä ei asenneta. main asettaa.
 STRICT = False
@@ -1040,6 +1047,7 @@ def plantuml_svg(source: str) -> str | None:
         return None
     PLANTUML_DIR.mkdir(parents=True, exist_ok=True)
     path.write_bytes(svg)
+    RENDERED["plantuml"] += 1
     return name
 
 
@@ -1107,6 +1115,7 @@ def svgbob_svg(art: str) -> str | None:
         return None
     SVGBOB_DIR.mkdir(parents=True, exist_ok=True)
     path.write_text(result.stdout, encoding="utf-8")
+    RENDERED["svgbob"] += 1
     return result.stdout
 
 
@@ -1290,6 +1299,7 @@ def mermaid_svg(source: str) -> str | None:
         return None
     MERMAID_DIR.mkdir(parents=True, exist_ok=True)
     path.write_text(result.stdout, encoding="utf-8")
+    RENDERED["mermaid"] += 1
     return result.stdout
 
 
@@ -3140,6 +3150,21 @@ def convert_page(origin: Path, source_path: str, clips: set[str] | None = None) 
                       page_graphs, page_unknown, set(audio.values()), silent)
 
 
+def report_diagrams(pruned: dict[str, int]) -> None:
+    """Rivi piirtäjää kohti, jos kaavioita piirrettiin tai poistettiin: ne ovat
+    kirjan versionhallinnassa (cache/), joten muutos pitää committoida."""
+    folders = {"plantuml": PLANTUML_DIR, "svgbob": SVGBOB_DIR, "mermaid": MERMAID_DIR}
+    for tool, folder in folders.items():
+        drawn, removed = RENDERED[tool], pruned.get(tool, 0)
+        if not drawn and not removed:
+            continue
+        count = lambda n: f"{n} kaavio{'ta' if n != 1 else ''}"  # noqa: E731
+        parts = [f"piirretty {count(drawn)}"] if drawn else []
+        parts += [f"poistettu {count(removed)}"] if removed else []
+        print(f"{tool}: {', '.join(parts)} ({repo_relative(folder)}/"
+              " on versionhallinnassa, committoi)", file=sys.stderr)
+
+
 def main(strict: bool = False) -> int:
     global STRICT
     STRICT = strict
@@ -3151,6 +3176,7 @@ def main(strict: bool = False) -> int:
         print(f"lähdepuu puuttuu: {SRC}", file=sys.stderr)
         return 1
     FAILED.clear()
+    RENDERED.clear()
     stale = sync_docs()
     used_diagrams: set[str] = set()
     used_drawings: set[str] = set()
@@ -3196,9 +3222,12 @@ def main(strict: bool = False) -> int:
     nav = build_nav()
     write_if_changed(BOOK / "nav.yml", build_base() + nav + build_extra(tab_labels))
     write_if_changed(DOCS / PRINT_PAGE, build_print_page(nav))
-    prune_diagrams(PLANTUML_DIR, used_diagrams, "plantuml" not in FAILED)
-    prune_diagrams(SVGBOB_DIR, used_drawings, "svgbob" not in FAILED)
-    prune_diagrams(MERMAID_DIR, used_graphs, "mermaid" not in FAILED)
+    pruned = {
+        "plantuml": prune_diagrams(PLANTUML_DIR, used_diagrams, "plantuml" not in FAILED),
+        "svgbob": prune_diagrams(SVGBOB_DIR, used_drawings, "svgbob" not in FAILED),
+        "mermaid": prune_diagrams(MERMAID_DIR, used_graphs, "mermaid" not in FAILED),
+    }
+    report_diagrams(pruned)
     stale -= copy_clips(used_clips)
     # Jäänteet viimeisenä, kun kaikki muu on jo paikallaan (ks. sync_docs).
     for file in sorted(stale):

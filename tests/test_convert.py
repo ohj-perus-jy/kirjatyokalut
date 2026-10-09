@@ -3,6 +3,7 @@
 Lähdepuuna on tests/book/src, jossa on yksi esimerkki jokaisesta muunnoksesta.
 """
 
+import collections
 import fcntl
 import json
 import os
@@ -985,6 +986,7 @@ def test_mermaid_svg_installs_the_packages_for_a_new_diagram(npm, tmp_path):
     assert sorted(p.name for p in (tmp_path / "cache").iterdir()) == sorted(
         convert.mermaid_name(s) for s in "ab")
     assert convert.FAILED == set()
+    assert convert.RENDERED["mermaid"] == 2
 
 
 def test_mermaid_svg_reads_the_cache_without_the_renderer(npm, tmp_path):
@@ -2070,6 +2072,28 @@ def test_prune_diagrams_keeps_everything_when_a_diagram_failed(tmp_path):
     (tmp_path / "toinen.svg").write_text("b", encoding="utf-8")
     assert convert.prune_diagrams(tmp_path, {"kaytossa.svg"}, complete=False) == 0
     assert len(list(tmp_path.glob("*.svg"))) == 2
+
+
+def test_report_diagrams_tells_what_to_commit(tmp_path, monkeypatch, capsys):
+    """Piirretyt ja poistetut kaaviot ovat versionhallinnassa, joten muunnos
+    kertoo ne; piirtäjä ilman muutoksia ei tulosta riviä."""
+    book = tmp_path / "zensical"
+    monkeypatch.setattr(convert, "BOOK", book)
+    for name in ("PLANTUML_DIR", "SVGBOB_DIR", "MERMAID_DIR"):
+        monkeypatch.setattr(convert, name, book / "cache" / name.split("_")[0].lower())
+    monkeypatch.setattr(convert, "RENDERED", collections.Counter(mermaid=3, svgbob=1))
+    convert.report_diagrams({"mermaid": 1, "plantuml": 2})
+    err = capsys.readouterr().err
+    assert ("mermaid: piirretty 3 kaaviota, poistettu 1 kaavio"
+            " (zensical/cache/mermaid/ on versionhallinnassa, committoi)") in err
+    assert "svgbob: piirretty 1 kaavio (" in err
+    assert "plantuml: poistettu 2 kaaviota (" in err
+
+
+def test_report_diagrams_is_silent_without_changes(monkeypatch, capsys):
+    monkeypatch.setattr(convert, "RENDERED", collections.Counter())
+    convert.report_diagrams({"mermaid": 0})
+    assert capsys.readouterr().err == ""
 
 
 def test_only_one_run_keeps_a_second_conversion_out(tmp_path, monkeypatch):
