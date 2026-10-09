@@ -547,3 +547,20 @@ def test_the_player_buttons_get_the_themes_tooltip(player):
     page.wait_for_selector(".md-tooltip2--active")
     assert page.locator(".md-tooltip2--active").text_content().strip() == "Lopeta lukeminen"
     assert errors == []
+
+
+@pytest.mark.parametrize("selector", [".jyu-puhe-prev", ".jyu-puhe-close"])
+def test_the_player_tooltips_stay_on_screen(player, selector):
+    """Palkki on ruudun alareunassa, joten napin alle vihje ei mahdu: se tulee
+    napin yläpuolelle, ja reunimmaistenkin nappien vihje on kokonaan ruudulla."""
+    page, errors = player()
+    page.click(".jyu-puhe-button")
+    page.hover(selector)
+    page.wait_for_selector(".md-tooltip2--active")
+    page.wait_for_timeout(500)
+    button = page.locator(selector).bounding_box()
+    tip = page.locator(".md-tooltip2--active .md-tooltip2__inner").bounding_box()
+    view = page.viewport_size
+    assert 0 <= tip["y"] and tip["y"] + tip["height"] < button["y"]
+    assert 0 <= tip["x"] and tip["x"] + tip["width"] <= view["width"]
+    assert errors == []

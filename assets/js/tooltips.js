@@ -95,7 +95,9 @@
   /* Teeman näköinen vihje ankkurin alle: avaus heti, sulkeminen viiveellä ja
    * häivytys kuten teemassa. Lisätyille napeille (attach) ja teemanvaihtimelle
    * (palette). Sijainti päivitetään myös vierittäessä, koska yläpalkki pysyy
-   * paikallaan. */
+   * paikallaan. Jos vihje ei mahdu ankkurin alle ruudulle (ääneenluvun
+   * soitinpalkki alareunassa), se tulee yläpuolelle, kuten teeman
+   * ponnahduksissa. */
   const tooltip = () => {
     const tip = document.createElement("div");
     tip.className = "md-tooltip2";
@@ -114,7 +116,11 @@
       tip.style.setProperty("--md-tooltip-host-x", `${box.x + scrollX}px`);
       tip.style.setProperty("--md-tooltip-host-y", `${box.y + scrollY}px`);
       tip.style.setProperty("--md-tooltip-x", `${box.width / 2}px`);
-      tip.style.setProperty("--md-tooltip-y", `${8 + box.height}px`);
+      const height = tip.offsetHeight;
+      const below = box.bottom + 8 + height <= innerHeight;
+      tip.style.setProperty("--md-tooltip-y", below ? `${8 + box.height}px` : `${-8 - height}px`);
+      tip.classList.toggle("md-tooltip2--bottom", below);
+      tip.classList.toggle("md-tooltip2--top", !below);
     };
 
     const fill = (value) => {
@@ -130,7 +136,6 @@
         /* Häivytyksen aikana uudelleen avattu on vielä sivulla. */
         if (!tip.isConnected) document.body.append(tip);
         tip.style.setProperty("--md-tooltip-tail", "0px");
-        tip.classList.add("md-tooltip2--bottom");
         addEventListener("resize", place);
         addEventListener("scroll", place, { passive: true });
         /* Seuraavassa kehyksessä, jotta siirtymä näkyy, kuten teemassa. */
