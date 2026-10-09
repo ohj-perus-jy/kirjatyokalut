@@ -1,4 +1,4 @@
-"""Opastusnuolet koodilohkon nappeihin (README.md: copyhint, playhint,
+"""Opastusnuolet koodilohkon nappeihin (README.md: copyhint, runhint,
 eyehint) koekirjan C#-sivulla (osa1/csharp.md).
 
 Aidan määre tulee luokaksi lohkon diviin (convert.py: fence_info), ja
@@ -10,10 +10,10 @@ selainkontekstin.
 
 import pytest
 
-HINTED = "div.highlight.copyhint.playhint.eyehint"
-MISSING = "div.highlight.noplayground.playhint"
+HINTED = "div.highlight.copyhint.runhint.eyehint"
+MISSING = "div.highlight.noplayground.runhint"
 HINT = ".jyu-hint"
-BUTTONS = {"copy": "copyhint", "run": "playhint", "hidelines": "eyehint"}
+BUTTONS = {"copy": "copyhint", "run": "runhint", "hidelines": "eyehint"}
 
 
 KEY = "jyu-hints"
@@ -59,7 +59,7 @@ def test_other_blocks_have_no_arrows(page):
 
 
 def test_missing_button_gets_no_arrow(page):
-    """noplayground-lohkossa ei ole ajonappia, joten playhint ei tee mitään
+    """noplayground-lohkossa ei ole ajonappia, joten runhint ei tee mitään
     eikä nuoli jää ilman nappia leijumaan."""
     block = page.locator(MISSING)
     assert block.count() == 1
@@ -98,12 +98,12 @@ def test_a_press_is_remembered_across_pages(page, url):
     assert block.locator(f"[data-md-type=run] {HINT}").count() == 1
 
 
-def test_any_button_of_the_type_teaches_it(page, url):
-    """Myös nuolettoman lohkon silmä opettaa silmän: painallus siinä poistaa
-    opastetun lohkon nuolen ja jää muistiin."""
+def test_only_a_hinted_button_teaches_it(page, url):
+    """Nuolettoman lohkon silmän painallus ei opeta silmää: opastetun lohkon
+    nuoli jää, eikä muistiin tule mitään."""
     page.locator("div.highlight.language-csharp:not(.eyehint) [data-md-type=hidelines]").first.click()
-    assert page.locator(f"{HINTED} [data-md-type=hidelines] {HINT}").count() == 0
-    assert page.evaluate(f"JSON.parse(localStorage.getItem('{KEY}'))") == ["hidelines"]
+    assert page.locator(f"{HINTED} [data-md-type=hidelines] {HINT}").count() == 1
+    assert page.evaluate(f"localStorage.getItem('{KEY}')") is None
 
 
 def test_a_broken_memory_is_ignored(browser, url):

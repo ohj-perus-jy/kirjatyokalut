@@ -51,7 +51,7 @@ public class Peli : PhysicsGame
 
 ## Opastusnuolet nappeihin
 
-```csharp,copyhint,playhint,eyehint
+```csharp,copyhint,runhint,eyehint
 //-public class Hei
 //-{
 //-    public static void Main()
@@ -63,6 +63,6 @@ public class Peli : PhysicsGame
 
 ## Opastusnuoli nappiin, jota ei ole
 
-```csharp,noplayground,playhint
+```csharp,noplayground,runhint
 System.Console.WriteLine("Ei ajonappia, ei nuolta.");
 ```

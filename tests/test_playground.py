@@ -211,8 +211,8 @@ def test_csharp_button_is_added_to_runnable_blocks_only(csharp_chapter):
         ["language-csharp ignore", 0],
         ["language-csharp feature-jypeli", 1],
         ["language-csharp editable", 1],
-        ["language-csharp copyhint playhint eyehint", 1],
-        ["language-csharp noplayground playhint", 0],
+        ["language-csharp copyhint runhint eyehint", 1],
+        ["language-csharp noplayground runhint", 0],
     ]
 
 

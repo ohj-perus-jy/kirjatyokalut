@@ -1,32 +1,22 @@
 /* Opastusnuolet koodilohkon nappeihin. Aidan määre (luokkana lohkon divissä,
- * convert.py: fence_info) nimeää napin: copyhint kopiointinappiin, playhint
- * ajonappiin, eyehint silmänappiin. Napin alle tulee keinuva nuoli, joka
- * poistuu napin ensimmäisellä painalluksella (hints.css). Kirja merkitsee
- * määreellä lohkon, jonka kohdalla toiminto esitellään.
- *
- * Painallus jää localStorageen ("jyu-hints": napin tyypit, joita lukija on
- * painanut), eikä sen napin nuolta näytetä enää millään sivulla: opastus on
- * tehnyt tehtävänsä. Mikä tahansa saman tyypin nappi käy, ei vain
- * opastettu, ja muiden tyyppien nuolet jäävät. Ilman localStoragea
- * (yksityinen tila) nuoli palaa seuraavalla sivulla.
+ * convert.py: fence_info) nimeää napin: copyhint, runhint, eyehint. Napin
+ * alle tulee keinuva nuoli (hints.css), joka poistuu napin ensimmäisellä
+ * painalluksella. Painallus jää localStorageen ("jyu-hints"), eikä sen
+ * tyypin nuolta näytetä enää millään sivulla. Vain nuolellisen napin
+ * painallus muistetaan. Ilman localStoragea nuoli palaa seuraavalla sivulla.
  *
  * Nuoli on napin oma lapsi, joten se seuraa nappia, olipa rivissä mitä
- * nappeja tahansa: lohkossa ei välttämättä ole ajonappia (ignore,
- * noplayground) eikä silmää (ei piilorivejä). Jos määreen nappia ei ole,
- * nuolta ei tule. Nuoli on SVG eikä maski kuten napin kuvake, koska maski
- * leikkaisi heittovarjon pois; väri tulee currentColorista. aria-hidden,
- * ettei ruudunlukija lue kuvaa; nuoli on osoittimelle läpinäkyvä.
+ * nappeja tahansa; jos määreen nappia ei ole, nuolta ei tule. Nuoli on SVG
+ * eikä maski, koska maski leikkaisi heittovarjon pois.
  *
- * Napit tekevät teema (kopiointi, DOMContentLoaded), playground.js ja
- * hidelines.js (DOMContentLoaded-kuuntelijat omassa järjestyksessään), joten
- * tämä on skripteistä viimeisenä (mkdocs-pohja.yml) ja odottaa saman
- * tapahtuman. */
+ * Napit tekevät teema, playground.js ja hidelines.js DOMContentLoadedissa,
+ * joten tämä on skripteistä viimeisenä (mkdocs-pohja.yml). */
 
 (() => {
   "use strict";
 
   /* Määre -> napin data-md-type (teema, playground.js, hidelines.js). */
-  const HINTS = { copyhint: "copy", playhint: "run", eyehint: "hidelines" };
+  const HINTS = { copyhint: "copy", runhint: "run", eyehint: "hidelines" };
 
   const KEY = "jyu-hints";
 
@@ -79,12 +69,13 @@
         if (button) addHint(button);
       }
     }
-    /* Kuuntelija dokumentissa, ei napeissa: lukija voi painaa myös nappia,
-     * jonka alla ei ole nuolta, ja sekin opettaa toiminnon. */
+    /* Kuuntelija dokumentissa, ei napeissa: nuolet voivat olla useassa
+     * lohkossa. Vain nappi, jossa nuoli on, muistetaan ja poistaa saman
+     * tyypin nuolet. */
     document.addEventListener("click", (event) => {
-      const type = event.target.closest?.("nav.md-code__nav > [data-md-type]")
-        ?.dataset.mdType;
-      if (!type || !Object.values(HINTS).includes(type)) return;
+      const button = event.target.closest?.("nav.md-code__nav > [data-md-type]");
+      if (!button?.querySelector(":scope > .jyu-hint")) return;
+      const type = button.dataset.mdType;
       remember(type);
       removeHints(type);
     });

@@ -221,7 +221,7 @@ extra_javascript:
   # console-lohkosta vain komennot, ja kehote pois hiirellä maalatusta.
   - assets/js/copy.js
 
-  # Opastusnuolet koodilohkon nappeihin (copyhint, playhint, eyehint). Nappien
+  # Opastusnuolet koodilohkon nappeihin (copyhint, runhint, eyehint). Nappien
   # tekijöiden jälkeen: nuoli menee valmiin napin sisään.
   - assets/js/hints.js
 
