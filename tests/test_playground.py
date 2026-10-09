@@ -211,6 +211,8 @@ def test_csharp_button_is_added_to_runnable_blocks_only(csharp_chapter):
         ["language-csharp ignore", 0],
         ["language-csharp feature-jypeli", 1],
         ["language-csharp editable", 1],
+        ["language-csharp copyhint playhint eyehint", 1],
+        ["language-csharp noplayground playhint", 0],
     ]
 
 
@@ -302,7 +304,7 @@ def test_only_editable_blocks_can_be_edited(csharp_chapter):
     assert csharp_chapter.page.evaluate("""() => [...document.querySelectorAll('div.highlight')]
       .map(block => [block.querySelector('code').isContentEditable,
                      block.querySelectorAll('[data-md-type=reset]').length])""") == [
-        [False, 0], [False, 0], [False, 0], [True, 1]]
+        [False, 0], [False, 0], [False, 0], [True, 1], [False, 0], [False, 0]]
 
 
 def test_edited_code_is_what_runs(csharp_chapter):

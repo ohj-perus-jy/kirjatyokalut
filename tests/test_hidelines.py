@@ -142,3 +142,4 @@ def test_copy_is_acknowledged_beside_the_button(page):
     assert note.inner_text() == "Kopioitu leikepöydälle"
     assert page.get_attribute(".md-dialog", "data-md-state") is None
     assert page.get_attribute(f"{BLOCK} {COPY}", "data-clipboard-target") is None
+

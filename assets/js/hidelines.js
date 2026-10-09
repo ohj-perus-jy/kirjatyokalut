@@ -11,7 +11,8 @@
  * sisennys (esim. Main-metodin rungon kahdeksan välilyöntiä) siirretään omaan
  * spaniin, joka piilotetaan piilorivien mukana ja tulee esiin niiden kanssa.
  * Lähteessä ohjelma on siis kirjoitettu kokonaan oikein sisennettynä. Silmän
- * painallus liu'uttaa rivit ja sisennyksen auki (hidelines.css). */
+ * painallus liu'uttaa rivit ja sisennyksen auki (hidelines.css). Aidan
+ * määre eyehint opastaa silmän luo (hints.js). */
 
 (() => {
   "use strict";

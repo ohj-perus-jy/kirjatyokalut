@@ -48,3 +48,21 @@ public class Peli : PhysicsGame
 //-    }
 //-}
 ```
+
+## Opastusnuolet nappeihin
+
+```csharp,copyhint,playhint,eyehint
+//-public class Hei
+//-{
+//-    public static void Main()
+//-    {
+        System.Console.WriteLine("Nappien alla on nuolet.");
+//-    }
+//-}
+```
+
+## Opastusnuoli nappiin, jota ei ole
+
+```csharp,noplayground,playhint
+System.Console.WriteLine("Ei ajonappia, ei nuolta.");
+```

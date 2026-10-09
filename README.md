@@ -55,6 +55,7 @@ Kielet: `csharp`, `java`, `javascript` (korostetut rivit: `csharp`, `java`).
 | `,feature-jypeli` | ajo Jypeli-kirjaston kanssa (`csharp-jypeli`) | playground.js |
 | `,editable` | lukija voi muuttaa koodia sivulla ja ajaa sen; "Peruuta muutokset" | playground.js |
 | `//-` rivin alussa | piilorivi: ei näy, menee ajoon; silmänappi näyttää. Piilotilassa näkyvien rivien yhteinen sisennys on pois ja koodi alkaa vasemmasta reunasta; silmä liu'uttaa piilorivit ja sisennyksen esiin (0,3 s, ei liikettä reduced-motion-asetuksella). Etuliitteen perään ei tule välilyöntiä, se jäisi riviin | `hide_lines`, hidelines.js/css |
+| `,copyhint`, `,playhint`, `,eyehint` | opastusnuoli kopiointi-, ajo- tai silmänapin alle: keinuva nuoli, joka poistuu napin ensimmäisellä painalluksella; lohkoon, jonka kohdalla toiminto esitellään. Painallus muistetaan selaimessa (localStorage `jyu-hints`), eikä sen napin nuolia näytetä enää millään sivulla. Toimii muiden määreiden kanssa (`csharp,noplayground,eyehint`); nuoli seuraa nappia, olipa rivissä mitä nappeja tahansa, ja jää pois, jos nappia ei ole | hints.js/css |
 | `// HIGHLIGHT_GREEN_BEGIN` … `_END` | korostetut rivit: green, yellow, red, blue | `mark_highlights`, highlights.js/css |
 | `// FILE: Nimi.java` | monitiedostolohko: tiedosto per välilehti, ajetaan yhdessä | `convert_files` |
 

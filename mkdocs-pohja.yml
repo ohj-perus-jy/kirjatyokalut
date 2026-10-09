@@ -169,6 +169,9 @@ extra_css:
   # ei voi maalata (assets/js/copy.js).
   - assets/css/copy.css
 
+  # Opastusnuolet nappeihin (assets/js/hints.js).
+  - assets/css/hints.css
+
   - assets/css/print.css
 
   # Vaiheittainen ohje (assets/js/walkthrough.js).
@@ -219,6 +222,10 @@ extra_javascript:
   # Kopiointinapin kuittaus napin viereen teeman alakulman ilmoituksen sijaan;
   # console-lohkosta vain komennot, ja kehote pois hiirellä maalatusta.
   - assets/js/copy.js
+
+  # Opastusnuolet koodilohkon nappeihin (copyhint, playhint, eyehint). Nappien
+  # tekijöiden jälkeen: nuoli menee valmiin napin sisään.
+  - assets/js/hints.js
 
   # Terminaalinauhoitusten soitin; soitin ja tyyli haetaan vasta sivulla,
   # jolla on nauhoitus.
