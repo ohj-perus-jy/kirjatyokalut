@@ -41,16 +41,20 @@ CSS = TOOL / "assets" / "css" / "fonts.css"
 
 RAW = "https://raw.githubusercontent.com"
 
-# Adoben julkaisut: perhe, repo ja tagi, tiedostot tyyleittäin (ttf-pohjainen
-# woff2: cff2-pohjainen olisi hieman pienempi, mutta ttf toimii kaikissa
-# selaimissa) ja muuttuvan kirjasimen painoalue (fvar-taulun wght).
+# Adoben julkaisut: perhe, repo ja tagi, tiedostot tyyleittäin ja muuttuvan
+# kirjasimen painoalue (fvar-taulun wght). Tiedostot ovat cff2-pohjaisia
+# (.otf.woff2), eivät ttf-pohjaisia: Adoben ttf-versioissa ei ole
+# vihjetauluja (fpgm, prep, gasp), ja Chromium Linuxilla asettaa niiden
+# merkit leipätekstin koossa epätasaisin välein ("Muuto shist oria"),
+# 3–5 % leveämmin. Cff2:n PostScript-vihjeillä teksti on yhtä leveää kuin
+# Googlen tiedostoilla. Firefox ja Safari (11+) tukevat cff2:ta.
 ADOBE = [
     ("Source Sans 3", "source-sans", "3.052R", {
-        "normal": "WOFF2/VF/SourceSans3VF-Upright.ttf.woff2",
-        "italic": "WOFF2/VF/SourceSans3VF-Italic.ttf.woff2"}, "200 900"),
+        "normal": "WOFF2/VF/SourceSans3VF-Upright.otf.woff2",
+        "italic": "WOFF2/VF/SourceSans3VF-Italic.otf.woff2"}, "200 900"),
     ("Source Serif 4", "source-serif", "4.005R", {
-        "normal": "WOFF2/VAR/SourceSerif4Variable-Roman.ttf.woff2",
-        "italic": "WOFF2/VAR/SourceSerif4Variable-Italic.ttf.woff2"}, "200 900"),
+        "normal": "WOFF2/VAR/SourceSerif4Variable-Roman.otf.woff2",
+        "italic": "WOFF2/VAR/SourceSerif4Variable-Italic.otf.woff2"}, "200 900"),
 ]
 
 # Google Fonts: perhe, css2-rajapinnan akselit (samat kuin aiemmin

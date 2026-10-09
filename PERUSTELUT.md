@@ -109,14 +109,17 @@ Google Fontsista. `skriptit/fontit.py` hakee ne ja kirjoittaa `fonts.css`:n.
   varannut nimen "Source" sekä Source Sans 3:lle että Source Serif 4:lle,
   joten ne haetaan Adoben omista julkaisuista (github.com/adobe-fonts)
   muuttuvina woff2-tiedostoina, jotka Adobe on itse pakannut: ne ovat
-  alkuperäisversioita, ja nimi saa pysyä (OFL-FAQ 2.2.1). Literatalla,
-  Atkinson Hyperlegible Nextillä ja JetBrains Monolla ei ole varattua nimeä,
-  joten niille kelpaavat Googlen pilkotut tiedostot, jotka ovat samat kuin
-  sivuilla tähänkin asti. Google valitsee tiedoston selaimen mukaan: Chrome
+  alkuperäisversioita, ja nimi saa pysyä (OFL-FAQ 2.2.1). Tiedostot ovat
+  cff2-pohjaisia, koska Adoben ttf-pohjaisista puuttuvat vihjetaulut ja
+  Chromium Linuxilla asettaa niiden merkit epätasaisin välein; vihjeiden
+  lisääminen itse tekisi tiedostosta muokatun version (`skriptit/fontit.py`).
+  Literatalla, Atkinson Hyperlegible Nextillä ja JetBrains Monolla ei ole
+  varattua nimeä, joten niille kelpaavat Googlen pilkotut tiedostot, jotka
+  ovat samat kuin sivuilla tähänkin asti. Google valitsee tiedoston selaimen mukaan: Chrome
   ja Firefox saavat samat tiedostot, Safari omansa; repossa on Chromen
   versio kaikille.
 - **Koko.** Adoben tiedostot sisältävät koko merkistön: Source Serif 4:n
-  pysty on 419 KiB ja Source Sans 3:n 166 KiB, kun Googlen latin-osat olivat
+  pysty on 416 KiB ja Source Sans 3:n 160 KiB, kun Googlen latin-osat olivat
   120 ja 28 KiB. Tavallisen sivun ensimmäinen lataus kasvaa noin 430 KiB,
   minkä jälkeen selain käyttää välimuistia. Googlen perheet ovat 12
   tiedostoa, joista lukija lataa vain käyttämänsä. Hylätyt vaihtoehdot:
