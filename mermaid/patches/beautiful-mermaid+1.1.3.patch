@@ -1,5 +1,5 @@
 diff --git a/node_modules/beautiful-mermaid/dist/index.js b/node_modules/beautiful-mermaid/dist/index.js
-index e7e087b..1bdb918 100644
+index e7e087b..ccaf820 100644
 --- a/node_modules/beautiful-mermaid/dist/index.js
 +++ b/node_modules/beautiful-mermaid/dist/index.js
 @@ -7816,7 +7816,9 @@ function buildClassElkGraph(diagram, _options) {
@@ -13,8 +13,26 @@ index e7e087b..1bdb918 100644
      },
      children: [],
      edges: []
+@@ -7828,6 +7830,17 @@ function buildClassElkGraph(diagram, _options) {
+   for (let i = 0; i < diagram.relationships.length; i++) {
+     const rel = diagram.relationships[i];
+     const edge = { id: `e${i}`, sources: [rel.from], targets: [rel.to] };
++    // kirjatyokalut: saman yliluokan perintä- ja toteutusviivat yhteisestä
++    // portista, jolloin ELK reitittää ne UML-puuksi (yksi kolmio ja runko)
++    if (rel.type === "inheritance" || rel.type === "realization") {
++      const parent = rel.markerAt === "to" ? rel.to : rel.from;
++      const port = `${parent}::inherit`;
++      const node = elkGraph.children.find((child) => child.id === parent);
++      node.ports ??= [];
++      if (!node.ports.some((p) => p.id === port)) node.ports.push({ id: port, width: 0, height: 0 });
++      if (rel.markerAt === "to") edge.targets = [port];
++      else edge.sources = [port];
++    }
+     if (rel.label) {
+       const metrics = measureMultilineText(rel.label, FONT_SIZES.edgeLabel, FONT_WEIGHTS.edgeLabel);
+       edge.labels = [{ text: rel.label, width: metrics.width + 8, height: metrics.height + 6 }];
 diff --git a/node_modules/beautiful-mermaid/src/class/layout.ts b/node_modules/beautiful-mermaid/src/class/layout.ts
-index 5930a4b..f645f5a 100644
+index 5930a4b..3e392fb 100644
 --- a/node_modules/beautiful-mermaid/src/class/layout.ts
 +++ b/node_modules/beautiful-mermaid/src/class/layout.ts
 @@ -71,6 +71,8 @@ function buildClassElkGraph(
@@ -26,3 +44,21 @@ index 5930a4b..f645f5a 100644
      },
      children: [],
      edges: [],
+@@ -84,6 +86,17 @@ function buildClassElkGraph(
+   for (let i = 0; i < diagram.relationships.length; i++) {
+     const rel = diagram.relationships[i]!
+     const edge: ElkExtendedEdge = { id: `e${i}`, sources: [rel.from], targets: [rel.to] }
++    // kirjatyokalut: saman yliluokan perintä- ja toteutusviivat yhteisestä
++    // portista, jolloin ELK reitittää ne UML-puuksi (yksi kolmio ja runko)
++    if (rel.type === 'inheritance' || rel.type === 'realization') {
++      const parent = rel.markerAt === 'to' ? rel.to : rel.from
++      const port = `${parent}::inherit`
++      const node = elkGraph.children!.find(child => child.id === parent)!
++      node.ports ??= []
++      if (!node.ports.some(p => p.id === port)) node.ports.push({ id: port, width: 0, height: 0 })
++      if (rel.markerAt === 'to') edge.targets = [port]
++      else edge.sources = [port]
++    }
+     if (rel.label) {
+       const metrics = measureMultilineText(rel.label, FONT_SIZES.edgeLabel, FONT_WEIGHTS.edgeLabel)
+       edge.labels = [{ text: rel.label, width: metrics.width + 8, height: metrics.height + 6 }]

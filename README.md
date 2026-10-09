@@ -113,7 +113,7 @@ ylähakemisto) ja lukee materiaalin sen viereisestä `src/`:stä.
 | Tiedosto | Mitä |
 | --- | --- |
 | `convert.py` | `../src` → `docs/` ja `nav.yml`; `--watch` vahtii, `--strict` kaatuu puuttuvaan kaavioon (julkaisu) |
-| `mermaid/` | mermaid-kaavioiden piirtäjä (`render.mjs`, Node-paketti beautiful-mermaid); `convert.py` asentaa paketit `npm ci`:llä tarvittaessa. Omat korjaukset piirtäjään ovat `patches/`:ssa (patch-package, `npm ci` ajaa ne): luokkakaaviossa yliluokka aliluokkiensa keskelle. Kaavion nimi välimuistissa on lähteen ja piirtäjän (versiot, korjaukset, `render.mjs`) sha1, joten piirtäjän muutos piirtää kirjan kaaviot uudelleen |
+| `mermaid/` | mermaid-kaavioiden piirtäjä (`render.mjs`, Node-paketti beautiful-mermaid); `convert.py` asentaa paketit `npm ci`:llä tarvittaessa. Omat korjaukset piirtäjään ovat `patches/`:ssa (patch-package, `npm ci` ajaa ne): luokkakaaviossa yliluokka aliluokkiensa keskelle ja sen perintäviivat yhteisenä runkona (yksi kolmio). Kaavion nimi välimuistissa on lähteen ja piirtäjän (versiot, korjaukset, `render.mjs`) sha1, joten piirtäjän muutos piirtää kirjan kaaviot uudelleen |
 | `mkdocs-pohja.yml` | kirjojen yhteiset Zensical-asetukset: teema, tyylit, skriptit |
 | `assets/`, `overrides/`, `icons/` | tyylit ja skriptit, teeman mallit, kuvakkeiden glyfit |
 | `puhe.py` | ääneenluvun leikkeet (Azure Speech) äänivarastoon, myös vaiheittaisen ohjeen vaiheiden; `--teksti` näyttää luettavan ja hinta-arvion |
