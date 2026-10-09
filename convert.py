@@ -3300,7 +3300,7 @@ def snapshot() -> dict[str, int]:
     """Vahdittavien tiedostojen polut ja muokkausajat.
 
     Kysely eikä inotify, koska inotify ei saa tapahtumia 9p-liitoksen takaa
-    (WSL, PERUSTELUT.md). os.scandir on rglobia nopeampi ja st_mtime_ns ei
+    (WSL, README: Käyttö kirjassa). os.scandir on rglobia nopeampi ja st_mtime_ns ei
     vaadi tiedostojen lukemista.
     """
     state: dict[str, int] = {}

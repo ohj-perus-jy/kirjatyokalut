@@ -1,22 +1,14 @@
 /* Kirjasimet sivuston omasta assets/fonts/-hakemistosta.
  *
  * GENEROITU: skriptit/fontit.py kirjoittaa tämän tiedoston, älä muokkaa käsin.
- * Source Sans 3 ja Source Serif 4 ovat Adoben omat muuttuvat tiedostot
- * (koko merkistö), muut Google Fontsin palvelemat tiedostot merkistöittäin
- * (latin, latin-ext); miksi näin, ks. skriptin alku ja PERUSTELUT.md.
+ * Miksi Source-perheet tulevat Adobelta ja muut Googlesta, ks. skriptin alku.
  * Versiot: Source Sans 3 3.052R (Adobe), Source Serif 4 4.005R (Adobe),
  * Literata v40 (Google Fonts), Atkinson Hyperlegible Next v7 (Google
  * Fonts), JetBrains Mono v24 (Google Fonts).
  *
- * Kaikki perheet ovat SIL OFL 1.1 -lisensoituja; lisenssi on perheen
- * hakemistossa (OFL.txt) ja kopioituu sivustolle tiedostojen mukana.
- *
- * Otsikoiden, valikon ja koodin kirjasin annetaan teeman muuttujissa, jotka
- * Zensicalin base.html jättää pois, kun mkdocs-pohja.yml asettaa
- * theme.font: false. Source Sans 3 on leipätekstin Source Serif 4:n
- * sisarkirjasin, joten mittasuhteet täsmäävät. Leipäteksti ja
- * kirjasinvalikon vaihtoehdot ovat typography.css:ssä. Esilataus:
- * overrides/main.html. */
+ * Lopun muuttujat korvaavat teeman kirjasinasetuksen (mkdocs-pohja.yml:
+ * theme.font: false). Leipäteksti ja valikon vaihtoehdot: typography.css,
+ * esilataus: overrides/main.html. */
 
 /* Source Sans 3 3.052R: WOFF2/VF/SourceSans3VF-Upright.otf.woff2 */
 @font-face {

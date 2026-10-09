@@ -18,12 +18,10 @@ theme:
   custom_dir: TYOKALUT/overrides
   language: fi
 
-  # Kirjasimet tulevat sivuston omasta assets/fonts/-hakemistosta
-  # (assets/css/fonts.css), ei Google Fontsista: false jättää base.html:stä
-  # pois sekä Google Fontsin linkin että muuttujat --md-text-font ja
-  # --md-code-font, jotka fonts.css asettaa (otsikoiden, valikon ja yläpalkin
-  # Source Sans 3, koodin JetBrains Mono). Kirjan oma theme.font toisi Google
-  # Fontsin takaisin; tests/test_book.py tarkistaa. Ks. PERUSTELUT.md, Kirjasimet.
+  # Kirjasimet tulevat assets/css/fonts.css:stä, ei Google Fontsista: false
+  # jättää base.html:stä pois Googlen linkin ja kirjasinmuuttujat, jotka
+  # fonts.css asettaa. Kirjan oma theme.font toisi Google Fontsin takaisin;
+  # tests/test_book.py tarkistaa.
   font: false
 
   features:

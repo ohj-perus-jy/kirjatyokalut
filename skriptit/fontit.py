@@ -1,32 +1,20 @@
 #!/usr/bin/env python3
-"""Kirjasintiedostot työkalujen omaan assets/fonts/-hakemistoon.
+"""Kirjasintiedostot assets/fonts/-hakemistoon ja @font-face-säännöt fonts.css:ään.
 
     python3 skriptit/fontit.py
 
-Kaksi lähdettä, ks. PERUSTELUT.md, Kirjasimet:
+Kaksi lähdettä lisenssin takia. Adobe on varannut nimen "Source" (OFL:n
+Reserved Font Name), jota saa käyttää vain alkuperäisversiolle. Google
+Fontsin palvelemat tiedostot on pilkottu merkistöittäin, mikä on OFL:n
+mielessä muokkaus, joten Source Sans 3 ja Source Serif 4 haetaan Adoben
+omista julkaisuista (ADOBE) koko merkistönä. Literatalla, Atkinson
+Hyperlegible Nextillä ja JetBrains Monolla ei ole varattua nimeä, joten ne
+haetaan Google Fontsin CSS-rajapinnasta (GOOGLE) samoina pilkottuina
+tiedostoina, jotka se palvelisi selaimelle. Älä yhdistä reittejä.
 
-- Source Sans 3 ja Source Serif 4 haetaan Adoben omista julkaisuista
-  (github.com/adobe-fonts, ADOBE) muuttuvina woff2-tiedostoina, koko merkistö
-  yhdessä tiedostossa tyyliä kohden. Perheillä on OFL:n varattu nimi "Source",
-  jota saa käyttää vain alkuperäisversiolle; Adoben itse pakkaamat tiedostot
-  ovat sellaisia, Google Fontsin pilkkomat eivät.
-- Literata, Atkinson Hyperlegible Next ja JetBrains Mono haetaan Google
-  Fontsin CSS-rajapinnasta (GOOGLE) samoina tiedostoina, jotka se palvelisi
-  selaimelle (woff2-kelpoinen User-Agent, muuttuvat kirjasimet), merkistöt
-  latin ja latin-ext. Perheillä ei ole varattua nimeä, joten pilkotut
-  tiedostot saavat pitää nimensä.
-
-Tiedostot tallennetaan perheittäin assets/fonts/<perhe>/ ja jokaisen perheen
-lisenssi sen viereen OFL.txt:ksi (Adoben LICENSE.md, google/fonts-repon
-OFL.txt). Lopuksi kirjoitetaan assets/css/fonts.css:n @font-face-säännöt
-paikallisilla poluilla.
-
-Skripti on deterministinen: ilman muutoksia lähteissä se ei muuta mitään.
-Adoben versio on kiinnitetty tagiin (ADOBE); päivitys on tagin vaihto tähän
-tiedostoon ja ajo. Googlen perheen päivitys näkyy polun /v15/-osan vaihtona.
-Kummassakin tapauksessa muutos tulee committiin, jolloin ulkoasun muutos
-näkyy diffissä eikä tule sivustolle huomaamatta. Ei riippuvuuksia Pythonin
-vakiokirjaston lisäksi.
+Jokaisen perheen lisenssi tallennetaan sen viereen OFL.txt:ksi. Skripti on
+deterministinen: Adoben versio on kiinnitetty tagiin (ADOBE), Googlen
+päivitys näkyy polun /v15/-osan vaihtona, ja kumpikin tulee committiin.
 """
 
 import re
@@ -191,20 +179,12 @@ def main() -> int:
     header = f"""/* Kirjasimet sivuston omasta assets/fonts/-hakemistosta.
  *
  * GENEROITU: skriptit/fontit.py kirjoittaa tämän tiedoston, älä muokkaa käsin.
- * Source Sans 3 ja Source Serif 4 ovat Adoben omat muuttuvat tiedostot
- * (koko merkistö), muut Google Fontsin palvelemat tiedostot merkistöittäin
- * (latin, latin-ext); miksi näin, ks. skriptin alku ja PERUSTELUT.md.
+ * Miksi Source-perheet tulevat Adobelta ja muut Googlesta, ks. skriptin alku.
 {listed}
  *
- * Kaikki perheet ovat SIL OFL 1.1 -lisensoituja; lisenssi on perheen
- * hakemistossa (OFL.txt) ja kopioituu sivustolle tiedostojen mukana.
- *
- * Otsikoiden, valikon ja koodin kirjasin annetaan teeman muuttujissa, jotka
- * Zensicalin base.html jättää pois, kun mkdocs-pohja.yml asettaa
- * theme.font: false. Source Sans 3 on leipätekstin Source Serif 4:n
- * sisarkirjasin, joten mittasuhteet täsmäävät. Leipäteksti ja
- * kirjasinvalikon vaihtoehdot ovat typography.css:ssä. Esilataus:
- * overrides/main.html. */
+ * Lopun muuttujat korvaavat teeman kirjasinasetuksen (mkdocs-pohja.yml:
+ * theme.font: false). Leipäteksti ja valikon vaihtoehdot: typography.css,
+ * esilataus: overrides/main.html. */
 
 """
     variables = "\n".join(f"  {name}: \"{value}\";" for name, value in THEME_FONTS.items())
