@@ -305,10 +305,19 @@ def test_mark_highlights_keeps_every_colour_apart():
         "java")[1] == {"green": [1, 4], "red": [3]}
 
 
-def test_mark_highlights_only_touches_java():
-    """Vain java-lohkot käsitellään, kuten mdBookin skriptissä."""
+def test_mark_highlights_only_touches_listed_languages():
+    """Vain listatut kielet käsitellään; muissa merkintä jää näkyviin."""
     body = ["// HIGHLIGHT_GREEN_BEGIN", "a;", "// HIGHLIGHT_GREEN_END"]
     assert convert.mark_highlights(body, "text") == (body, {})
+
+
+def test_mark_highlights_handles_settings_json():
+    """Työkaluohjeiden settings.json: sisennetty merkintä poistuu ennen
+    renderöintiä, joten JSON-lexeri ei näe "//"-riviä."""
+    assert convert.mark_highlights(
+        ["{", '    "a": 1,', "    // HIGHLIGHT_GREEN_BEGIN", '    "b": 2',
+         "    // HIGHLIGHT_GREEN_END", "}"], "json") == (
+        ["{", '    "a": 1,', '    "b": 2', "}"], {"green": [3]})
 
 
 def test_mark_highlights_warns_about_an_unknown_colour(capsys):

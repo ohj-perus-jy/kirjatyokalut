@@ -45,7 +45,7 @@ kirjoittamalla merkinnän `src/`:ään. Toteutus-sarakkeen funktiot ovat
 
 ### Koodilohkot
 
-Kielet: `csharp`, `java`, `javascript` (korostetut rivit: `csharp`, `java`).
+Kielet: `csharp`, `java`, `javascript` (korostetut rivit: `csharp`, `java`, `json`, `bash`).
 
 | Merkintä | Tulos | Toteutus |
 | --- | --- | --- |

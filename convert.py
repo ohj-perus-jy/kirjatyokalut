@@ -178,10 +178,11 @@ HIGHLIGHT_RE = re.compile(
     r"^[\s>]*//\s*HIGHLIGHT_(?P<color>[A-Z0-9]+)_(?P<edge>BEGIN|END)\s*$")
 HIGHLIGHT_COLORS = ("green", "yellow", "red", "blue")
 
-# ohj1:n mdBook-skripti (theme/code-highlights.js) käsittelee vain javan, eikä
-# ohj1:n aineistossa ole yhtään merkintää; csharp on mukana, jotta merkintä
-# toimisi jos sitä joskus käytetään, java koekirjan ja testien takia.
-HIGHLIGHT_LANGUAGES = ("csharp", "java")
+# ohj1:n mdBook-skripti (theme/code-highlights.js) käsitteli vain javan; csharp
+# on kirjan koodia varten, java koekirjan ja testien takia. json ja bash ovat
+# työkaluohjeita varten (settings.json, komentorivi): merkintärivit poistetaan
+# ennen renderöintiä, joten "//" ei päädy JSON-lexerille.
+HIGHLIGHT_LANGUAGES = ("csharp", "java", "json", "bash")
 
 # mdBookin sisällytysmakro. Polun perässä voi olla rivivalinta, ks. take_lines.
 INCLUDE_RE = re.compile(r"\{\{#include\s+(?P<spec>[^}\s][^}]*?)\s*\}\}")
