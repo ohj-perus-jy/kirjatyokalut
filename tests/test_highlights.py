@@ -63,17 +63,21 @@ def test_the_band_covers_the_line_from_edge_to_edge(page):
 
 
 def test_a_marked_line_that_is_hidden_stays_hidden(page):
-    """Piilotus voittaa korostuksen; silmästä rivi tulee esiin väreineen,
-    himmeänä kuten muutkin piilorivit."""
+    """Piilotus voittaa korostuksen: piilossa rivi on kasaan painettu ja
+    visibilityllä pois innerTextistä (hidelines.css); silmästä rivi tulee
+    esiin väreineen, himmeänä kuten muutkin piilorivit."""
     marked_and_hidden = f"{BLOCK} code > span.boring.hl-green"
-    assert page.eval_on_selector(
-        marked_and_hidden, "line => getComputedStyle(line).display") == "none"
-
-    page.click(f"{BLOCK} {EYE}")
     assert page.eval_on_selector(marked_and_hidden, """line => {
       const style = getComputedStyle(line);
-      return [style.display, style.opacity];
-    }""") == ["block", "0.6"]
+      return [style.visibility, style.height];
+    }""") == ["hidden", "0px"]
+
+    page.click(f"{BLOCK} {EYE}")
+    page.wait_for_timeout(400)  # siirtymä
+    assert page.eval_on_selector(marked_and_hidden, """line => {
+      const style = getComputedStyle(line);
+      return [style.display, style.visibility, style.opacity];
+    }""") == ["block", "visible", "0.6"]
 
 
 def test_every_file_of_a_multifile_block_is_marked_on_its_own(page):

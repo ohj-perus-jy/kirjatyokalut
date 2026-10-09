@@ -5,7 +5,13 @@
  * Rivit ovat Pygmentsin rivispaneja (line_spans), <code>:n suorat span-lapset
  * lähteen järjestyksessä. Tunnisteisiin ei nojata, koska tulostussivu
  * kirjoittaa ne uusiksi (print.js). Nappi menee samaan teeman nappiriviin kuin
- * kopiointinappi ja ajonappi (playground.js). */
+ * kopiointinappi ja ajonappi (playground.js).
+ *
+ * Piilotilassa näkyvä koodi on vasemmassa reunassa: näkyvien rivien yhteinen
+ * sisennys (esim. Main-metodin rungon kahdeksan välilyöntiä) siirretään omaan
+ * spaniin, joka piilotetaan piilorivien mukana ja tulee esiin niiden kanssa.
+ * Lähteessä ohjelma on siis kirjoitettu kokonaan oikein sisennettynä. Silmän
+ * painallus liu'uttaa rivit ja sisennyksen auki (hidelines.css). */
 
 (() => {
   "use strict";
@@ -41,9 +47,62 @@
     button.dataset.mdType = "hidelines";
     label(button, false);
     button.addEventListener("click", () => {
+      code.classList.add("jyu-toggled");
       label(button, !code.classList.toggle("hide-boring"));
     });
     nav.append(button);
+  };
+
+  /* Rivin alun välilyönnit ja sarkaimet. */
+  const leading = (line) => /^[ \t]*/.exec(line.textContent)[0];
+
+  /* Näkyvien rivien (ei piilorivi, ei tyhjä) pisin yhteinen sisennys. Verrataan
+   * merkkijonoja, ei pituuksia, jotta sarkaimet ja välilyönnit eivät sekoitu. */
+  const commonIndent = (lines) => {
+    let common = null;
+    for (const line of lines) {
+      if (line.classList.contains("boring") || !line.textContent.trim()) continue;
+      const indent = leading(line);
+      if (common === null) {
+        common = indent;
+        continue;
+      }
+      let length = 0;
+      while (length < common.length && common[length] === indent[length]) length++;
+      common = common.slice(0, length);
+      if (!common) break;
+    }
+    return common ?? "";
+  };
+
+  /* Sisennyksen alusta `indent` omaan spaniin. Välilyönnit ovat Pygmentsin
+   * tekstisolmuissa (yleensä yksi span.w), mutta ne voivat jakautua useampaan,
+   * joten solmuja käydään läpi, kunnes merkit on otettu. Span tulee rivin
+   * suoraksi lapseksi ensimmäisen tekstiä sisältävän lapsen eteen, jotta se
+   * ei jää tyhjentyneen tokenin sisään. */
+  const dedent = (line, indent) => {
+    if (!indent || !line.textContent.trim() || !leading(line).startsWith(indent)) return;
+    const walker = document.createTreeWalker(line, NodeFilter.SHOW_TEXT);
+    let remaining = indent.length;
+    let first = null;
+    for (let node = walker.nextNode(); node && remaining > 0; node = walker.nextNode()) {
+      if (!node.data) continue;
+      first ??= node;
+      const taken = Math.min(remaining, node.data.length);
+      node.data = node.data.slice(taken);
+      remaining -= taken;
+    }
+    let child = first;
+    while (child.parentNode !== line) child = child.parentNode;
+    const span = document.createElement("span");
+    span.className = "jyu-indent";
+    span.textContent = indent;
+    /* Leveys tyylille (hidelines.css) ch-yksikköinä: sarkain on tab-sizen
+     * verran välilyöntejä. */
+    const tabSize = Number(getComputedStyle(line).tabSize) || 8;
+    span.style.setProperty(
+      "--jyu-indent", String(indent.replace(/\t/g, " ".repeat(tabSize)).length));
+    line.insertBefore(span, child);
   };
 
   const hide = (root) => {
@@ -53,6 +112,10 @@
       const lines = code.querySelectorAll(":scope > span");
       for (const number of block.dataset.hidden.split(" ")) {
         lines[Number(number) - 1]?.classList.add("boring");
+      }
+      const indent = commonIndent(lines);
+      for (const line of lines) {
+        if (!line.classList.contains("boring")) dedent(line, indent);
       }
       code.classList.add("hide-boring");
       afterTheme(() => addButton(code));

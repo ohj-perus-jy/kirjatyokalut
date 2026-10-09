@@ -20,22 +20,74 @@
 }
 
 /* Rivi on HTML:ssä tallessa myös piilotettuna (ajonappi lähettää sen); vain
- * näkyminen on kiinni luokasta. Kopiointinappi kopioi näkyvän tekstin
- * (innerText), joten piilorivi menee leikepöydälle vain silmällä esiin
- * otettuna. */
-.md-typeset .hide-boring .boring {
-  display: none;
+ * näkyminen on kiinni luokasta. Piilorivi on lohko, jotta silmän painallus
+ * voi liu'uttaa sen auki (korkeus 0 → rivi) ja häivyttää sen himmeyteensä
+ * (0.6 kuten mdBookissa); samalla näkyvien rivien sisennys (hidelines.js:
+ * dedent) levenee nollasta omaan mittaansa. Pitkä piilorivi levenee sisällön
+ * mukaan kuten korostettu rivi (highlights.css), ettei overflow leikkaisi
+ * sitä; korostetulla rivillä on omat mittansa. Piilotilassa visibility
+ * poistaa tekstin innerTextistä, hausta ja ruudunlukijalta, joten
+ * kopiointinappi (innerText) saa piilorivin ja sisennyksen leikepöydälle
+ * vain silmällä esiin otettuina. */
+.md-typeset .highlight code > .boring {
+  display: block;
+  overflow: hidden;
+  height: 1lh;
+  opacity: 0.6;
 }
 
-/* Kopioitaessa highlights.css muuttaa korostetun rivin displayn (contents),
- * mikä painavampana voittaisi piilotuksen ja korostettu piilorivi vuotaisi
- * leikepöydälle; tämä on vielä painavampi. */
+.md-typeset .highlight code > .boring:not(.hl-line) {
+  width: max-content;
+  min-width: 100%;
+}
+
+.md-typeset .highlight code.hide-boring > .boring {
+  height: 0;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.md-typeset .highlight .jyu-indent {
+  display: inline-block;
+  vertical-align: top;
+  overflow: hidden;
+  width: calc(var(--jyu-indent, 0) * 1ch);
+}
+
+.md-typeset .highlight code.hide-boring .jyu-indent {
+  width: 0;
+  visibility: hidden;
+}
+
+/* Siirtymä vain lohkossa, jonka silmää on painettu (jyu-toggled): sivun
+ * latautuessa jo piirretty rivi ei saa sulkeutua animaationa. Piilotettaessa
+ * visibility vaihtuu vasta siirtymän päätyttyä, näytettäessä heti. */
+.md-typeset .highlight code.jyu-toggled > .boring,
+.md-typeset .highlight code.jyu-toggled .jyu-indent {
+  transition: height 0.3s, width 0.3s, opacity 0.3s, visibility 0s;
+}
+
+.md-typeset .highlight code.jyu-toggled.hide-boring > .boring,
+.md-typeset .highlight code.jyu-toggled.hide-boring .jyu-indent {
+  transition: height 0.3s, width 0.3s, opacity 0.3s, visibility 0s 0.3s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .md-typeset .highlight code.jyu-toggled > .boring,
+  .md-typeset .highlight code.jyu-toggled .jyu-indent {
+    transition: none;
+  }
+}
+
+/* Kopioitaessa lohkotason rivi lisäisi innerTextiin rivinvaihdon rivin oman
+ * vaihdon lisäksi, joten esiin otettu piilorivi on kopioinnin ajan contents
+ * kuten korostettu rivi (highlights.css). Piilossa oleva on none: visibility
+ * riittäisi tekstin poistoon, mutta contents painavampana voittaisi
+ * korostetun piilorivin piilotuksen, ja tämä on vielä painavampi. */
+.md-typeset .highlight code[data-md-copying] > .boring {
+  display: contents;
+}
+
 .md-typeset .highlight code[data-md-copying].hide-boring .boring {
   display: none;
-}
-
-/* Esiin otettu piilorivi jää himmeäksi, jolloin näkee mikä oli piilossa;
- * sama 0.6 kuin mdBookissa. */
-.md-typeset .boring {
-  opacity: 0.6;
 }

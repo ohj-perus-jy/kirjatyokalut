@@ -6,6 +6,7 @@ näkyy vasta selaimessa. Koekirjan lohkossa piilorivit ovat 1 ja 3.
 """
 
 import pytest
+from playwright.sync_api import expect
 
 BLOCK = "div.highlight[data-hidden]"
 EYE = "[data-md-type=hidelines]"
@@ -56,9 +57,46 @@ def test_the_eye_shows_and_hides_them(page):
     assert page.get_attribute(f"{BLOCK} {EYE}", "aria-pressed") == "true"
 
     page.click(f"{BLOCK} {EYE}")
-    assert "void main() {" not in page.inner_text(BLOCK)
+    # Piilotus on siirtymä (hidelines.css): teksti poistuu innerTextistä
+    # vasta sen päätyttyä, joten odotetaan.
+    expect(page.locator(BLOCK)).not_to_contain_text("void main() {", use_inner_text=True)
     assert page.get_attribute(f"{BLOCK} {EYE}", "aria-label") == "Näytä piilotetut rivit"
     assert page.get_attribute(f"{BLOCK} {EYE}", "aria-pressed") == "false"
+
+
+@pytest.fixture
+def csharp_page(browser, book, serve):
+    """ohj1:n C#-sivu (osa1/csharp.md): näkyvä rivi on Main-metodin rungossa
+    kahdeksan välilyöntiä sisennettynä."""
+    opened = browser.new_page()
+    errors: list[str] = []
+    opened.on("pageerror", lambda error: errors.append(str(error)))
+    opened.goto(f"{serve(book.site)}/osa1/csharp/", wait_until="load")
+    yield opened
+    assert errors == []
+    opened.close()
+
+
+def test_visible_code_is_flush_left_until_the_eye_shows_the_rest(csharp_page):
+    """Piilotilassa näkyvien rivien yhteinen sisennys on piilossa (jyu-indent)
+    ja koodi alkaa vasemmasta reunasta; silmä tuo sisennyksen takaisin
+    piilorivien kanssa, jolloin ohjelma on lähteen mukaisesti sisennetty.
+    Ajonappi lukee textContentin, jossa sisennys on aina mukana."""
+    page = csharp_page
+    block = page.locator(BLOCK).first
+    assert block.inner_text().strip("\n") == 'Console.WriteLine("Hei, maailma!");'
+    assert block.locator("code").evaluate("code => code.textContent") == (
+        "using System;\npublic class Hei\n{\n    public static void Main()\n"
+        "    {\n        Console.WriteLine(\"Hei, maailma!\");\n    }\n}\n")
+
+    block.locator(EYE).click()
+    # Rivispanien väliin innerText lisää ylimääräisen rivinvaihdon.
+    assert [line for line in block.inner_text().split("\n") if line] == [
+        "using System;", "public class Hei", "{",
+        "    public static void Main()", "    {",
+        '        Console.WriteLine("Hei, maailma!");', "    }", "}"]
+    assert block.locator("code").evaluate("code => code.textContent").startswith(
+        "using System;")
 
 
 def test_only_blocks_with_hidden_lines_get_an_eye(page):

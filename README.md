@@ -54,7 +54,7 @@ Kielet: `csharp`, `java`, `javascript` (korostetut rivit: `csharp`, `java`).
 | `,ignore`, `,noplayground` | ei ajonappia, väritys säilyy | `convert_fences` |
 | `,feature-jypeli` | ajo Jypeli-kirjaston kanssa (`csharp-jypeli`) | playground.js |
 | `,editable` | lukija voi muuttaa koodia sivulla ja ajaa sen; "Peruuta muutokset" | playground.js |
-| `//-` rivin alussa | piilorivi: ei näy, menee ajoon; silmänappi näyttää | `hide_lines`, hidelines.js/css |
+| `//-` rivin alussa | piilorivi: ei näy, menee ajoon; silmänappi näyttää. Piilotilassa näkyvien rivien yhteinen sisennys on pois ja koodi alkaa vasemmasta reunasta; silmä liu'uttaa piilorivit ja sisennyksen esiin (0,3 s, ei liikettä reduced-motion-asetuksella). Etuliitteen perään ei tule välilyöntiä, se jäisi riviin | `hide_lines`, hidelines.js/css |
 | `// HIGHLIGHT_GREEN_BEGIN` … `_END` | korostetut rivit: green, yellow, red, blue | `mark_highlights`, highlights.js/css |
 | `// FILE: Nimi.java` | monitiedostolohko: tiedosto per välilehti, ajetaan yhdessä | `convert_files` |
 
