@@ -23,13 +23,15 @@
 }
 
 /* Tummassa teemassa kaikki kolme yhtä kirkkaina, jolloin yksi tekstin
- * vaalennus (alempana) sopii kaikille. */
+ * vaalennus (alempana) sopii kaikille. Vihreän ja punaisen kylläisyys on
+ * 45 %, koska kylläisempinä ne pomppasivat harmaansinisestä teemasta;
+ * vaaleus on nostettu niin, että kirkkaus pysyi ennallaan. */
 [data-md-color-scheme="slate"] {
-  --jyu-hl-green: hsl(129, 75%, 15.7%);
+  --jyu-hl-green: hsl(129, 45%, 18.5%);
   --jyu-hl-green-edge: hsl(130, 55%, 50%);
   --jyu-hl-yellow: hsl(48, 74%, 16%);
   --jyu-hl-yellow-edge: hsl(48, 90%, 50%);
-  --jyu-hl-red: hsl(7, 64%, 26.3%);
+  --jyu-hl-red: hsl(7, 45%, 26.4%);
   --jyu-hl-red-edge: hsl(5, 90%, 68%);
 }
 
