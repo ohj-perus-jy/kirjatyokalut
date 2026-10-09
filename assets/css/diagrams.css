@@ -48,10 +48,26 @@
   margin: 1em 0;
 }
 
-.md-typeset .jyu-mermaid > svg {
+/* Kuvasuurennus (convert.py: mermaid_zoom) käärii SVG:n linkkiin, ja
+ * GLightbox kloonaa sen sivun loppuun omaan diaansa (.gslide-inline), johon
+ * .md-typeset ei osu. */
+.md-typeset .jyu-mermaid svg,
+.gslide-inline > svg {
   --bg: var(--md-default-bg-color);
   --fg: var(--md-default-fg-color);
   height: auto;
+}
+
+/* Suurennettu kaavio: GLightboxin valkoinen dia teeman taustaksi. Leveys
+ * tulee linkin data-widthistä; korkea kaavio kutistuu dian enimmäiskorkeuteen
+ * (GLightbox: 95vh, kapealla näytöllä 100vh − 40 px) eikä vieri. */
+.gslide-inline:has(> svg) {
+  background-color: var(--md-default-bg-color);
+}
+
+.gslide-inline > svg {
+  width: 100%;
+  max-height: min(95vh, 100vh - 40px);
 }
 
 /* Nuolenpäät ovat piirtäjän oletuksella 1,5 px:n viivaa eli ohuempia kuin

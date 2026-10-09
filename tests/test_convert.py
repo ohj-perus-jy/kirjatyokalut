@@ -755,6 +755,7 @@ def test_svgbob_svg_warns_without_cargo(cargo, monkeypatch):
 def test_convert_mermaid_wraps_the_diagram_in_a_div(monkeypatch):
     """Aita -> div.jyu-mermaid, jossa piirtäjän SVG; käytetty tiedosto on
     lähteen sha1. Tyhjät rivit pois kuten svgbobissa."""
+    monkeypatch.setattr(convert, "IMAGE_ZOOM", False)
     monkeypatch.setattr(convert, "mermaid_svg",
                         lambda source: "<svg>\n\n<text>a</text>\n</svg>")
     converted, diagrams, used = convert.convert_mermaid(
@@ -768,6 +769,7 @@ def test_convert_mermaid_wraps_the_diagram_in_a_div(monkeypatch):
 def test_convert_mermaid_strips_the_fence_indent(monkeypatch):
     """Sisennetty aita (esim. luettelon kohdassa): sisennys pois lähteestä,
     jotta sama kaavio on sama tiedosto, ja takaisin SVG:n riveille."""
+    monkeypatch.setattr(convert, "IMAGE_ZOOM", False)
     sources = []
     monkeypatch.setattr(convert, "mermaid_svg",
                         lambda source: sources.append(source) or "<svg/>")
@@ -786,6 +788,22 @@ def test_convert_mermaid_gives_every_diagram_its_own_ids(monkeypatch):
         "```mermaid\na\n```\n\n```mermaid\nb\n```\n")
     assert 'id="mm1-cls-arrow"' in converted and "url(#mm1-cls-arrow)" in converted
     assert 'id="mm2-cls-arrow"' in converted and "url(#mm2-cls-arrow)" in converted
+
+
+def test_convert_mermaid_links_the_diagram_to_its_zoom(monkeypatch):
+    """kirja.toml: kuvasuurennus = true: kaavio on GLightboxin inline-linkki,
+    joka osoittaa SVG:hen itseensä (mermaid_zoom). Leveys 1,5 kertaa
+    viewBox, enintään ikkunan levyinen."""
+    monkeypatch.setattr(convert, "IMAGE_ZOOM", True)
+    monkeypatch.setattr(convert, "mermaid_svg",
+                        lambda source: '<svg viewBox="0 0 700.4 300" width="700.4">\n</svg>')
+    converted, _, _ = convert.convert_mermaid("  ```mermaid\n  a\n  ```\n")
+    assert converted == (
+        '  <div class="jyu-mermaid">\n'
+        '  <a class="glightbox" href="#mm1-kaavio" data-type="inline"'
+        ' data-width="min(95vw, 1051px)" data-height="auto">\n'
+        '  <svg id="mm1-kaavio" viewBox="0 0 700.4 300" width="700.4">\n'
+        "  </svg>\n  </a>\n  </div>\n")
 
 
 def test_convert_mermaid_keeps_the_fence_without_the_renderer(monkeypatch):

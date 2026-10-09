@@ -329,6 +329,13 @@ MERMAID_GENERIC_RE = re.compile(r"~(?P<type>[^~<>]+)~")
 MERMAID_MARKER_RE = re.compile(
     r"(?P<colon><tspan[^>]*>: </tspan>)<tspan(?P<attrs>[^>]*)>[*$](?: (?P<rest>[^<]*))?</tspan>")
 
+# mermaid_zoom: kuvasuurennus (IMAGE_ZOOM) myös kaavioille. Suurennos on 1,5
+# kertaa piirroksen koko, jolloin 11 px:n jäsenet ovat leipätekstin kokoisia
+# (16 px); leveä kaavio rajautuu ikkunaan. Koko luetaan viewBoxista.
+MERMAID_ZOOM = 1.5
+MERMAID_ROOT_RE = re.compile(r"<svg\b")
+MERMAID_VIEWBOX_RE = re.compile(r'\bviewBox="[-\d.]+ [-\d.]+ (?P<width>[\d.]+) [\d.]+"')
+
 # Tehtäväkortit: mdBookin omat elementit <task>, <task-title num="">, <points>,
 # <handout>, <task-link>. <task> ei ole Python-Markdownin BLOCK_LEVEL_ELEMENTS-
 # listalla, joten kortti jäisi kappaleen sisään eikä md_in_html käsittelisi sitä
@@ -1269,6 +1276,23 @@ def mermaid_clean(svg: str) -> str:
         lambda m: MERMAID_GENERIC_RE.sub(r"&lt;\g<type>&gt;", m[0]), svg)
 
 
+def mermaid_zoom(svg: str, name: str) -> str:
+    """Kaavio linkiksi, jonka klikkaus avaa sen suurennettuna.
+
+    Zensicalin GLightbox-laajennus käärii vain <img>-kuvat, mutta teema
+    alustaa GLightboxin kaikille sivun .glightbox-linkeille, ja sen inline-tila
+    kloonaa linkin osoittaman elementin (tässä SVG, tunniste name). Klooni
+    näkee sivun CSS-muuttujat, joten värit seuraavat teemaa (diagrams.css).
+    Leveys ks. MERMAID_ZOOM; GLightboxin oletuskorkeus 506 px pois.
+    """
+    size = MERMAID_VIEWBOX_RE.search(svg)
+    width = (f"min(95vw, {round(float(size['width']) * MERMAID_ZOOM)}px)"
+             if size else "95vw")
+    svg = MERMAID_ROOT_RE.sub(f'<svg id="{name}"', svg, count=1)
+    return (f'<a class="glightbox" href="#{name}" data-type="inline"'
+            f' data-width="{width}" data-height="auto">\n{svg}\n</a>')
+
+
 def convert_mermaid(text: str) -> tuple[str, int, set[str]]:
     """```mermaid-aidat upotetuiksi SVG-kaavioiksi. -> (teksti, kaavioita, nimet).
 
@@ -1302,6 +1326,8 @@ def convert_mermaid(text: str) -> tuple[str, int, set[str]]:
             used.add(hashlib.sha1(source.encode("utf-8")).hexdigest() + ".svg")
             diagrams += 1
             svg = prefix_svg_ids(mermaid_clean(svg), f"mm{diagrams}")
+            if IMAGE_ZOOM:
+                svg = mermaid_zoom(svg, f"mm{diagrams}-kaavio")
             out.append(f'{indent}<div class="jyu-mermaid">')
             out += [indent + line for line in svg.split("\n") if line.strip()]
             out.append(f"{indent}</div>")

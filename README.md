@@ -74,7 +74,7 @@ Kielet: `csharp`, `java`, `javascript` (korostetut rivit: `csharp`, `java`).
 | Alatunniste: edellinen/seuraava, tekijät ja lisenssi, "Muokkaa", "Muutoshistoria", "Ilmoita ongelma" | copyright.html |
 | Alaviitteet ja `title`-attribuutit tooltipeinä | mkdocs-pohja.yml, typography.css |
 | Koko sivun ääneenluku (`kirja.toml`: `[puhe] sivut`): kaiutin yläpalkissa, soitinpalkki (nopeus 1–2×, jää muistiin), luettava kappale korostettuna; koodista, taulukosta ja kaaviosta vain ilmoitus, välilehdistä lukijan valitsema | `speech_units`, `mark_speech`, puhe.js/css, header.html, `puhe.py` |
-| Kuvan klikkaus avaa sen täysikokoisena (`kirja.toml`: `kuvasuurennus`, kokeilussa ohj2:ssa); kuvan saa pois merkinnällä `{ .off-glb }`. Vaiheittaisessa ohjeessa vaiheen kuvat ovat oma galleriansa, ja animaation varakuva ei avaudu | `build_base`, Zensicalin GLightbox, walkthrough.js |
+| Kuvan klikkaus avaa sen täysikokoisena (`kirja.toml`: `kuvasuurennus`, kokeilussa ohj2:ssa); kuvan saa pois merkinnällä `{ .off-glb }`. Mermaid-kaavio avautuu 1,5-kertaisena teeman väreissä. Vaiheittaisessa ohjeessa vaiheen kuvat ovat oma galleriansa, ja animaation varakuva ei avaudu | `build_base`, `mermaid_zoom`, Zensicalin GLightbox, diagrams.css, walkthrough.js |
 | Taulukoiden, koodin ja nappirivin tyyli | tables.css, code.css, codebuttons.css |
 
 ### Ylläpito
@@ -133,7 +133,7 @@ siitä kirjan hakemisto tunnistetaan.
 | --- | --- | --- |
 | `nimi` | kirjan lyhyt nimi verkkopyyntöjen User-Agentiin (PlantUML, puhe.py) | `BOOK_NAME` |
 | `ei_sivuja` | lista fnmatch-kuvioita `.md`-tiedostoille, joista ei tehdä sivua | `NOT_PAGES` |
-| `kuvasuurennus` | `true`: kuvan klikkaus avaa sen täysikokoisena (GLightbox); oletus pois | `IMAGE_ZOOM` |
+| `kuvasuurennus` | `true`: kuvan ja mermaid-kaavion klikkaus avaa sen suurennettuna (GLightbox); oletus pois | `IMAGE_ZOOM` |
 | `[testit] rikkinaiset_kuvat` | kuvat, joiden tiedetään puuttuvan (test_book.py sallii ne) | – |
 | `[linkit] tim_kansiot` | TIM-kansiot, joiden julkisten sivujen linkit tarkistetaan (ks. Linkkitarkistus) | – |
 | `[linkit] tim_pois` | tarkistuksesta pois jätettävät TIM-dokumentit (polku kuten kansioissa) | – |
