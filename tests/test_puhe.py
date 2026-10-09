@@ -50,6 +50,7 @@ def test_a_written_ending_is_kept_and_a_letter_name_takes_a_front_vowel():
     assert convert.speech_say("Timer, time, ASP.NET, ohj1ht") == "Timer, time, ASP.NET, ohj1ht"
     assert convert.speech_say("ohj1-kansio") == "oo hoo jii yksi-kansio"
     assert convert.speech_say("Javassa, JavaFX ja mainittua") == "jaavassa, JavaFX ja mainittua"
+    assert convert.speech_say("(engl. class member)") == "(englanniksi class member)"
     assert convert.speech_say("virta <= koko, IO.println, VIRTA-arvo") == (
         "virta pienempi tai yhtä suuri kuin koko, IO.print lain, virta-arvo")
 

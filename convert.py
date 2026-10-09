@@ -2763,6 +2763,7 @@ SPEECH_SAYINGS = {
     "ohj1": "oo hoo jii yksi",
     "Ohj1": "oo hoo jii yksi",
     "IDE": "ide",  # sanana: kirjaimina ääni sanoi "i" tai "ie"
+    "engl.": "englanniksi",  # ääni ei avaa lyhennettä
     # Javan sanat lausuttuina, ei suomen kirjainäänteillä ("tru-e"). Ei mainia:
     # kirjoitettu pääte tekisi mainittua-sanasta "meinittua".
     "Java": "jaava",
