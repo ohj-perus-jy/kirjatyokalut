@@ -311,6 +311,8 @@ MERMAID_DIR = BOOK / "cache" / "mermaid"
 MERMAID_TOOL = TOOL / "mermaid"
 MERMAID_RENDER = MERMAID_TOOL / "render.mjs"
 MERMAID_MODULES = MERMAID_TOOL / "node_modules"
+# Piirtäjän omat korjaukset (patch-package, npm ci ajaa ne), ks. mermaid_renderer.
+MERMAID_PATCHES = MERMAID_TOOL / "patches"
 
 # mermaid_clean: piirtäjän tyylilohkosta Google Fontsin @import-rivit pois ja
 # kirjasimet teeman muuttujiksi, juurielementin värit (style="--bg:...")
@@ -1221,20 +1223,53 @@ def convert_svgbob(text: str, source_path: str = "") -> tuple[str, int, set[str]
     return "\n".join(out), diagrams, used
 
 
+@functools.cache
+def mermaid_renderer() -> str:
+    """Piirtäjän tunniste kaavion nimeen (mermaid_name): beautiful-mermaidin ja
+    elkjs:n versiot lukitustiedostosta, omat korjaukset ja render.mjs. Kaikki
+    ovat työkalujen tiedostoja, joten nimen laskeminen ei tarvitse Nodea."""
+    packages = json.loads((MERMAID_TOOL / "package-lock.json")
+                          .read_text(encoding="utf-8"))["packages"]
+    parts = [f"{name}@{packages['node_modules/' + name]['version']}"
+             for name in ("beautiful-mermaid", "elkjs")]
+    parts += [path.read_text(encoding="utf-8")
+              for path in [*sorted(MERMAID_PATCHES.glob("*.patch")), MERMAID_RENDER]]
+    return "\n".join(parts)
+
+
+def mermaid_name(source: str) -> str:
+    """Kaavion tiedosto välimuistissa: lähteen ja piirtäjän sha1."""
+    key = f"{mermaid_renderer()}\n{source}".encode("utf-8")
+    return hashlib.sha1(key).hexdigest() + ".svg"
+
+
+def mermaid_installed() -> bool:
+    """Onko piirtäjä asennettu nykyisestä lukitustiedostosta ja korjauksista?
+    npm ci kirjoittaa node_modules/.package-lock.json:n; jos lukitustiedosto
+    tai korjaus on sitä uudempi (git pull), asennus on vanha, eikä sillä
+    piirretty kaavio vastaisi nimeään."""
+    marker = MERMAID_MODULES / ".package-lock.json"
+    if not marker.is_file():
+        return False
+    installed = marker.stat().st_mtime
+    return all(path.stat().st_mtime <= installed for path in
+               [MERMAID_TOOL / "package-lock.json", *MERMAID_PATCHES.glob("*.patch")])
+
+
 def mermaid_svg(source: str) -> str | None:
     """Mermaid-kaavio -> SVG piirtäjän tulosteena, tai None.
 
-    Nimi on lähteen sha1, joten muuttunut kaavio piirretään uudelleen ja
-    muuttumaton luetaan välimuistista. None tarkoittaa, ettei piirtäjää ole
-    tai kaavio ei piirry (syntaksivirhe): silloin aita jätetään ennalleen
-    eikä käännös kaadu.
+    Nimi on lähteen ja piirtäjän sha1 (mermaid_name), joten muuttunut kaavio
+    tai piirtäjä piirretään uudelleen ja muuttumaton luetaan välimuistista.
+    None tarkoittaa, ettei piirtäjää ole tai kaavio ei piirry (syntaksivirhe):
+    silloin aita jätetään ennalleen eikä käännös kaadu.
     """
-    path = MERMAID_DIR / (hashlib.sha1(source.encode("utf-8")).hexdigest() + ".svg")
+    path = MERMAID_DIR / mermaid_name(source)
     if path.is_file():
         return path.read_text(encoding="utf-8")
     node = shutil.which("node")
-    if node is None or not (MERMAID_MODULES.is_dir() or install_mermaid()):
-        print("varoitus: mermaid-piirtäjä puuttuu, mermaid-kaaviot jäävät"
+    if node is None or not (mermaid_installed() or install_mermaid()):
+        print("varoitus: mermaid-piirtäjä puuttuu tai on vanha, mermaid-kaaviot jäävät"
               f" koodilohkoiksi (node ja npm ci {repo_relative(MERMAID_TOOL)}:ssä)",
               file=sys.stderr)
         FAILED.add("mermaid")
@@ -1254,12 +1289,13 @@ def mermaid_svg(source: str) -> str | None:
 
 @functools.cache
 def install_mermaid() -> bool:
-    """Asenna piirtäjän paketit npm:llä (mermaid/package-lock.json), kerran
-    prosessia kohden. -> onnistuiko. Ei asenneta --strict-ajossa eikä ilman npm:ää."""
+    """Asenna piirtäjän paketit npm:llä (mermaid/package-lock.json, korjaukset
+    postinstall-vaiheessa), kerran prosessia kohden. -> onnistuiko. Ei
+    asenneta --strict-ajossa eikä ilman npm:ää."""
     npm = shutil.which("npm")
     if STRICT or npm is None:
         return False
-    print("mermaid-piirtäjä puuttuu, asennetaan: npm ci"
+    print("mermaid-piirtäjä puuttuu tai on vanha, asennetaan: npm ci"
           f" ({repo_relative(MERMAID_TOOL)})", file=sys.stderr)
     return subprocess.run([npm, "ci", "--no-audit", "--no-fund"],
                           cwd=MERMAID_TOOL).returncode == 0
@@ -1374,7 +1410,7 @@ def convert_mermaid(text: str) -> tuple[str, int, set[str]]:
         if svg is None:
             out.extend(lines[number:end + 1])
         else:
-            used.add(hashlib.sha1(source.encode("utf-8")).hexdigest() + ".svg")
+            used.add(mermaid_name(source))
             diagrams += 1
             svg = prefix_svg_ids(mermaid_clean(svg), f"mm{diagrams}")
             if IMAGE_ZOOM:

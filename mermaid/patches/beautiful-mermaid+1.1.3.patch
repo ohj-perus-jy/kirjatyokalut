@@ -1,0 +1,28 @@
+diff --git a/node_modules/beautiful-mermaid/dist/index.js b/node_modules/beautiful-mermaid/dist/index.js
+index e7e087b..1bdb918 100644
+--- a/node_modules/beautiful-mermaid/dist/index.js
++++ b/node_modules/beautiful-mermaid/dist/index.js
+@@ -7816,7 +7816,9 @@ function buildClassElkGraph(diagram, _options) {
+       "elk.layered.spacing.nodeNodeBetweenLayers": String(CLS.layerSpacing),
+       "elk.padding": `[top=${CLS.padding},left=${CLS.padding},bottom=${CLS.padding},right=${CLS.padding}]`,
+       "elk.edgeRouting": "ORTHOGONAL",
+-      "elk.edgeLabels.placement": "CENTER"
++      "elk.edgeLabels.placement": "CENTER",
++      // kirjatyokalut: yliluokka aliluokkiensa keskelle kuten vuokaavioissa
++      "elk.layered.nodePlacement.bk.fixedAlignment": "BALANCED"
+     },
+     children: [],
+     edges: []
+diff --git a/node_modules/beautiful-mermaid/src/class/layout.ts b/node_modules/beautiful-mermaid/src/class/layout.ts
+index 5930a4b..f645f5a 100644
+--- a/node_modules/beautiful-mermaid/src/class/layout.ts
++++ b/node_modules/beautiful-mermaid/src/class/layout.ts
+@@ -71,6 +71,8 @@ function buildClassElkGraph(
+       'elk.padding': `[top=${CLS.padding},left=${CLS.padding},bottom=${CLS.padding},right=${CLS.padding}]`,
+       'elk.edgeRouting': 'ORTHOGONAL',
+       'elk.edgeLabels.placement': 'CENTER',
++      // kirjatyokalut: yliluokka aliluokkiensa keskelle kuten vuokaavioissa
++      'elk.layered.nodePlacement.bk.fixedAlignment': 'BALANCED',
+     },
+     children: [],
+     edges: [],

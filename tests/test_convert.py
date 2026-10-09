@@ -763,7 +763,42 @@ def test_convert_mermaid_wraps_the_diagram_in_a_div(monkeypatch):
     assert converted == ('ennen\n\n<div class="jyu-mermaid">\n<svg>\n<text>a</text>\n'
                          "</svg>\n</div>\n\njälkeen\n")
     assert diagrams == 1
-    assert used == {convert.hashlib.sha1(b"classDiagram\nA <|-- B\n").hexdigest() + ".svg"}
+    assert used == {convert.mermaid_name("classDiagram\nA <|-- B\n")}
+
+
+def test_mermaid_name_changes_with_the_renderer(monkeypatch):
+    """Nimi on lähteen ja piirtäjän sha1: piirtäjän version tai korjauksen
+    muutos piirtää kaaviot uudelleen, vaikka lähde on sama."""
+    name = convert.mermaid_name("a\n")
+    assert name.endswith(".svg") and name != convert.mermaid_name("b\n")
+    monkeypatch.setattr(convert, "mermaid_renderer", lambda: "toinen piirtäjä")
+    assert convert.mermaid_name("a\n") != name
+
+
+def test_mermaid_renderer_names_the_versions_and_the_patches():
+    renderer = convert.mermaid_renderer()
+    assert "beautiful-mermaid@" in renderer and "elkjs@" in renderer
+    assert "fixedAlignment" in renderer  # mermaid/patches/
+    assert "renderMermaidSVG" in renderer  # render.mjs
+
+
+def test_mermaid_installed_wants_a_newer_install_than_the_lock(monkeypatch, tmp_path):
+    """npm ci:n merkki (node_modules/.package-lock.json) lukitustiedostoa ja
+    korjauksia vanhempi = asennus on vanha, piirretään vasta asennuksen jälkeen."""
+    monkeypatch.setattr(convert, "MERMAID_TOOL", tmp_path)
+    monkeypatch.setattr(convert, "MERMAID_MODULES", tmp_path / "node_modules")
+    monkeypatch.setattr(convert, "MERMAID_PATCHES", tmp_path / "patches")
+    (tmp_path / "patches").mkdir()
+    (tmp_path / "node_modules").mkdir()
+    assert not convert.mermaid_installed()
+    lock, patch = tmp_path / "package-lock.json", tmp_path / "patches" / "a.patch"
+    marker = tmp_path / "node_modules" / ".package-lock.json"
+    for path, time in ((lock, 1), (patch, 2), (marker, 3)):
+        path.write_text("")
+        os.utime(path, (time, time))
+    assert convert.mermaid_installed()
+    os.utime(patch, (4, 4))
+    assert not convert.mermaid_installed()
 
 
 def test_convert_mermaid_strips_the_fence_indent(monkeypatch):
@@ -916,7 +951,8 @@ def test_mermaid_clean_writes_members_in_uml_notation():
 @pytest.fixture
 def npm(monkeypatch, tmp_path):
     """node ja npm ovat, piirtäjän paketit (node_modules) puuttuvat. Asennus
-    luo hakemiston. -> ajetut komennot."""
+    luo hakemiston ja npm ci:n merkin (ks. mermaid_installed). -> ajetut
+    komennot."""
     calls = []
     modules = tmp_path / "node_modules"
 
@@ -924,6 +960,7 @@ def npm(monkeypatch, tmp_path):
         calls.append(command)
         if command[1:2] == ["ci"]:
             modules.mkdir()
+            (modules / ".package-lock.json").write_text("")
         return subprocess.CompletedProcess(command, 0, stdout="<svg/>")
 
     monkeypatch.setattr(convert.shutil, "which", lambda name, path=None:
@@ -945,13 +982,13 @@ def test_mermaid_svg_installs_the_packages_for_a_new_diagram(npm, tmp_path):
     render = ["/usr/bin/node", str(convert.MERMAID_RENDER)]
     assert npm == [["/usr/bin/npm", "ci", "--no-audit", "--no-fund"], render, render]
     assert sorted(p.name for p in (tmp_path / "cache").iterdir()) == sorted(
-        convert.hashlib.sha1(s.encode()).hexdigest() + ".svg" for s in "ab")
+        convert.mermaid_name(s) for s in "ab")
     assert convert.FAILED == set()
 
 
 def test_mermaid_svg_reads_the_cache_without_the_renderer(npm, tmp_path):
     (tmp_path / "cache").mkdir()
-    (tmp_path / "cache" / (convert.hashlib.sha1(b"a").hexdigest() + ".svg")).write_text("<svg>x</svg>")
+    (tmp_path / "cache" / convert.mermaid_name("a")).write_text("<svg>x</svg>")
     assert convert.mermaid_svg("a") == "<svg>x</svg>"
     assert npm == []
 
@@ -973,6 +1010,7 @@ def test_mermaid_svg_reports_a_broken_diagram(npm, monkeypatch, capsys):
     """Piirtäjän virhe (syntaksi, tyhjä kaavio): aita jää, varoitus kertoo
     syyn, eikä välimuistiin jää mitään."""
     convert.MERMAID_MODULES.mkdir()
+    (convert.MERMAID_MODULES / ".package-lock.json").write_text("")
 
     def run(command, **kwargs):
         raise subprocess.CalledProcessError(1, command, stderr="rivi 2: odottamaton merkki\n")

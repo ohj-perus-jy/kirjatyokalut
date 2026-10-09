@@ -3,7 +3,13 @@
   "private": true,
   "description": "Mermaid-kaavioiden piirtäjä convert.py:lle (beautiful-mermaid), ks. render.mjs.",
   "type": "module",
+  "scripts": {
+    "postinstall": "patch-package --error-on-fail"
+  },
   "dependencies": {
     "beautiful-mermaid": "1.1.3"
+  },
+  "devDependencies": {
+    "patch-package": "8.0.1"
   }
 }
