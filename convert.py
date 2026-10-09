@@ -268,11 +268,11 @@ PLANTUML_ALT = "UML-luokkakaavio"
 SVGBOB_FENCE_RE = re.compile(r"^(?P<indent>\s*)(?P<fence>```+|~~~+)bob\s*$")
 SVGBOB_DIR = BOOK / "cache" / "svgbob"
 
-# svgbob kirjoittaa jokaiseen kaavioon samat id="arrow" ym. määrittelyt, joten
-# saman sivun kaaviot saavat juoksevan etuliitteen; print.js lisää tulostussivulla
-# vielä luvun oman etuliitteen.
-SVGBOB_ID_RE = re.compile(r'\bid="(?P<name>[^"]+)"')
-SVGBOB_REF_RE = re.compile(r"url\(#(?P<name>[^)]+)\)")
+# svgbob ja beautiful-mermaid kirjoittavat jokaiseen kaavioon samat id="arrow"
+# ym. määrittelyt, joten saman sivun kaaviot saavat juoksevan etuliitteen
+# (prefix_svg_ids); print.js lisää tulostussivulla vielä luvun oman etuliitteen.
+SVG_ID_RE = re.compile(r'\bid="(?P<name>[^"]+)"')
+SVG_REF_RE = re.compile(r"url\(#(?P<name>[^)]+)\)")
 
 SVGBOB_VERSION = "0.7.6"
 # book.tomlin piirtoasetukset, värit ja kirjasin Zensicalin muuttujina.
@@ -297,6 +297,62 @@ SVGBOB_OVAL_RE = re.compile(r"\(\s[^()]*\)")
 # pakottaa tekstin svgbobin 8 px:n ruutuun (font-size: calc(8px / .6)).
 SVGBOB_SIZE_RE = re.compile(r'width="(?P<width>\d+)" height="(?P<height>\d+)"')
 SVGBOB_CHAR_WIDTH = 8
+
+# Mermaid-kaaviot: ```mermaid-aita piirretään beautiful-mermaidilla
+# (mermaid/render.mjs, Node) ja upotetaan sivulle SVG:nä kuten bob-kaaviot:
+# värit ja kirjasin tulevat sivun CSS-muuttujista (diagrams.css), joten tumma
+# teema vaihtuu ilman uudelleenpiirtoa, ja tulostussivu näkee kaaviot. Aiemmin
+# teema piirsi aidat selaimessa mermaid.js:llä, jota ei enää ladata. Riippuvuus
+# on pehmeä kuten svgbob: valmiit kaaviot ovat versionhallinnassa
+# (cache/mermaid/), puuttuvat paketit asennetaan npm:llä, kun niitä ensi kerran
+# tarvitaan, ja ilman nodea aita jää koodilohkoksi; --strict kaataa ajon.
+MERMAID_FENCE_RE = re.compile(r"^(?P<indent>\s*)(?P<fence>```+|~~~+)mermaid\s*$")
+MERMAID_DIR = BOOK / "cache" / "mermaid"
+MERMAID_TOOL = TOOL / "mermaid"
+MERMAID_RENDER = MERMAID_TOOL / "render.mjs"
+MERMAID_MODULES = MERMAID_TOOL / "node_modules"
+# Piirtäjän omat korjaukset (patch-package, npm ci ajaa ne), ks. mermaid_renderer.
+MERMAID_PATCHES = MERMAID_TOOL / "patches"
+
+# mermaid_clean: piirtäjän tyylilohkosta Google Fontsin @import-rivit pois ja
+# kirjasimet teeman muuttujiksi, juurielementin värit (style="--bg:...")
+# diagrams.css:n varaan.
+MERMAID_IMPORT_RE = re.compile(r"^[ \t]*@import url\([^)]*\);[ \t]*\n", re.MULTILINE)
+MERMAID_FONT_RE = re.compile(r"^(?P<indent>[ \t]*)text \{ font-family: [^}]*\}", re.MULTILINE)
+MERMAID_MONO_RE = re.compile(r"^(?P<indent>[ \t]*)\.mono \{ font-family: [^}]*\}", re.MULTILINE)
+MERMAID_STYLE_ATTR_RE = re.compile(r'(?P<svg><svg\b[^>]*?) style="--bg:[^"]*"')
+# Luokan jäsenten merkinnät, jotka beautiful-mermaid 1.1.3 jättää tekstiin:
+# geneerinen tyyppi List~Kortti~ tekstielementin sisällössä sekä abstraktin (*)
+# ja staattisen ($) jäsenen merkki paluutyypin palassa ("<tspan>: </tspan>
+# <tspan>* boolean</tspan>"), vaikka piirtäjä tunnistaa merkin (kursiivi,
+# alleviivaus). Ilman paluutyyppiä myös kaksoispiste pois.
+MERMAID_TEXT_RE = re.compile(r"(?<=>)[^<>]+(?=</t)")
+MERMAID_GENERIC_RE = re.compile(r"~(?P<type>[^~<>]+)~")
+MERMAID_MARKER_RE = re.compile(
+    r"(?P<colon><tspan[^>]*>: </tspan>)<tspan(?P<attrs>[^>]*)>[*$](?: (?P<rest>[^<]*))?</tspan>")
+# Luokan osastot: beautiful-mermaid 1.1.3 piirtää aina otsikon alle attribuutti-
+# ja metodiosaston, tyhjän 8 px:n korkuisena (CLS.emptySectionHeight), joten
+# jäsenetön luokka näkyy kahtena tyhjänä kaistaleena. Ryhmässä on ulkolaatikko,
+# otsikon tausta ja kaksi osastojen rajaviivaa, kukin omalla rivillään.
+MERMAID_CLASS_RE = re.compile(
+    r'(?P<open><g class="class-node"[^>]*>\n)(?P<body>.*?\n)(?=</g>)', re.DOTALL)
+MERMAID_RECT_RE = re.compile(r'<rect x="[^"]*" y="(?P<y>[^"]*)" width="[^"]*" height="(?P<height>[^"]*)"')
+MERMAID_LINE_RE = re.compile(r'^[ \t]*<line [^>]*\by1="(?P<y>[^"]*)"[^>]*/>\n', re.MULTILINE)
+MERMAID_TEXT_Y_RE = re.compile(r'^(?P<start>[ \t]*<text [^>]*?\by=")(?P<y>[^"]*)(?P<end>"[^>]*>)', re.MULTILINE)
+MERMAID_EMPTY_SECTION = 8
+
+# Kaavion koko sivulla: piirtäjän tekstit ovat kiinteitä (luokan nimi 13,
+# jäsenet 11 viewBox-yksikköä) eikä niihin ole asetusta, joten diagrams.css
+# antaa SVG:lle leveyden em-yksikössä ja skaalaa koko kaavion leipätekstin
+# mukaan. Leveys luetaan viewBoxista kääreen muuttujaan (MERMAID_WIDTH_VAR).
+# mermaid_zoom: kuvasuurennus (IMAGE_ZOOM) myös kaavioille. Suurennos on 2
+# kertaa piirroksen koko eli noin 1,6 kertaa sivulla näkyvä (16,5 px:n
+# leipätekstillä kaavio on sivulla 1,27-kertainen); leveä kaavio rajautuu
+# ikkunaan.
+MERMAID_WIDTH_VAR = "--jyu-mermaid-width"
+MERMAID_ZOOM = 2
+MERMAID_ROOT_RE = re.compile(r"<svg\b")
+MERMAID_VIEWBOX_RE = re.compile(r'\bviewBox="[-\d.]+ [-\d.]+ (?P<width>[\d.]+) [\d.]+"')
 
 # Tehtäväkortit: mdBookin omat elementit <task>, <task-title num="">, <points>,
 # <handout>, <task-link>. <task> ei ole Python-Markdownin BLOCK_LEVEL_ELEMENTS-
@@ -386,7 +442,8 @@ ICON_MAP = {
 # Muunnoksen lukko, ks. only_one_run.
 LOCK = BOOK / ".convert.lock"
 
-# Piirtäjät, jotka epäonnistuivat tässä ajossa ("plantuml", "svgbob"); main
+# Piirtäjät, jotka epäonnistuivat tässä ajossa ("plantuml", "svgbob",
+# "mermaid"); main
 # tyhjentää ajon aluksi. prune_diagrams ei saa siivota vajaan käytettyjen joukon
 # perusteella. Moduulitason joukko, koska testit nojaavat paluuarvojen muotoon.
 FAILED: set[str] = set()
@@ -1074,13 +1131,13 @@ def install_svgbob() -> str | None:
                                                       path=str(root / "bin"))
 
 
-def svgbob_prefix_ids(svg: str, number: int) -> str:
+def prefix_svg_ids(svg: str, prefix: str) -> str:
     """Kaavion tunnisteet ja niiden viittaukset omaan nimiavaruuteensa.
 
-    Ks. SVGBOB_ID_RE: ilman tätä saman sivun kaavioilla on samat tunnisteet.
+    Ks. SVG_ID_RE: ilman tätä saman sivun kaavioilla on samat tunnisteet.
     """
-    svg = SVGBOB_ID_RE.sub(lambda m: f'id="bob{number}-{m["name"]}"', svg)
-    return SVGBOB_REF_RE.sub(lambda m: f'url(#bob{number}-{m["name"]})', svg)
+    svg = SVG_ID_RE.sub(lambda m: f'id="{prefix}-{m["name"]}"', svg)
+    return SVG_REF_RE.sub(lambda m: f'url(#{prefix}-{m["name"]})', svg)
 
 
 def svgbob_fit_text(svg: str) -> str:
@@ -1163,9 +1220,213 @@ def convert_svgbob(text: str, source_path: str = "") -> tuple[str, int, set[str]
                       " (kirjoita teksti lainausmerkkeihin)", file=sys.stderr)
             used.add(hashlib.sha1(art.encode("utf-8")).hexdigest() + ".svg")
             diagrams += 1
-            svg = svgbob_prefix_ids(svgbob_fit_text(svg), diagrams)
+            svg = prefix_svg_ids(svgbob_fit_text(svg), f"bob{diagrams}")
             indent = match["indent"]
             out.append(f'{indent}<div class="svgbob">')
+            out += [indent + line for line in svg.split("\n") if line.strip()]
+            out.append(f"{indent}</div>")
+        number = end + 1
+    return "\n".join(out), diagrams, used
+
+
+@functools.cache
+def mermaid_renderer() -> str:
+    """Piirtäjän tunniste kaavion nimeen (mermaid_name): beautiful-mermaidin ja
+    elkjs:n versiot lukitustiedostosta, omat korjaukset ja render.mjs. Kaikki
+    ovat työkalujen tiedostoja, joten nimen laskeminen ei tarvitse Nodea."""
+    packages = json.loads((MERMAID_TOOL / "package-lock.json")
+                          .read_text(encoding="utf-8"))["packages"]
+    parts = [f"{name}@{packages['node_modules/' + name]['version']}"
+             for name in ("beautiful-mermaid", "elkjs")]
+    parts += [path.read_text(encoding="utf-8")
+              for path in [*sorted(MERMAID_PATCHES.glob("*.patch")), MERMAID_RENDER]]
+    return "\n".join(parts)
+
+
+def mermaid_name(source: str) -> str:
+    """Kaavion tiedosto välimuistissa: lähteen ja piirtäjän sha1."""
+    key = f"{mermaid_renderer()}\n{source}".encode("utf-8")
+    return hashlib.sha1(key).hexdigest() + ".svg"
+
+
+def mermaid_installed() -> bool:
+    """Onko piirtäjä asennettu nykyisestä lukitustiedostosta ja korjauksista?
+    npm ci kirjoittaa node_modules/.package-lock.json:n; jos lukitustiedosto
+    tai korjaus on sitä uudempi (git pull), asennus on vanha, eikä sillä
+    piirretty kaavio vastaisi nimeään."""
+    marker = MERMAID_MODULES / ".package-lock.json"
+    if not marker.is_file():
+        return False
+    installed = marker.stat().st_mtime
+    return all(path.stat().st_mtime <= installed for path in
+               [MERMAID_TOOL / "package-lock.json", *MERMAID_PATCHES.glob("*.patch")])
+
+
+def mermaid_svg(source: str) -> str | None:
+    """Mermaid-kaavio -> SVG piirtäjän tulosteena, tai None.
+
+    Nimi on lähteen ja piirtäjän sha1 (mermaid_name), joten muuttunut kaavio
+    tai piirtäjä piirretään uudelleen ja muuttumaton luetaan välimuistista.
+    None tarkoittaa, ettei piirtäjää ole tai kaavio ei piirry (syntaksivirhe):
+    silloin aita jätetään ennalleen eikä käännös kaadu.
+    """
+    path = MERMAID_DIR / mermaid_name(source)
+    if path.is_file():
+        return path.read_text(encoding="utf-8")
+    node = shutil.which("node")
+    if node is None or not (mermaid_installed() or install_mermaid()):
+        print("varoitus: mermaid-piirtäjä puuttuu tai on vanha, mermaid-kaaviot jäävät"
+              f" koodilohkoiksi (node ja npm ci {repo_relative(MERMAID_TOOL)}:ssä)",
+              file=sys.stderr)
+        FAILED.add("mermaid")
+        return None
+    try:
+        result = subprocess.run([node, str(MERMAID_RENDER)], input=source,
+                                capture_output=True, text=True, check=True)
+    except subprocess.CalledProcessError as error:
+        print(f"varoitus: mermaid-kaavio ei piirry: {error.stderr.strip()}",
+              file=sys.stderr)
+        FAILED.add("mermaid")
+        return None
+    MERMAID_DIR.mkdir(parents=True, exist_ok=True)
+    path.write_text(result.stdout, encoding="utf-8")
+    return result.stdout
+
+
+@functools.cache
+def install_mermaid() -> bool:
+    """Asenna piirtäjän paketit npm:llä (mermaid/package-lock.json, korjaukset
+    postinstall-vaiheessa), kerran prosessia kohden. -> onnistuiko. Ei
+    asenneta --strict-ajossa eikä ilman npm:ää."""
+    npm = shutil.which("npm")
+    if STRICT or npm is None:
+        return False
+    print("mermaid-piirtäjä puuttuu tai on vanha, asennetaan: npm ci"
+          f" ({repo_relative(MERMAID_TOOL)})", file=sys.stderr)
+    return subprocess.run([npm, "ci", "--no-audit", "--no-fund"],
+                          cwd=MERMAID_TOOL).returncode == 0
+
+
+def mermaid_clean(svg: str) -> str:
+    """Piirtäjän SVG sivulle: kirjasin ja värit sivun muuttujista.
+
+    beautiful-mermaid tuo kirjasimensa Google Fontsista @importilla ja
+    kirjoittaa värit juurielementin style-attribuuttiin; molemmat pois, jotta
+    kirjasin on teeman ja värit diagrams.css:n (tumma teema vaihtuu CSS:llä,
+    ja attribuutti voittaisi tyylitiedoston). Ks. MERMAID_TEXT_RE.
+    """
+    svg = MERMAID_IMPORT_RE.sub("", svg)
+    svg = MERMAID_FONT_RE.sub(
+        r"\g<indent>text { font-family: var(--md-text-font-family); }", svg)
+    svg = MERMAID_MONO_RE.sub(
+        r"\g<indent>.mono { font-family: var(--md-code-font-family); }", svg)
+    svg = MERMAID_STYLE_ATTR_RE.sub(r"\g<svg>", svg, count=1)
+    svg = MERMAID_MARKER_RE.sub(
+        lambda m: f'{m["colon"]}<tspan{m["attrs"]}>{m["rest"]}</tspan>' if m["rest"] else "",
+        svg)
+    svg = MERMAID_CLASS_RE.sub(lambda m: m["open"] + mermaid_hide_empty(m["body"]), svg)
+    return MERMAID_TEXT_RE.sub(
+        lambda m: MERMAID_GENERIC_RE.sub(r"&lt;\g<type>&gt;", m[0]), svg)
+
+
+def mermaid_hide_empty(body: str) -> str:
+    """Luokan tyhjät osastot pois näkyvistä, ks. MERMAID_CLASS_RE.
+
+    Laatikon koko pysyy, koska viivat päättyvät sen reunaan. Jäsenettömässä
+    luokassa otsikon tausta täyttää laatikon ja nimi on keskellä; jos vain
+    toinen osasto on tyhjä, sen rajaviiva lähtee ja jäsenet siirtyvät puolet
+    tyhjästä tilasta, jolloin ylä- ja alareunaan jää yhtä paljon tilaa.
+    """
+    rects = list(MERMAID_RECT_RE.finditer(body))
+    lines = list(MERMAID_LINE_RE.finditer(body))
+    if len(rects) != 2 or len(lines) != 2:
+        return body
+    top, height = float(rects[0]["y"]), float(rects[0]["height"])
+    header = float(rects[1]["height"])
+    attributes_empty = math.isclose(float(lines[1]["y"]) - float(lines[0]["y"]),
+                                    MERMAID_EMPTY_SECTION, abs_tol=0.01)
+    methods_empty = math.isclose(top + height - float(lines[1]["y"]),
+                                 MERMAID_EMPTY_SECTION, abs_tol=0.01)
+
+    def shift(text: str, mono: bool, amount: float) -> str:
+        """Jäsenten (mono) tai nimen ja stereotyypin tekstit pystysuunnassa."""
+        def move(m: re.Match) -> str:
+            if ('class="mono"' in m[0]) != mono:
+                return m[0]
+            y = f"{float(m['y']) + amount:.3f}".rstrip("0").rstrip(".")
+            return f'{m["start"]}{y}{m["end"]}'
+        return MERMAID_TEXT_Y_RE.sub(move, text)
+
+    if attributes_empty and methods_empty:
+        body = (body[:rects[1].start("height")] + rects[0]["height"]
+                + body[rects[1].end("height"):lines[0].start()]
+                + body[lines[0].end():lines[1].start()] + body[lines[1].end():])
+        return shift(body, mono=False, amount=(height - header) / 2)
+    if attributes_empty or methods_empty:
+        body = body[:lines[1].start()] + body[lines[1].end():]
+        half = MERMAID_EMPTY_SECTION / 2
+        return shift(body, mono=True, amount=-half if attributes_empty else half)
+    return body
+
+
+def mermaid_zoom(svg: str, name: str) -> str:
+    """Kaavio linkiksi, jonka klikkaus avaa sen suurennettuna.
+
+    Zensicalin GLightbox-laajennus käärii vain <img>-kuvat, mutta teema
+    alustaa GLightboxin kaikille sivun .glightbox-linkeille, ja sen inline-tila
+    kloonaa linkin osoittaman elementin (tässä SVG, tunniste name). Klooni
+    näkee sivun CSS-muuttujat, joten värit seuraavat teemaa (diagrams.css).
+    Leveys ks. MERMAID_ZOOM; GLightboxin oletuskorkeus 506 px pois. Dia ei
+    peri sivun em-leveyttä (diagrams.css: width: 100 %), joten koko on
+    pikseleinä.
+    """
+    size = MERMAID_VIEWBOX_RE.search(svg)
+    width = (f"min(95vw, {round(float(size['width']) * MERMAID_ZOOM)}px)"
+             if size else "95vw")
+    svg = MERMAID_ROOT_RE.sub(f'<svg id="{name}"', svg, count=1)
+    return (f'<a class="glightbox" href="#{name}" data-type="inline"'
+            f' data-width="{width}" data-height="auto">\n{svg}\n</a>')
+
+
+def convert_mermaid(text: str) -> tuple[str, int, set[str]]:
+    """```mermaid-aidat upotetuiksi SVG-kaavioiksi. -> (teksti, kaavioita, nimet).
+
+    Kuten convert_svgbob: convert_divsin jälkeen, tyhjät rivit pois.
+    """
+    lines = text.split("\n")
+    out: list[str] = []
+    used: set[str] = set()
+    diagrams = 0
+    number = 0
+    while number < len(lines):
+        match = MERMAID_FENCE_RE.match(lines[number])
+        if not match:
+            out.append(lines[number])
+            number += 1
+            continue
+        end = number + 1
+        while end < len(lines) and lines[end].strip() != match["fence"]:
+            end += 1
+        if end == len(lines):  # sulkematon aita: jätetään rauhaan
+            out.append(lines[number])
+            number += 1
+            continue
+        indent = match["indent"]
+        source = "\n".join(line.removeprefix(indent)
+                           for line in lines[number + 1:end]) + "\n"
+        svg = mermaid_svg(source)
+        if svg is None:
+            out.extend(lines[number:end + 1])
+        else:
+            used.add(mermaid_name(source))
+            diagrams += 1
+            svg = prefix_svg_ids(mermaid_clean(svg), f"mm{diagrams}")
+            if IMAGE_ZOOM:
+                svg = mermaid_zoom(svg, f"mm{diagrams}-kaavio")
+            size = MERMAID_VIEWBOX_RE.search(svg)
+            style = (f' style="{MERMAID_WIDTH_VAR}: {float(size["width"]):g}"'
+                     if size else "")
+            out.append(f'{indent}<div class="jyu-mermaid"{style}>')
             out += [indent + line for line in svg.split("\n") if line.strip()]
             out.append(f"{indent}</div>")
         number = end + 1
@@ -2436,7 +2697,8 @@ class _SpeechScan:
         column = tag.end("tag")
         kind = next((kind for kind, found in (
             ("ohje", "jyu-walk" in classes), ("visa", "jyu-visa" in classes),
-            ("kaavio", "svgbob" in classes), ("taulukko", name == "table"),
+            ("kaavio", bool(classes & {"svgbob", "jyu-mermaid"})),
+            ("taulukko", name == "table"),
             ("video", name == "video")) if found), None)
         if kind:
             self.add(lines[index], column, "tagi", kind, SPEECH_NOTICES[kind])
@@ -2821,6 +3083,7 @@ class PageResult(NamedTuple):
     unknown_icons: set[str]
     diagrams: set[str]
     drawings: set[str]
+    graphs: set[str]
     unknown_alerts: set[str]
     clips: set[str]
     silent_steps: list[str]
@@ -2860,6 +3123,7 @@ def convert_page(origin: Path, source_path: str, clips: set[str] | None = None) 
     # svgbobia (kääre ei saa markdown="1":tä).
     converted, _ = convert_divs(converted)
     converted, _, page_art = convert_svgbob(converted, source_path)
+    converted, _, page_graphs = convert_mermaid(converted)
     # Tehtäväkortit ennen bonusmerkkejä (task_head lukee kortin tagin itse).
     converted, _ = convert_tasks(converted)
     # Vaiheittainen ohje ennen convert_tabsia kuten tehtäväkortit: tagit
@@ -2873,7 +3137,7 @@ def convert_page(origin: Path, source_path: str, clips: set[str] | None = None) 
     # Animaatiot välilehtien jälkeen, ks. convert_animations.
     converted, _ = convert_animations(converted, source_path)
     return PageResult(converted, page_labels, page_unknown_icons, page_used, page_art,
-                      page_unknown, set(audio.values()), silent)
+                      page_graphs, page_unknown, set(audio.values()), silent)
 
 
 def main(strict: bool = False) -> int:
@@ -2890,6 +3154,7 @@ def main(strict: bool = False) -> int:
     stale = sync_docs()
     used_diagrams: set[str] = set()
     used_drawings: set[str] = set()
+    used_graphs: set[str] = set()
     tab_labels: set[str] = set()
     unknown_alerts: set[str] = set()
     unknown_icons: set[str] = set()
@@ -2918,6 +3183,7 @@ def main(strict: bool = False) -> int:
         unknown_icons |= page.unknown_icons
         used_diagrams |= page.diagrams
         used_drawings |= page.drawings
+        used_graphs |= page.graphs
         unknown_alerts |= page.unknown_alerts
     for asset in ASSETS.rglob("*"):
         if asset.is_file():
@@ -2932,6 +3198,7 @@ def main(strict: bool = False) -> int:
     write_if_changed(DOCS / PRINT_PAGE, build_print_page(nav))
     prune_diagrams(PLANTUML_DIR, used_diagrams, "plantuml" not in FAILED)
     prune_diagrams(SVGBOB_DIR, used_drawings, "svgbob" not in FAILED)
+    prune_diagrams(MERMAID_DIR, used_graphs, "mermaid" not in FAILED)
     stale -= copy_clips(used_clips)
     # Jäänteet viimeisenä, kun kaikki muu on jo paikallaan (ks. sync_docs).
     for file in sorted(stale):

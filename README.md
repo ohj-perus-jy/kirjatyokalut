@@ -39,7 +39,7 @@ kirjoittamalla merkinnän `src/`:ään. Toteutus-sarakkeen funktiot ovat
 | `<walkthrough scenes>`, `<step scene>` | vaiheittainen ohje: animoitu kohtaus askel kerrallaan, halutessa ääneen luettuna (`<walkthrough scenes audio>`, leikkeet äänivarastossa, `puhe.py`) | `convert_walkthroughs`, walkthrough.js/css |
 | `<animation scenes scene>` | yksittäinen animaatio tavallisella sivulla; tahti `data-wait`, `data-type` | `convert_animations` |
 | `<asciinema>` | terminaalinauhoitus soittimessa; soitin ladataan vain sivuille, joilla on nauhoitus | asciinema.js |
-| ` ```plantuml `, ` ```bob `, ` ```mermaid ` | luokkakaavio kuvana, ascii-kaavio upotettuna SVG:nä, mermaid sellaisenaan; kaaviot kirjan `cache/`:ssa | `convert_plantuml`, `convert_svgbob`, diagrams.css |
+| ` ```mermaid `, ` ```bob `, ` ```plantuml ` | mermaid-kaavio (mm. UML-luokkakaavio) ja ascii-kaavio upotettuna SVG:nä, jonka värit seuraavat teemaa; plantuml-luokkakaavio kuvana (vanha tapa, korvataan mermaidilla); kaaviot kirjan `cache/`:ssa | `convert_mermaid`, `mermaid/render.mjs`, `convert_svgbob`, `convert_plantuml`, diagrams.css |
 | `<i class="bi …">`, `<i class="fa …">` | kuvake teeman glyfinä; valikkopolun nuoli merkkinä › | `convert_icons`, `icons/`, icons.css |
 | `[teksti](#käyttö)` | ankkuri ilman ääkkösiä, sama muoto kuin teeman otsikkotunnuksissa | `convert_anchors` |
 
@@ -74,7 +74,7 @@ Kielet: `csharp`, `java`, `javascript` (korostetut rivit: `csharp`, `java`).
 | Alatunniste: edellinen/seuraava, tekijät ja lisenssi, "Muokkaa", "Muutoshistoria", "Ilmoita ongelma" | copyright.html |
 | Alaviitteet ja `title`-attribuutit tooltipeinä | mkdocs-pohja.yml, typography.css |
 | Koko sivun ääneenluku (`kirja.toml`: `[puhe] sivut`): kaiutin yläpalkissa, soitinpalkki (nopeus 1–2×, jää muistiin), luettava kappale korostettuna; koodista, taulukosta ja kaaviosta vain ilmoitus, välilehdistä lukijan valitsema | `speech_units`, `mark_speech`, puhe.js/css, header.html, `puhe.py` |
-| Kuvan klikkaus avaa sen täysikokoisena (`kirja.toml`: `kuvasuurennus`, kokeilussa ohj2:ssa); kuvan saa pois merkinnällä `{ .off-glb }`. Vaiheittaisessa ohjeessa vaiheen kuvat ovat oma galleriansa, ja animaation varakuva ei avaudu | `build_base`, Zensicalin GLightbox, walkthrough.js |
+| Kuvan klikkaus avaa sen täysikokoisena (`kirja.toml`: `kuvasuurennus`, kokeilussa ohj2:ssa); kuvan saa pois merkinnällä `{ .off-glb }`. Mermaid-kaavio avautuu 1,5-kertaisena teeman väreissä. Vaiheittaisessa ohjeessa vaiheen kuvat ovat oma galleriansa, ja animaation varakuva ei avaudu | `build_base`, `mermaid_zoom`, Zensicalin GLightbox, diagrams.css, walkthrough.js |
 | Taulukoiden, koodin ja nappirivin tyyli | tables.css, code.css, codebuttons.css |
 
 ### Ylläpito
@@ -97,8 +97,9 @@ kirja/                     kirjan repo
     kirja.toml             kirjan asetukset työkaluille
     mkdocs.yml             kirjan omat sivustoasetukset (nimi, tekijät, repo)
     run.sh                 kääre: tyokalut/run.sh
+    cache/mermaid/         kirjan mermaid-kaaviot (versionhallinnassa)
     cache/svgbob/          kirjan bob-kaaviot (versionhallinnassa)
-    cache/plantuml/        kirjan luokkakaaviot (versionhallinnassa)
+    cache/plantuml/        kirjan plantuml-luokkakaaviot (versionhallinnassa)
     puhe/                  ääneenluvun leikkeet: erillisen repon klooni (puhe.py),
                            .gitignoressa, EI submodule
     tyokalut/              TÄMÄ REPO submodulena
@@ -112,6 +113,7 @@ ylähakemisto) ja lukee materiaalin sen viereisestä `src/`:stä.
 | Tiedosto | Mitä |
 | --- | --- |
 | `convert.py` | `../src` → `docs/` ja `nav.yml`; `--watch` vahtii, `--strict` kaatuu puuttuvaan kaavioon (julkaisu) |
+| `mermaid/` | mermaid-kaavioiden piirtäjä (`render.mjs`, Node-paketti beautiful-mermaid); `convert.py` asentaa paketit `npm ci`:llä tarvittaessa. Omat korjaukset piirtäjään ovat `patches/`:ssa (patch-package, `npm ci` ajaa ne): luokkakaaviossa yliluokka aliluokkiensa keskelle ja sen perintäviivat yhteisenä runkona (yksi kolmio, sen alla 10 px:n varsi). Kaavion nimi välimuistissa on lähteen ja piirtäjän (versiot, korjaukset, `render.mjs`) sha1, joten piirtäjän muutos piirtää kirjan kaaviot uudelleen |
 | `mkdocs-pohja.yml` | kirjojen yhteiset Zensical-asetukset: teema, tyylit, skriptit |
 | `assets/`, `overrides/`, `icons/` | tyylit ja skriptit, teeman mallit, kuvakkeiden glyfit |
 | `puhe.py` | ääneenluvun leikkeet (Azure Speech) äänivarastoon, myös vaiheittaisen ohjeen vaiheiden; `--teksti` näyttää luettavan ja hinta-arvion |
@@ -131,7 +133,7 @@ siitä kirjan hakemisto tunnistetaan.
 | --- | --- | --- |
 | `nimi` | kirjan lyhyt nimi verkkopyyntöjen User-Agentiin (PlantUML, puhe.py) | `BOOK_NAME` |
 | `ei_sivuja` | lista fnmatch-kuvioita `.md`-tiedostoille, joista ei tehdä sivua | `NOT_PAGES` |
-| `kuvasuurennus` | `true`: kuvan klikkaus avaa sen täysikokoisena (GLightbox); oletus pois | `IMAGE_ZOOM` |
+| `kuvasuurennus` | `true`: kuvan ja mermaid-kaavion klikkaus avaa sen suurennettuna (GLightbox); oletus pois | `IMAGE_ZOOM` |
 | `[testit] rikkinaiset_kuvat` | kuvat, joiden tiedetään puuttuvan (test_book.py sallii ne) | – |
 | `[linkit] tim_kansiot` | TIM-kansiot, joiden julkisten sivujen linkit tarkistetaan (ks. Linkkitarkistus) | – |
 | `[linkit] tim_pois` | tarkistuksesta pois jätettävät TIM-dokumentit (polku kuten kansioissa) | – |
@@ -329,7 +331,8 @@ Tarvitset:
 - kirjan repon GitHubissa ja sen juuressa materiaalin mdBookin muodossa:
   `src/SUMMARY.md` ja sivut (pienin toimiva kirja: `tests/book/`)
 - Linuxin tai WSL:n, jossa on git ja Python 3.11+
-- valinnaisesti cargon, jolla `convert.py` asentaa bob-kaavioiden piirtäjän
+- valinnaisesti cargon, jolla `convert.py` asentaa bob-kaavioiden piirtäjän,
+  ja Noden (npm), jolla se asentaa mermaid-kaavioiden piirtäjän
 
 Tee kirjan juuressa:
 
