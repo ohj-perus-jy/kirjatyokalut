@@ -2763,6 +2763,24 @@ SPEECH_SAYINGS = {
     "ohj1": "oo hoo jii yksi",
     "Ohj1": "oo hoo jii yksi",
     "IDE": "ide",  # sanana: kirjaimina ääni sanoi "i" tai "ie"
+    # Javan sanat lausuttuina, ei suomen kirjainäänteillä ("tru-e"). Ei mainia:
+    # kirjoitettu pääte tekisi mainittua-sanasta "meinittua".
+    "Java": "jaava",
+    "private": "praivet",
+    "boolean": "buulean",
+    "double": "dabl",
+    "true": "truu",
+    "false": "fols",
+    "new": "njuu",
+    "println": "print lain",
+    "ArrayList": "eirei list",
+    "<=": "pienempi tai yhtä suuri kuin",
+    # Vakioiden nimet sanoina, ei kirjain kerrallaan (vrt. TIM).
+    "NIMI": "nimi",
+    "VIRTA": "virta",
+    "SALASANA": "salasana",
+    "KOKO": "koko",
+    "DL-BONUS": "DL-bonus",
 }
 # Kaksoispisteellä taivutetun vartalo, jos se ei ole sanottu + i kuten
 # lainasanoissa (C#:n -> see sharpin): kirjaimen nimeen tulee ä (äsässä).

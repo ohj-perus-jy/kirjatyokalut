@@ -32,7 +32,7 @@ def test_ssml_escapes_the_text_and_keeps_the_lines_as_paragraphs():
 
 
 def test_the_voice_says_the_words_it_would_misread():
-    assert convert.speech_say("Kielet C#, Java ja C++.") == "Kielet see sharp, Java ja C++."
+    assert convert.speech_say("Kielet C#, Java ja C++.") == "Kielet see sharp, jaava ja C++."
     assert convert.speech_say("C#-kielessä") == "see sharp-kielessä"
     assert convert.speech_say("C#:n, C#:ssa, C#:ia, C#:iin") == (
         "see sharpin, see sharpissa, see sharpia, see sharpiin")
@@ -49,6 +49,9 @@ def test_a_written_ending_is_kept_and_a_letter_name_takes_a_front_vowel():
         "raider idenä, ide-ympäristöjä ja IDEAn")
     assert convert.speech_say("Timer, time, ASP.NET, ohj1ht") == "Timer, time, ASP.NET, ohj1ht"
     assert convert.speech_say("ohj1-kansio") == "oo hoo jii yksi-kansio"
+    assert convert.speech_say("Javassa, JavaFX ja mainittua") == "jaavassa, JavaFX ja mainittua"
+    assert convert.speech_say("virta <= koko, IO.println, VIRTA-arvo") == (
+        "virta pienempi tai yhtä suuri kuin koko, IO.print lain, virta-arvo")
 
 
 # --- Leikkeet ja varasto ----------------------------------------------------------
