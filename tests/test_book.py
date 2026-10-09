@@ -10,7 +10,7 @@ import re
 import pytest
 
 import convert
-from conftest import open_print_page
+from conftest import google_font_references, open_print_page
 
 SRC = convert.SRC
 
@@ -327,6 +327,14 @@ def test_print_page_has_no_source_links(real_site):
     historiaa."""
     html = (real_site / "tulosta" / "index.html").read_text(encoding="utf-8")
     assert SOURCE_LINK.search(html) is None
+
+
+def test_fonts_come_from_the_site_itself(real_site):
+    """Kirjasimet ovat sivuston omassa assets/fonts/-hakemistossa (fonts.css).
+    Kirjan oma theme.font toisi Google Fontsin takaisin, koska INHERIT
+    yhdistää sen pohjan theme.font: false -arvon päälle. Koekirjalle sama
+    tarkistus: tests/test_fonts.py."""
+    assert google_font_references(real_site) == []
 
 
 def test_print_page_is_not_in_the_search_index(real_site):

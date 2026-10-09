@@ -7,6 +7,7 @@ kootaan valmiista HTML:stä, joten testattava syntyy vasta käännöksessä.
 import functools
 import http.server
 import importlib.metadata
+import re
 import shutil
 import subprocess
 import sys
@@ -83,6 +84,18 @@ def is_stale(site: Path) -> bool:
         if any(path.stat().st_mtime > built for path in paths if path.is_file()):
             return True
     return False
+
+
+# Kirjasimet tulevat sivuston omasta assets/fonts/-hakemistosta (fonts.css):
+# viittaus Google Fontsiin on virhe (tests/test_fonts.py, tests/test_book.py).
+GOOGLE_FONTS = re.compile(r"fonts\.(googleapis|gstatic)\.com")
+
+
+def google_font_references(site: Path) -> list[str]:
+    """Sivuston HTML- ja CSS-tiedostot, jotka viittaavat Google Fontsiin."""
+    return [str(path.relative_to(site)) for path in sorted(site.rglob("*"))
+            if path.suffix in (".html", ".css")
+            and GOOGLE_FONTS.search(path.read_text(encoding="utf-8", errors="replace"))]
 
 
 @pytest.fixture(scope="session")

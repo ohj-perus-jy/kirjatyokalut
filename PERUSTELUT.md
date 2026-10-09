@@ -60,6 +60,73 @@ Kun Zensicalin versio vaihtuu, tarkista käsin:
   skripti kirjoittaa sivupalkille. Tiedostossa on myös kopio teeman
   hiusviivojen geometriasta. Jos valikko tai viivat hajoavat, katso tämä
   tiedosto ensimmäisenä.
+- `mkdocs-pohja.yml`:n `theme.font: false` nojaa siihen, että `base.html`
+  jättää silloin pois sekä Google Fontsin linkin että muuttujat
+  `--md-text-font` ja `--md-code-font` (0.0.68: `{% block fonts %}`, rivit
+  70–80), jotka `assets/css/fonts.css` asettaa. Tarkista uudesta
+  `base.html`:stä, että ehto on yhä `config.theme.font != false` ja että
+  teeman CSS johtaa `--md-text-font-family`n yhä muuttujasta
+  `--md-text-font`. `overrides/main.html` korvaa teeman `main.html`:n, joka
+  on ollut pelkkä `{% extends "base.html" %}`; jos siihen tulee sisältöä, se
+  on tuotava omaan kopioon. `tests/test_fonts.py` huomaa, jos kirjasimet
+  eivät enää lataudu sivustolta.
+
+## Kirjasimet
+
+Kirjasintiedostot (Source Serif 4, Source Sans 3, JetBrains Mono, Literata,
+Atkinson Hyperlegible Next) ovat repossa `assets/fonts/`-hakemistossa ja
+tulevat sivustolle sen omasta osoitteesta (`assets/css/fonts.css`), eivät
+Google Fontsista. `skriptit/fontit.py` hakee ne ja kirjoittaa `fonts.css`:n.
+
+- **Ei ulkoista riippuvuutta.** Kirja näyttää samalta ilman yhteyttä Googleen:
+  vahdissa ilman verkkoa, verkoissa ja selaimissa, joista Google Fonts on
+  estetty. Aiemmin kirjasimet vaihtuivat silloin hiljaa varakirjasimiin.
+- **Nopeampi ensimmäinen lataus.** Googlen reitti oli kolme peräkkäistä
+  pyyntöä kahteen vieraaseen osoitteeseen (`typography.css` → Googlen CSS →
+  tiedosto). Selainten välimuisti on sivustokohtainen, joten muiden
+  sivustojen lataamista Google-kirjasimista ei ollut hyötyä. Nyt tiedosto
+  tulee samasta osoitteesta kuin sivu, ja leipätekstin tiedosto esiladataan
+  (`overrides/main.html`).
+- **Tiedostot vaihtuvat vain commitilla.** Google päivittää kirjasimia omaan
+  tahtiinsa, jolloin ulkoasu ja mitat saattoivat muuttua ilman muutosta
+  tässä repossa; svgbob-kaaviot nojaavat JetBrains Monon merkkileveyteen
+  (`diagrams.css`). Päivitys tehdään ajamalla `skriptit/fontit.py` (Adoben
+  perheillä ensin tagin vaihto skriptiin), ja muutos näkyy diffissä. Testit
+  ajetaan samoilla tiedostoilla kuin julkaisu.
+- **Tietosuoja.** Google Fontsin rajapinta saa jokaisesta sivulatauksesta
+  lukijan IP-osoitteen, selaimen tiedot ja sivun osoitteen (Googlen oma
+  FAQ). Omalta palvelimelta ladattaessa Google ei saa mitään, eikä kolmatta
+  osapuolta tarvitse mainita tietosuojaselosteessa.
+- **Kaksi lähdettä lisenssin takia.** Kaikki viisi perhettä ovat SIL OFL 1.1
+  -lisensoituja. OFL sallii jakelun ohjelmiston mukana, kun
+  tekijänoikeusilmoitus ja lisenssi kulkevat mukana: perheen `OFL.txt` on
+  tiedostojen vieressä ja kopioituu sivustolle (`tests/test_fonts.py`
+  tarkistaa).
+  Google Fontsin palvelemat tiedostot on pilkottu merkistöittäin, mikä on
+  OFL:n mielessä muokkaus (OFL-FAQ 2.6). Muokattu versio ei saa käyttää
+  tekijän varaamaa nimeä (Reserved Font Name), ja CSS:n `font-family` on
+  nimi, "jolla kirjasin määritellään dokumentissa" (OFL-FAQ 5.3). Adobe on
+  varannut nimen "Source" sekä Source Sans 3:lle että Source Serif 4:lle,
+  joten ne haetaan Adoben omista julkaisuista (github.com/adobe-fonts)
+  muuttuvina woff2-tiedostoina, jotka Adobe on itse pakannut: ne ovat
+  alkuperäisversioita, ja nimi saa pysyä (OFL-FAQ 2.2.1). Tiedostot ovat
+  cff2-pohjaisia, koska Adoben ttf-pohjaisista puuttuvat vihjetaulut ja
+  Chromium Linuxilla asettaa niiden merkit epätasaisin välein; vihjeiden
+  lisääminen itse tekisi tiedostosta muokatun version (`skriptit/fontit.py`).
+  Literatalla, Atkinson Hyperlegible Nextillä ja JetBrains Monolla ei ole
+  varattua nimeä, joten niille kelpaavat Googlen pilkotut tiedostot, jotka
+  ovat samat kuin sivuilla tähänkin asti. Google valitsee tiedoston selaimen mukaan: Chrome
+  ja Firefox saavat samat tiedostot, Safari omansa; repossa on Chromen
+  versio kaikille.
+- **Koko.** Adoben tiedostot sisältävät koko merkistön: Source Serif 4:n
+  pysty on 416 KiB ja Source Sans 3:n 160 KiB, kun Googlen latin-osat olivat
+  120 ja 28 KiB. Tavallisen sivun ensimmäinen lataus kasvaa noin 430 KiB,
+  minkä jälkeen selain käyttää välimuistia. Googlen perheet ovat 12
+  tiedostoa, joista lukija lataa vain käyttämänsä. Hylätyt vaihtoehdot:
+  Googlen Source-tiedostot omalla nimellä (vaatisi tiedostojen sisäisten
+  nimien muuttamisen eli oman muokatun version, OFL-FAQ 3.1) ja Googlen
+  kaikki merkistöt vetoamalla OFL-FAQ:n "Functional Equivalenceen" (2.7),
+  jota FAQ itse pitää epäkäytännöllisenä.
 
 ## Muunnosaskel: vahti (vaihtoehto A)
 

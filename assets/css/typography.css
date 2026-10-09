@@ -2,11 +2,10 @@
 
 /* Leipäteksti on Source Serif 4 kuten mdBookissa. Ei theme.font.text, koska se
  * vaihtaisi myös valikon, yläpalkin ja otsikot; kohteena vain artikkeli
- * (.md-content__inner). Zensical lataa Google Fontsista vain theme.font-
- * asetuksen kirjasimet, joten nämä haetaan tässä. Vaihtoehtoiset kirjasimet
- * samassa pyynnössä; selain lataa tiedoston vasta kun sitä käytetään.
- * Kaikki kolme ovat SIL OFL -lisensoituja. */
-@import url("https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400..700;1,8..60,400..700&family=Literata:ital,opsz,wght@0,7..72,400..700;1,7..72,400..700&family=Atkinson+Hyperlegible+Next:ital,wght@0,400..700;1,400..700&display=swap");
+ * (.md-content__inner). Kirjasintiedostot ja @font-face-säännöt ovat
+ * fonts.css:ssä (sivuston oma assets/fonts/, ei Google Fonts), samoin teeman
+ * oma Source Sans 3. Selain lataa vaihtoehtoisen kirjasimen tiedoston vasta
+ * kun sitä käytetään. */
 
 .md-content__inner {
   font-family: "Source Serif 4", "Source Serif Pro", Georgia, serif;

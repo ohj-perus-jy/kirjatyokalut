@@ -18,10 +18,13 @@ theme:
   custom_dir: TYOKALUT/overrides
   language: fi
 
-  # Otsikoiden, valikon ja yläpalkin kirjasin. Source Sans 3 on leipätekstin
-  # Source Serif 4:n (typography.css) sisarkirjasin, joten mittasuhteet täsmäävät.
-  font:
-    text: Source Sans 3
+  # Kirjasimet tulevat sivuston omasta assets/fonts/-hakemistosta
+  # (assets/css/fonts.css), ei Google Fontsista: false jättää base.html:stä
+  # pois sekä Google Fontsin linkin että muuttujat --md-text-font ja
+  # --md-code-font, jotka fonts.css asettaa (otsikoiden, valikon ja yläpalkin
+  # Source Sans 3, koodin JetBrains Mono). Kirjan oma theme.font toisi Google
+  # Fontsin takaisin; tests/test_book.py tarkistaa. Ks. PERUSTELUT.md, Kirjasimet.
+  font: false
 
   features:
     # Osan otsikko on itse linkki osan etusivulle, kuten mdBookissa.
@@ -109,6 +112,10 @@ markdown_extensions:
   pymdownx.tilde: {}
 
 extra_css:
+  # Kirjasintiedostot (@font-face) ja teeman kirjasinmuuttujat; ensimmäisenä,
+  # jotta leipätekstin lataus alkaa heti. Generoitu: skriptit/fontit.py.
+  - assets/css/fonts.css
+
   # Leipätekstin kirjasin; miksi ei theme.font.text, ks. tiedoston alku.
   - assets/css/typography.css
 
