@@ -827,16 +827,17 @@ def test_convert_mermaid_gives_every_diagram_its_own_ids(monkeypatch):
 
 def test_convert_mermaid_links_the_diagram_to_its_zoom(monkeypatch):
     """kirja.toml: kuvasuurennus = true: kaavio on GLightboxin inline-linkki,
-    joka osoittaa SVG:hen itseensä (mermaid_zoom). Leveys 1,5 kertaa
-    viewBox, enintään ikkunan levyinen."""
+    joka osoittaa SVG:hen itseensä (mermaid_zoom). Leveys 2 kertaa viewBox,
+    enintään ikkunan levyinen. Kääre saa viewBox-leveyden muuttujaan, josta
+    diagrams.css laskee kaavion em-leveyden."""
     monkeypatch.setattr(convert, "IMAGE_ZOOM", True)
     monkeypatch.setattr(convert, "mermaid_svg",
                         lambda source: '<svg viewBox="0 0 700.4 300" width="700.4">\n</svg>')
     converted, _, _ = convert.convert_mermaid("  ```mermaid\n  a\n  ```\n")
     assert converted == (
-        '  <div class="jyu-mermaid">\n'
+        '  <div class="jyu-mermaid" style="--jyu-mermaid-width: 700.4">\n'
         '  <a class="glightbox" href="#mm1-kaavio" data-type="inline"'
-        ' data-width="min(95vw, 1051px)" data-height="auto">\n'
+        ' data-width="min(95vw, 1401px)" data-height="auto">\n'
         '  <svg id="mm1-kaavio" viewBox="0 0 700.4 300" width="700.4">\n'
         "  </svg>\n  </a>\n  </div>\n")
 

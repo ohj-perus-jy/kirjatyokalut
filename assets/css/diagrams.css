@@ -42,10 +42,21 @@
  * teema vaihtuu ilman uudelleenpiirtoa. Piirtäjän omat värit riisutaan
  * SVG:stä (mermaid_clean), koska attribuutti voittaisi tämän säännön.
  * Kirjasimet tulevat kaavion omasta <style>-lohkosta teeman muuttujilla.
- * SVG:llä on viewBox ja kiinteä koko: kapealla näytöllä se kutistuu
- * (teeman max-width: 100%), ja height: auto pitää mittasuhteen. */
+ * SVG:llä on viewBox: kapealla näytöllä se kutistuu (teeman max-width: 100%),
+ * ja height: auto pitää mittasuhteen. */
 .md-typeset .jyu-mermaid {
   margin: 1em 0;
+}
+
+/* Kaavion koko: piirtäjän tekstit ovat kiinteitä (luokan nimi 13, jäsenet ja
+ * viivojen tekstit 11 viewBox-yksikköä) eikä niihin ole asetusta, ja SVG:n
+ * omalla leveydellä yksikkö on pikseli, jolloin nimi on 79 % leipätekstistä.
+ * Leveys em-yksikössä skaalaa koko kaavion niin, että 13 yksikköä on 1 em:
+ * nimi on leipätekstin kokoinen ja jäsenet 11/13 em kuten teeman koodi
+ * (.85em). Lukijan tekstikoko (typography.css) seuraa mukana. viewBoxin
+ * leveys tulee kääreen muuttujaan convert.py:stä (MERMAID_WIDTH_VAR). */
+.md-typeset .jyu-mermaid[style*="--jyu-mermaid-width"] svg {
+  width: calc(var(--jyu-mermaid-width) / 13 * 1em);
 }
 
 /* Kuvasuurennus (convert.py: mermaid_zoom) käärii SVG:n linkkiin, ja

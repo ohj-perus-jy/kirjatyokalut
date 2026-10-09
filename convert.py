@@ -341,10 +341,16 @@ MERMAID_LINE_RE = re.compile(r'^[ \t]*<line [^>]*\by1="(?P<y>[^"]*)"[^>]*/>\n', 
 MERMAID_TEXT_Y_RE = re.compile(r'^(?P<start>[ \t]*<text [^>]*?\by=")(?P<y>[^"]*)(?P<end>"[^>]*>)', re.MULTILINE)
 MERMAID_EMPTY_SECTION = 8
 
-# mermaid_zoom: kuvasuurennus (IMAGE_ZOOM) myös kaavioille. Suurennos on 1,5
-# kertaa piirroksen koko, jolloin 11 px:n jäsenet ovat leipätekstin kokoisia
-# (16 px); leveä kaavio rajautuu ikkunaan. Koko luetaan viewBoxista.
-MERMAID_ZOOM = 1.5
+# Kaavion koko sivulla: piirtäjän tekstit ovat kiinteitä (luokan nimi 13,
+# jäsenet 11 viewBox-yksikköä) eikä niihin ole asetusta, joten diagrams.css
+# antaa SVG:lle leveyden em-yksikössä ja skaalaa koko kaavion leipätekstin
+# mukaan. Leveys luetaan viewBoxista kääreen muuttujaan (MERMAID_WIDTH_VAR).
+# mermaid_zoom: kuvasuurennus (IMAGE_ZOOM) myös kaavioille. Suurennos on 2
+# kertaa piirroksen koko eli noin 1,6 kertaa sivulla näkyvä (16,5 px:n
+# leipätekstillä kaavio on sivulla 1,27-kertainen); leveä kaavio rajautuu
+# ikkunaan.
+MERMAID_WIDTH_VAR = "--jyu-mermaid-width"
+MERMAID_ZOOM = 2
 MERMAID_ROOT_RE = re.compile(r"<svg\b")
 MERMAID_VIEWBOX_RE = re.compile(r'\bviewBox="[-\d.]+ [-\d.]+ (?P<width>[\d.]+) [\d.]+"')
 
@@ -1370,7 +1376,9 @@ def mermaid_zoom(svg: str, name: str) -> str:
     alustaa GLightboxin kaikille sivun .glightbox-linkeille, ja sen inline-tila
     kloonaa linkin osoittaman elementin (tässä SVG, tunniste name). Klooni
     näkee sivun CSS-muuttujat, joten värit seuraavat teemaa (diagrams.css).
-    Leveys ks. MERMAID_ZOOM; GLightboxin oletuskorkeus 506 px pois.
+    Leveys ks. MERMAID_ZOOM; GLightboxin oletuskorkeus 506 px pois. Dia ei
+    peri sivun em-leveyttä (diagrams.css: width: 100 %), joten koko on
+    pikseleinä.
     """
     size = MERMAID_VIEWBOX_RE.search(svg)
     width = (f"min(95vw, {round(float(size['width']) * MERMAID_ZOOM)}px)"
@@ -1415,7 +1423,10 @@ def convert_mermaid(text: str) -> tuple[str, int, set[str]]:
             svg = prefix_svg_ids(mermaid_clean(svg), f"mm{diagrams}")
             if IMAGE_ZOOM:
                 svg = mermaid_zoom(svg, f"mm{diagrams}-kaavio")
-            out.append(f'{indent}<div class="jyu-mermaid">')
+            size = MERMAID_VIEWBOX_RE.search(svg)
+            style = (f' style="{MERMAID_WIDTH_VAR}: {float(size["width"]):g}"'
+                     if size else "")
+            out.append(f'{indent}<div class="jyu-mermaid"{style}>')
             out += [indent + line for line in svg.split("\n") if line.strip()]
             out.append(f"{indent}</div>")
         number = end + 1
