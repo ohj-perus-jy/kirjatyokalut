@@ -32,19 +32,21 @@
           </span>
           {#- Sivustovalikko nimen vieressä (mkdocs.yml: extra.sites). Ellipsiksen
               ulkopuolella, koska se leikkaa ylivuodon. Ulkoasu
-              assets/css/sitemenu.css, toiminta assets/js/sitemenu.js. -#}
+              assets/css/sitemenu.css, toiminta assets/js/sitemenu.js.
+              Linkkilista on ARIA:n valikkopainike (aria-haspopup="true",
+              role="menu"/"menuitem"): nuolet liikkuvat, Esc sulkee. -#}
           {% if config.extra.sites %}
             <button type="button" class="jyu-sites__button" id="jyu-sites-button"
                     title="Vaihda sivustoa" aria-label="Vaihda sivustoa"
-                    aria-expanded="false" aria-controls="jyu-sites-list">
+                    aria-haspopup="true" aria-expanded="false" aria-controls="jyu-sites-list">
               {% include ".icons/lucide/chevron-down.svg" %}
             </button>
-            <ul class="jyu-sites__list" id="jyu-sites-list" aria-label="Sivustot" hidden>
+            <ul class="jyu-sites__list" id="jyu-sites-list" role="menu" aria-label="Sivustot" hidden>
               {% for site in config.extra.sites %}
                 {#- Oma sivusto omaan etusivuun, jotta /dev/ ja localhost pysyvät itsessään. -#}
                 {% set current = site.name == config.site_name %}
-                <li>
-                  <a class="jyu-sites__item" href="{{ home if current else site.url }}"{% if current %} aria-current="true"{% endif %}>
+                <li role="none">
+                  <a class="jyu-sites__item" role="menuitem" href="{{ home if current else site.url }}"{% if current %} aria-current="true"{% endif %}>
                     {% include ".icons/lucide/check.svg" %}
                     <span>{{ site.name }}</span>
                   </a>
@@ -89,15 +91,17 @@
         toiminta assets/js/fontmenu.js, kirjasimet ja koko typography.css.
         data-steps on tekstikoon portaat prosentteina (100 = oletus, ei
         tallennu). data-font on tallennettava tunnus (tyhjä = oletus, ei
-        tallennu), data-short painikkeen vihjeessä näkyvä nimi. -#}
+        tallennu), data-short painikkeen vihjeessä näkyvä nimi. Paneelissa on
+        koon säätörivi ja kirjasinlista, joten se ei ole pelkkä listbox vaan
+        ei-modaalinen dialogi (aria-haspopup="dialog", role="dialog"). -#}
     <div class="md-header__option jyu-font" data-md-component="jyu-font" data-steps="90 100 110 120 135 150 175">
       <button type="button" class="jyu-font__button" id="jyu-font-button"
               title="Leipäteksti: Serif, 100 %" aria-label="Leipäteksti: Serif, 100 %"
-              aria-expanded="false" aria-controls="jyu-font-panel">
+              aria-haspopup="dialog" aria-expanded="false" aria-controls="jyu-font-panel">
         {% include ".icons/lucide/type.svg" %}
         <span class="jyu-font__chevron">{% include ".icons/lucide/chevron-down.svg" %}</span>
       </button>
-      <div class="jyu-font__panel" id="jyu-font-panel" hidden>
+      <div class="jyu-font__panel" id="jyu-font-panel" role="dialog" aria-label="Leipäteksti" hidden>
         <div class="jyu-font__size" role="group" aria-labelledby="jyu-font-size-label">
           <span class="jyu-font__size-label" id="jyu-font-size-label">Tekstin koko</span>
           <button type="button" class="jyu-font__step" data-step="-1" aria-label="Pienennä tekstiä">

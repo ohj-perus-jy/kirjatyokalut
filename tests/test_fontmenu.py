@@ -117,6 +117,36 @@ def test_without_a_choice_the_page_is_as_before(browser, base_url):
     assert errors == []
 
 
+def popup(page, selector) -> dict:
+    """Painikkeen ponnahdusattribuutit ja sen ohjaaman elementin rooli."""
+    return page.evaluate(
+        """s => { const b = document.querySelector(s);
+            const target = document.getElementById(b.getAttribute('aria-controls'));
+            return { haspopup: b.getAttribute('aria-haspopup'),
+                     expanded: b.getAttribute('aria-expanded'),
+                     role: target && target.getAttribute('role') } }""", selector)
+
+
+def test_the_button_tells_it_opens_a_dialog(browser, base_url):
+    """Ruudunlukija kertoo, että painike avaa ponnahduksen, vasta
+    aria-haspopupista. Paneeli ei ole pelkkä listbox (koon säätörivi ja
+    kirjasinlista), joten se on ei-modaalinen dialogi, ja aria-controls
+    osoittaa juuri siihen. Teema poistaa molemmat attribuutit vihjeensä
+    sulkeutuessa, myös sivun alussa, ja tooltips.js palauttaa ne: ne ovat
+    paikallaan sivun auettua ja vihjeen käytyä auki ja kiinni."""
+    page, errors = open_page(browser, base_url)
+    expected = {"haspopup": "dialog", "expanded": "false", "role": "dialog"}
+    assert popup(page, ".jyu-font__button") == expected
+    assert page.get_attribute(PANEL, "aria-label") == "Leipäteksti"
+    assert page.get_attribute(".jyu-font__list", "role") == "listbox"
+    page.hover(".jyu-font__button")
+    assert hints(page) == ["Leipäteksti: Serif, 100 %"]
+    page.mouse.move(10, 400)
+    assert hints(page) == []
+    assert popup(page, ".jyu-font__button") == expected
+    assert errors == []
+
+
 def test_a_choice_changes_the_font_and_is_remembered(browser, base_url):
     """Valinta vaihtaa artikkelin kirjasimen, päivittää painikkeen vihjeen ja
     tallentuu selaimeen. Paneeli pysyy auki, jotta kokoa voi säätää samalla.

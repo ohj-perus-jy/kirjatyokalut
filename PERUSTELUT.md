@@ -46,6 +46,11 @@ Kun Zensicalin versio vaihtuu, tarkista käsin:
 - `search.css` käyttää teeman minifioituja luokkanimiä, ja `tooltips.js`
   jäljittelee teeman vihjettä. Muutokset tulevat esiin testeissä
   `test_search.py` ja `test_tooltips.py`.
+- Teeman vihje poistaa ankkuriltaan `aria-controls`in ja `aria-haspopup`in
+  sulkeutuessaan, myös sivun alussa, ja `tooltips.js` palauttaa mallin arvot
+  valikkojen painikkeisiin. Jos teema korjaa tämän, palautus jää tarpeettomaksi
+  mutta harmittomaksi; testit `test_fontmenu.py` ja `test_sitemenu.py`
+  (`tells_it_opens`).
 - `layout.css` kumoaa `!important`illa inline-tyylit, jotka Zensicalin
   skripti kirjoittaa sivupalkille, ja kopioi teeman hiusviivojen geometrian.
   Jos valikko tai viivat hajoavat, katso tämä tiedosto ensimmäisenä.

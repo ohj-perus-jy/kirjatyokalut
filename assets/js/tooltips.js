@@ -51,6 +51,27 @@
   const THEME = "[data-md-component=header] [title],"
     + " [data-md-component=content] [title]:not([data-preview])";
 
+  /* Teeman vihje voi olla myös dialogi (navigation.instant.preview), jolloin
+   * teema kirjoittaa ankkuriin aria-controlsin ja aria-haspopupin. Vihjeen
+   * sulkeutuessa, myös sivun alussa, se poistaa ne erottelematta omiaan
+   * mallin omista, joten valikkojen painikkeet (header.html: aria-controls,
+   * aria-haspopup) jäisivät ilman. Mallin arvot otetaan talteen ennen teeman
+   * käynnistymistä (tämä skripti ajetaan ennen DOMContentLoadedia) ja
+   * palautetaan aina, kun teema on poistanut ne (restore). */
+  const POPUP = ["aria-controls", "aria-haspopup"];
+  const popups = new WeakMap();
+  const keep = (element) => {
+    const saved = POPUP.filter((name) => element.hasAttribute(name))
+      .map((name) => [name, element.getAttribute(name)]);
+    if (saved.length) popups.set(element, saved);
+  };
+  const restore = (element) => {
+    for (const [name, value] of popups.get(element) ?? []) {
+      if (!element.hasAttribute(name)) element.setAttribute(name, value);
+    }
+  };
+  document.querySelectorAll(THEME).forEach(keep);
+
   /* Teeman ottamien elementtien vihjeteksti ja ne, joille tämä antoi
    * aria-labelin tai aria-descriptionin titlestä. */
   const texts = new WeakMap();
@@ -256,6 +277,7 @@
     for (const element of document.querySelectorAll(THEME)) {
       taken.add(element);
       stash(element);
+      restore(element);
     }
     palette();
     const consider = (button) => {
@@ -273,6 +295,7 @@
           const target = record.target;
           if (taken.has(target)) {
             if (record.attributeName === "title") stash(target);
+            else if (POPUP.includes(record.attributeName)) restore(target);
             else fill(target);
           } else if (record.attributeName === "title" && target.hasAttribute("title")) {
             consider(target);
@@ -286,7 +309,8 @@
         }
       }
     }).observe(document.body, {
-      childList: true, subtree: true, attributeFilter: ["title", "aria-describedby"],
+      childList: true, subtree: true,
+      attributeFilter: ["title", "aria-describedby", ...POPUP],
     });
   };
   if (document.readyState === "loading") {

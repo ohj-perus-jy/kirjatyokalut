@@ -48,6 +48,36 @@ def test_the_menu_lists_this_site_and_jypeli(browser, base_url):
     assert errors == []
 
 
+def popup(page) -> dict:
+    """Painikkeen ponnahdusattribuutit ja listan roolit."""
+    return page.evaluate(
+        """(() => { const b = document.querySelector('.jyu-sites__button');
+            const target = document.getElementById(b.getAttribute('aria-controls'));
+            return { haspopup: b.getAttribute('aria-haspopup'),
+                     expanded: b.getAttribute('aria-expanded'),
+                     role: target && target.getAttribute('role'),
+                     items: target && [...target.querySelectorAll('li, a')]
+                         .map(e => e.getAttribute('role')) } })()""")
+
+
+def test_the_button_tells_it_opens_a_menu(browser, base_url):
+    """Ruudunlukija kertoo, että painike avaa valikon, vasta aria-haspopupista.
+    Lista on ARIA:n valikkopainike (menu/menuitem) kuten kirjasinvalikon
+    paneeli on dialogi: yläpalkin painikkeet kertovat ponnahduksensa samalla
+    tavalla. Teema poistaa aria-haspopupin ja aria-controlsin vihjeensä
+    sulkeutuessa, myös sivun alussa, ja tooltips.js palauttaa ne."""
+    page, errors = open_page(browser, base_url)
+    expected = {"haspopup": "true", "expanded": "false", "role": "menu",
+                "items": ["none", "menuitem", "none", "menuitem"]}
+    assert popup(page) == expected
+    page.hover(".jyu-sites__button")
+    assert hints(page) == ["Vaihda sivustoa"]
+    page.mouse.move(10, 400)
+    assert hints(page) == []
+    assert popup(page) == expected
+    assert errors == []
+
+
 def test_the_button_opens_and_an_outside_click_closes(browser, base_url):
     page, errors = open_page(browser, base_url)
     page.click(".jyu-sites__button")
