@@ -49,7 +49,7 @@
   --jyu-footer-bg: #e3e6ec;
 }
 
-/* Tumman teeman pohja teeman 5 %:sta 11 %:n kirkkauteen ja sinertävämmäksi,
+/* Tumman teeman pohja teeman 5 %:sta 10,5 %:n kirkkauteen ja sinertävämmäksi,
  * jotta kisko (8 %) mahtuu sen alle ja sisältöalue on sivun vaalein pinta
  * koodilohkoa (code.css: 18 %) lukuun ottamatta. Teeman --light, --lighter
  * ja --lightest ovat saman värin läpinäkyviä asteita (yläpalkin sumennettu
@@ -59,10 +59,10 @@
   --jyu-rule: hsla(var(--md-hue), 15%, 90%, 0.2);
   --jyu-rail-bg: hsla(var(--md-hue), 20%, 8%, 1);
   --jyu-footer-bg: hsla(var(--md-hue), 20%, 15%, 1);
-  --md-default-bg-color: hsla(var(--md-hue), 20%, 11%, 1);
-  --md-default-bg-color--light: hsla(var(--md-hue), 20%, 11%, 0.54);
-  --md-default-bg-color--lighter: hsla(var(--md-hue), 20%, 11%, 0.26);
-  --md-default-bg-color--lightest: hsla(var(--md-hue), 20%, 11%, 0.07);
+  --md-default-bg-color: hsla(var(--md-hue), 20%, 10.5%, 1);
+  --md-default-bg-color--light: hsla(var(--md-hue), 20%, 10.5%, 0.54);
+  --md-default-bg-color--lighter: hsla(var(--md-hue), 20%, 10.5%, 0.26);
+  --md-default-bg-color--lightest: hsla(var(--md-hue), 20%, 10.5%, 0.07);
 }
 
 /* Sama tausta kapean näytön valikkolaatikolle. Teeman sääntö on
