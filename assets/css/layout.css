@@ -42,6 +42,11 @@
    * viileä harmaa, tummassa sivua tummempi. Kokeiltu 2026-10-11 muiden
    * palettien rinnalla; tämä oli ainoa muutos, joka jäi. */
   --jyu-rail-bg: #f4f5f7;
+
+  /* Alatunnisteen kaista: teeman --md-default-fg-color--lightest on
+   * vaaleassa lähes sama harmaa kuin levyn ulkopuolinen reuna, jolloin
+   * raja ei erotu. Sama viileä sävy kuin reunalla, mutta tummempana. */
+  --jyu-footer-bg: #e3e6ec;
 }
 
 /* Tumman teeman pohja teeman 5 %:sta 11 %:n kirkkauteen ja sinertävämmäksi,
@@ -53,6 +58,7 @@
   --jyu-rail-scrollbar: color-mix(in srgb, var(--md-accent-fg-color) 80%, black);
   --jyu-rule: hsla(var(--md-hue), 15%, 90%, 0.2);
   --jyu-rail-bg: hsla(var(--md-hue), 20%, 8%, 1);
+  --jyu-footer-bg: hsla(var(--md-hue), 20%, 15%, 1);
   --md-default-bg-color: hsla(var(--md-hue), 20%, 11%, 1);
   --md-default-bg-color--light: hsla(var(--md-hue), 20%, 11%, 0.54);
   --md-default-bg-color--lighter: hsla(var(--md-hue), 20%, 11%, 0.26);
@@ -66,9 +72,16 @@
   background-color: var(--jyu-rail-bg);
 }
 
+.md-footer-meta {
+  background-color: var(--jyu-footer-bg);
+}
+
 /* Kirjakuvake teeman linkkivärillä (vaaleassa indigo, tummassa sen
- * vaalennus), ei tekstin värillä: yläpalkin ainoa värillinen merkki. */
-.md-header__button.md-logo {
+ * vaalennus), ei tekstin värillä: yläpalkin ainoa värillinen merkki. Sama
+ * kapean näytön valikkolaatikon otsikkoriville, jossa teema näyttää
+ * kuvakkeen yläpalkin sijaan. */
+.md-header__button.md-logo,
+.md-nav__button.md-logo {
   color: var(--md-typeset-a-color);
 }
 
