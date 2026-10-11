@@ -44,10 +44,26 @@
   --jyu-rail-bg: #f4f5f7;
 }
 
+/* Tumman teeman pohja teeman 5 %:sta 11 %:n kirkkauteen ja sinertävämmäksi,
+ * jotta kisko (8 %) mahtuu sen alle ja sisältöalue on sivun vaalein pinta
+ * koodilohkoa (code.css: 18 %) lukuun ottamatta. Teeman --light, --lighter
+ * ja --lightest ovat saman värin läpinäkyviä asteita (yläpalkin sumennettu
+ * tausta, alatunniste), joten ne siirretään mukana. */
 [data-md-color-scheme="slate"] {
   --jyu-rail-scrollbar: color-mix(in srgb, var(--md-accent-fg-color) 80%, black);
   --jyu-rule: hsla(var(--md-hue), 15%, 90%, 0.2);
   --jyu-rail-bg: hsla(var(--md-hue), 20%, 8%, 1);
+  --md-default-bg-color: hsla(var(--md-hue), 20%, 11%, 1);
+  --md-default-bg-color--light: hsla(var(--md-hue), 20%, 11%, 0.54);
+  --md-default-bg-color--lighter: hsla(var(--md-hue), 20%, 11%, 0.26);
+  --md-default-bg-color--lightest: hsla(var(--md-hue), 20%, 11%, 0.07);
+}
+
+/* Sama tausta kapean näytön valikkolaatikolle. Teeman sääntö on
+ * max-width-lohkossa samalla tarkkuudella, joten myöhemmin ladattu voittaa;
+ * leveällä näytöllä kiskon oma sääntö (alempana) asettaa saman arvon. */
+.md-sidebar--primary {
+  background-color: var(--jyu-rail-bg);
 }
 
 /* Teeman omat hiusviivat samaan sävyyn; yläpalkin alareuna on se viiva, jonka
