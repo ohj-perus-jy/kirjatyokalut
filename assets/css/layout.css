@@ -452,10 +452,9 @@
 
   .md-header::before {
     position: absolute;
-    /* Koko levyn leveydeltä, myös kiskon päällä: yläpalkki on yksi
-     * yhtenäinen kaista, jonka alta kisko alkaa. Ulkopuolinen reuna
-     * (--jyu-side) jää bodyn kiskonväriseksi. */
-    inset: 0 var(--jyu-side) 0 var(--jyu-side);
+    /* Ikkunan reunasta reunaan, myös kiskon ja levyn ulkopuolisen reunan
+     * päällä: yläpalkki on yksi yhtenäinen kaista, jonka alta kisko alkaa. */
+    inset: 0;
     z-index: -1;
     background-color: var(--md-default-bg-color--light);
     backdrop-filter: blur(0.4rem);
