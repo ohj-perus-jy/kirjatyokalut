@@ -36,11 +36,18 @@
    * täyttöjen (alatunnisteen palkki, valikon hover) väri. Käytössä myös
    * tasks.css:ssä ja print.css:ssä. */
   --jyu-rule: #00000033;
+
+  /* Kiskon tausta: hieman sivun pohjasta poikkeava pinta, jotta valikko
+   * erottuu sisältöalueesta pintana eikä vain reunaviivalla. Vaaleassa
+   * viileä harmaa, tummassa sivua tummempi. Kokeiltu 2026-10-11 muiden
+   * palettien rinnalla; tämä oli ainoa muutos, joka jäi. */
+  --jyu-rail-bg: #f4f5f7;
 }
 
 [data-md-color-scheme="slate"] {
   --jyu-rail-scrollbar: color-mix(in srgb, var(--md-accent-fg-color) 80%, black);
   --jyu-rule: hsla(var(--md-hue), 15%, 90%, 0.2);
+  --jyu-rail-bg: hsla(var(--md-hue), 20%, 8%, 1);
 }
 
 /* Teeman omat hiusviivat samaan sävyyn; yläpalkin alareuna on se viiva, jonka
@@ -258,7 +265,7 @@
     width: var(--jyu-rail);
     height: 100vh;
     padding: 2.4rem 0 0;
-    background-color: var(--md-default-bg-color);
+    background-color: var(--jyu-rail-bg);
     border-right: 1px solid var(--jyu-rule);
     z-index: 3;
   }
