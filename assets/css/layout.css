@@ -66,6 +66,12 @@
   background-color: var(--jyu-rail-bg);
 }
 
+/* Kirjakuvake teeman linkkivärillä (vaaleassa indigo, tummassa sen
+ * vaalennus), ei tekstin värillä: yläpalkin ainoa värillinen merkki. */
+.md-header__button.md-logo {
+  color: var(--md-typeset-a-color);
+}
+
 /* Teeman omat hiusviivat samaan sävyyn; yläpalkin alareuna on se viiva, jonka
  * jatkoksi kiskon reuna ja valikon erotin on tehty. Geometria on kopio teeman
  * säännöstä, koska pelkkää väriä ei voi vaihtaa erikseen: jos teema muuttaa
@@ -377,6 +383,23 @@
   .md-main {
     padding-right: var(--jyu-side);
     padding-left: calc(var(--jyu-side) + var(--jyu-rail) + var(--jyu-gap));
+    /* Sivun pohja vain kiskon ja ruudukon alueelle: ulkopuolelle jäävä
+     * reuna (--jyu-side kummallakin puolella) on kiskon värinen, jolloin
+     * kisko ja sisältö ovat yksi levy sen päällä. Liukuväri terävin
+     * rajoin eikä background-size/position, koska niissä --jyu-siden 50 %
+     * laskettaisiin eri mitasta (alue miinus kuva); liukuvärin pysäytys-
+     * prosentit ovat elementin leveydestä kuten täytteenkin. Kisko peittää
+     * oman osuutensa, rako kiskon ja ruudukon välissä jää sivun väriseksi. */
+    background-image: linear-gradient(
+      to right,
+      var(--jyu-rail-bg) var(--jyu-side),
+      var(--md-default-bg-color) var(--jyu-side) calc(100% - var(--jyu-side)),
+      var(--jyu-rail-bg) calc(100% - var(--jyu-side))
+    );
+  }
+
+  body {
+    background-color: var(--jyu-rail-bg);
   }
 
   .md-footer {
@@ -429,7 +452,10 @@
 
   .md-header::before {
     position: absolute;
-    inset: 0 0 0 calc(var(--jyu-side) + var(--jyu-rail));
+    /* Koko levyn leveydeltä, myös kiskon päällä: yläpalkki on yksi
+     * yhtenäinen kaista, jonka alta kisko alkaa. Ulkopuolinen reuna
+     * (--jyu-side) jää bodyn kiskonväriseksi. */
+    inset: 0 var(--jyu-side) 0 var(--jyu-side);
     z-index: -1;
     background-color: var(--md-default-bg-color--light);
     backdrop-filter: blur(0.4rem);
