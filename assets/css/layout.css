@@ -36,11 +36,53 @@
    * täyttöjen (alatunnisteen palkki, valikon hover) väri. Käytössä myös
    * tasks.css:ssä ja print.css:ssä. */
   --jyu-rule: #00000033;
+
+  /* Kiskon tausta: hieman sivun pohjasta poikkeava pinta, jotta valikko
+   * erottuu sisältöalueesta pintana eikä vain reunaviivalla. Vaaleassa
+   * viileä harmaa, tummassa sivua tummempi. Kokeiltu 2026-10-11 muiden
+   * palettien rinnalla; tämä oli ainoa muutos, joka jäi. */
+  --jyu-rail-bg: #f4f5f7;
+
+  /* Alatunnisteen kaista: teeman --md-default-fg-color--lightest on
+   * vaaleassa lähes sama harmaa kuin levyn ulkopuolinen reuna, jolloin
+   * raja ei erotu. Sama viileä sävy kuin reunalla, mutta tummempana. */
+  --jyu-footer-bg: #e3e6ec;
 }
 
+/* Tumman teeman pohja teeman 5 %:sta 11 %:n kirkkauteen ja sinertävämmäksi,
+ * jotta kisko (8 %) mahtuu sen alle ja sisältöalue on sivun vaalein pinta
+ * koodilohkoa (code.css: 18 %) lukuun ottamatta. Teeman --light, --lighter
+ * ja --lightest ovat saman värin läpinäkyviä asteita (yläpalkin sumennettu
+ * tausta, alatunniste), joten ne siirretään mukana. */
 [data-md-color-scheme="slate"] {
   --jyu-rail-scrollbar: color-mix(in srgb, var(--md-accent-fg-color) 80%, black);
   --jyu-rule: hsla(var(--md-hue), 15%, 90%, 0.2);
+  --jyu-rail-bg: hsla(var(--md-hue), 20%, 8%, 1);
+  --jyu-footer-bg: hsla(var(--md-hue), 20%, 15%, 1);
+  --md-default-bg-color: hsla(var(--md-hue), 20%, 11%, 1);
+  --md-default-bg-color--light: hsla(var(--md-hue), 20%, 11%, 0.54);
+  --md-default-bg-color--lighter: hsla(var(--md-hue), 20%, 11%, 0.26);
+  --md-default-bg-color--lightest: hsla(var(--md-hue), 20%, 11%, 0.07);
+}
+
+/* Sama tausta kapean näytön valikkolaatikolle. Teeman sääntö on
+ * max-width-lohkossa samalla tarkkuudella, joten myöhemmin ladattu voittaa;
+ * leveällä näytöllä kiskon oma sääntö (alempana) asettaa saman arvon. */
+.md-sidebar--primary {
+  background-color: var(--jyu-rail-bg);
+}
+
+.md-footer-meta {
+  background-color: var(--jyu-footer-bg);
+}
+
+/* Kirjakuvake teeman linkkivärillä (vaaleassa indigo, tummassa sen
+ * vaalennus), ei tekstin värillä: yläpalkin ainoa värillinen merkki. Sama
+ * kapean näytön valikkolaatikon otsikkoriville, jossa teema näyttää
+ * kuvakkeen yläpalkin sijaan. */
+.md-header__button.md-logo,
+.md-nav__button.md-logo {
+  color: var(--md-typeset-a-color);
 }
 
 /* Teeman omat hiusviivat samaan sävyyn; yläpalkin alareuna on se viiva, jonka
@@ -258,7 +300,7 @@
     width: var(--jyu-rail);
     height: 100vh;
     padding: 2.4rem 0 0;
-    background-color: var(--md-default-bg-color);
+    background-color: var(--jyu-rail-bg);
     border-right: 1px solid var(--jyu-rule);
     z-index: 3;
   }
@@ -354,6 +396,23 @@
   .md-main {
     padding-right: var(--jyu-side);
     padding-left: calc(var(--jyu-side) + var(--jyu-rail) + var(--jyu-gap));
+    /* Sivun pohja vain kiskon ja ruudukon alueelle: ulkopuolelle jäävä
+     * reuna (--jyu-side kummallakin puolella) on kiskon värinen, jolloin
+     * kisko ja sisältö ovat yksi levy sen päällä. Liukuväri terävin
+     * rajoin eikä background-size/position, koska niissä --jyu-siden 50 %
+     * laskettaisiin eri mitasta (alue miinus kuva); liukuvärin pysäytys-
+     * prosentit ovat elementin leveydestä kuten täytteenkin. Kisko peittää
+     * oman osuutensa, rako kiskon ja ruudukon välissä jää sivun väriseksi. */
+    background-image: linear-gradient(
+      to right,
+      var(--jyu-rail-bg) var(--jyu-side),
+      var(--md-default-bg-color) var(--jyu-side) calc(100% - var(--jyu-side)),
+      var(--jyu-rail-bg) calc(100% - var(--jyu-side))
+    );
+  }
+
+  body {
+    background-color: var(--jyu-rail-bg);
   }
 
   .md-footer {
@@ -406,7 +465,9 @@
 
   .md-header::before {
     position: absolute;
-    inset: 0 0 0 calc(var(--jyu-side) + var(--jyu-rail));
+    /* Ikkunan reunasta reunaan, myös kiskon ja levyn ulkopuolisen reunan
+     * päällä: yläpalkki on yksi yhtenäinen kaista, jonka alta kisko alkaa. */
+    inset: 0;
     z-index: -1;
     background-color: var(--md-default-bg-color--light);
     backdrop-filter: blur(0.4rem);
