@@ -86,7 +86,9 @@ Sivusto:
   teemanvaihtimella on vihje myös näppäimistöllä (10-02).
 - Alatunnisteeseen sivun muutoshistoria (09-23).
 - Valikko kiskona 1180 px:stä alkaen, 11" iPad vaakatasossa (09-24);
-  leveällä näytöllä keskitettynä tekstin kanssa (10-02).
+  leveällä näytöllä keskitettynä tekstin kanssa (10-02). Kisko ja
+  sisällysluettelo samaa pintaa, teksti levynä niiden välissä hiusviivoin
+  rajattuna, ja alatunniste tekstipalstan levyinen (10-11, 10-12).
 - Hakukentän paikkamerkki "Hae" (09-25). Haku yläpalkissa pelkkänä
   kuvakkeena, nimi ja Ctrl+K / ⌘K vihjeessä, ja kuvakkeet järjestykseen
   haku, kirjasin, teema, tulostus (10-12). Otsikon ¶-linkin vihje suomeksi

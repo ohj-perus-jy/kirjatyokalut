@@ -28,6 +28,12 @@
    * levyisestä isännästä, kummastakin ilman vierityspalkkia. */
   --jyu-side: max(0px, 50% - (var(--jyu-rail) + var(--jyu-gap) + 61rem) / 2);
 
+  /* Sisällysluettelon sarakkeen leveys: kopio teeman .md-sidebar-leveydestä
+   * (12.1rem), koska levyn oikea reuna ja alatunnisteen leveys lasketaan
+   * siitä. Jos teema muuttaa mittaa, tämä on päivitettävä käsin. Nolla, kun
+   * sivu piilottaa luettelon (hide: toc, esim. tulosta.md), ks. alempana. */
+  --jyu-toc: 12.1rem;
+
   /* Kiskon vierityspalkin väri hiiren ollessa valikon päällä, ks. alempana. */
   --jyu-rail-scrollbar: color-mix(in srgb, var(--md-accent-fg-color) 80%, white);
 
@@ -410,14 +416,18 @@
    *    päälle --jyu-gap, jotta vasen rako on yhtä leveä kuin oikea.
    *    Leveällä näytöllä --jyu-side kummallekin puolelle, jolloin
    *    ruudukolle jää tasan sen oma leveys ja se asettuu kiskon viereen.
-   *    Alatunnisteelle marginaalina, jotta sen yläreunan viiva ja sävytetty
-   *    kaista päättyvät samaan kohtaan eivätkä jatku ikkunan reunaan. */
+   *    Alatunniste on vain tekstipalstan levyinen: oikealla marginaaliin
+   *    tulee myös sisällysluettelon sarake, jolloin nuolirivi ja sävytetty
+   *    kaista päättyvät levyn reunaan eivätkä jatku luettelon alle, ja
+   *    oikea reuna jatkaa levyn hiusviivaa (.md-content yllä). Teeman
+   *    .md-grid (61rem) kutistuu itsestään marginaalien väliin. */
   .md-main {
     padding-right: var(--jyu-side);
     padding-left: calc(var(--jyu-side) + var(--jyu-rail) + var(--jyu-gap));
-    /* Sivun pohja vain kiskon ja ruudukon alueelle: ulkopuolelle jäävä
-     * reuna (--jyu-side kummallakin puolella) on kiskon värinen, jolloin
-     * kisko ja sisältö ovat yksi levy sen päällä. Liukuväri terävin
+    /* Sivun pohja vain kiskon ja tekstipalstan alueelle: levy päättyy
+     * sisällysluettelon sarakkeen vasempaan reunaan, ja luettelo sekä
+     * siitä oikealle jäävä reuna ovat kiskon väriset kuten levyn
+     * ulkopuolinen reuna vasemmallakin (--jyu-side). Liukuväri terävin
      * rajoin eikä background-size/position, koska niissä --jyu-siden 50 %
      * laskettaisiin eri mitasta (alue miinus kuva); liukuvärin pysäytys-
      * prosentit ovat elementin leveydestä kuten täytteenkin. Kisko peittää
@@ -425,9 +435,42 @@
     background-image: linear-gradient(
       to right,
       var(--jyu-rail-bg) var(--jyu-side),
-      var(--md-default-bg-color) var(--jyu-side) calc(100% - var(--jyu-side)),
-      var(--jyu-rail-bg) calc(100% - var(--jyu-side))
+      var(--md-default-bg-color) var(--jyu-side)
+        calc(100% - var(--jyu-side) - var(--jyu-toc)),
+      var(--jyu-rail-bg) calc(100% - var(--jyu-side) - var(--jyu-toc))
     );
+  }
+
+  /* Levyn oikea reuna: sama hiusviiva kuin kiskon oikea reuna, tekstipalstan
+   * ja sisällysluettelon väliin. Tekstipalstan (.md-content) sisäreunaan
+   * upotettuna varjona, joka ei vie palstasta pikseliäkään toisin kuin
+   * reunaviiva. Ei liukuvärin raitana, koska selain pyöristää laatikon
+   * pikseliin mutta ei liukuvärin pysäytystä: puolen pikselin kohdalla raita
+   * levenisi kahdeksi haaleaksi. Ei myöskään asemoituna pseudoelementtinä:
+   * position pääsisällön esivanhemmalla muuttaisi otsikoiden offsetTopin,
+   * josta teema laskee sisällysluettelon korostuksen. Luettelon sarakkeeseen
+   * ei voi piirtää, koska teema pitää sen nollan korkuisena (sticky).
+   * Palsta venytetään ruudukon yläreunan marginaalin (1.5rem) yli, jotta
+   * viiva alkaa yläpalkista kuten kiskon reuna; täyte palauttaa tekstin
+   * paikalleen. Alatunniste jatkaa viivaa omana reunanaan (alempana). */
+  .md-content {
+    margin-top: -1.5rem;
+    padding-top: 1.5rem;
+    box-shadow: inset -1px 0 0 var(--jyu-rule);
+  }
+
+  /* Sisällysluettelon sticky-otsikko peittää alleen vierivät kohdat teeman
+   * sivun pohjavärillä, joka olisi nyt vaalea laatikko kiskon värisellä
+   * sarakkeella. */
+  .md-sidebar--secondary .md-nav__title {
+    background-color: var(--jyu-rail-bg);
+  }
+
+  /* Kun sivu piilottaa sisällysluettelon (hide: toc), levy ja alatunniste
+   * ulottuvat ruudukon oikeaan reunaan. .md-container, jotta sama arvo
+   * pätee sekä pääsisältöön että sen sisareen alatunnisteeseen. */
+  .md-container:has(.md-sidebar--secondary[hidden]) {
+    --jyu-toc: 0px;
   }
 
   body {
@@ -435,8 +478,10 @@
   }
 
   .md-footer {
-    margin-inline: var(--jyu-side);
+    margin-right: calc(var(--jyu-side) + var(--jyu-toc));
+    margin-left: var(--jyu-side);
     padding-left: calc(var(--jyu-rail) + var(--jyu-gap));
+    border-right: 1px solid var(--jyu-rule);
   }
 
   /* Alatunnisteen sävytetty kaista (.md-footer-meta) silti kiinni kiskoon:

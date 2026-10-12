@@ -107,7 +107,11 @@ EDGES = """() => {
         controls: box('.jyu-print-button').right
             + parseFloat(getComputedStyle(document.querySelector('.jyu-print-button')).marginRight)
             - box('.md-sidebar--secondary .md-nav__list').right,
-        footer: [box('.md-footer').left - rail.left, box('.md-footer').right - grid.right],
+        toc: box('.md-sidebar--secondary').left - grid.right,
+        footer: [box('.md-footer').left - rail.left,
+                 box('.md-footer').right - box('.md-sidebar--secondary').left],
+        toc_left: box('.md-sidebar--secondary').left, rail_right: rail.right,
+        header_bottom: box('.md-header').bottom,
     }
 }"""
 
@@ -117,9 +121,10 @@ def test_wide_screen_centres_the_rail_with_the_text(browser, chapter_url, width,
     """Kun kisko, rako ja ruudukko (61rem) mahtuvat ja tilaa jää yli, ne
     keskitetään yhdessä: tyhjä tila jakautuu tasan kiskon vasemmalle ja
     sisällysluettelon oikealle puolelle eikä jää valikon ja tekstin väliin.
-    Logo ja yläpalkin painikkeet siirtyvät mukana, ja alatunniste päättyy
-    ruudukon reunaan.
-    Kapeammalla kisko on reunassa kuten ennen."""
+    Logo ja yläpalkin painikkeet siirtyvät mukana. Levy (sivun pohja, sen
+    oikean reunan hiusviiva ja alatunniste) päättyy sisällysluettelon
+    sarakkeen reunaan, ja luettelo on kiskon värinen. Kapeammalla kisko on
+    reunassa kuten ennen."""
     context = browser.new_context(viewport={"width": width, "height": 700})
     page = context.new_page()
     page.goto(chapter_url, wait_until="load")
@@ -129,10 +134,25 @@ def test_wide_screen_centres_the_rail_with_the_text(browser, chapter_url, width,
         assert edges["left"] == pytest.approx(edges["right"], abs=1)
         assert edges["gap"] == pytest.approx(0.8, abs=0.01)
         assert edges["controls"] == pytest.approx(0, abs=1)
-        assert edges["footer"] == pytest.approx([0, 0], abs=1)
     else:
         assert edges["left"] == 0
     assert 0 < edges["logo"] < 30
+    assert edges["toc"] < -200
+    assert edges["footer"] == pytest.approx([0, 0], abs=1)
+    # Pinnat kuvasta: yhden pikselin kaappaukset ovat tavuittain samat, kun
+    # väri on sama. Kisko ja luettelon sarake ovat samaa pintaa, kiskon ja
+    # ruudukon rako ja tekstipalstan oikea marginaali levyä, ja niiden
+    # välissä on levyn reunan hiusviiva. y on heti yläpalkin alla, jossa
+    # viivan on jo alettava eikä vielä ole tekstiä.
+    y = edges["header_bottom"] + 4
+    pixel = lambda x: page.screenshot(clip={"x": x, "y": y, "width": 1, "height": 1})
+    rail, toc = pixel(edges["left"] + 5), pixel(edges["toc_left"] + 3)
+    gap, margin, rule = (pixel(edges["rail_right"] + 4), pixel(edges["toc_left"] - 8),
+                         pixel(edges["toc_left"] - 1))
+    assert rail == toc
+    assert gap == margin
+    assert rail != gap
+    assert rule not in (rail, gap)
     context.close()
 
 
