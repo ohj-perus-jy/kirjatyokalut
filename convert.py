@@ -3262,9 +3262,14 @@ def main(strict: bool = False) -> int:
     # silent_steps kertoo, tarvitaanko varastoa vaiheittaisille ohjeille.
     no_store = clips is None and bool(SPEECH_PAGES or silent_steps)
     if no_store:
+        # Varaston repo kloonataan; puhe vain, jos repoa ei ole: se tekee
+        # puuttuvat leikkeet Azurella, ja se maksaa.
+        store = repo_relative(SPEECH_STORE)
+        fix = (f"kloonaa se: git clone --depth 1 {SPEECH_REPO} {store}" if SPEECH_REPO
+               else "kirja.toml:ssa ei ole [puhe] repo -osoitetta, leikkeet tekee"
+                    " ./run.sh puhe (Azure, maksullinen)")
         print(f"{'virhe' if strict else 'varoitus'}: äänivarasto puuttuu"
-              f" ({repo_relative(SPEECH_STORE)}), sivut ovat äänettömiä;"
-              " aja ./run.sh puhe", file=sys.stderr)
+              f" ({store}), sivut ovat äänettömiä; {fix}", file=sys.stderr)
     else:
         if silent:
             names = ", ".join(sorted(silent)[:5]) + (", ..." if len(silent) > 5 else "")

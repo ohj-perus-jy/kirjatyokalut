@@ -211,6 +211,22 @@ def test_strict_build_fails_without_the_store(tmp_path):
     result = build()
     assert result.returncode == 1
     assert "virhe: äänivarasto puuttuu" in result.stderr
+    assert "./run.sh puhe" in result.stderr
+
+
+def test_missing_store_is_cloned_not_synthesized(tmp_path):
+    """Kun varaston repo on tiedossa, varoitus neuvoo kloonaamaan sen eikä
+    tekemään leikkeitä uudelleen Azurella."""
+    zensical = copy_book(tmp_path)
+    shutil.rmtree(zensical / "puhe")
+    config = zensical / "kirja.toml"
+    config.write_text(config.read_text(encoding="utf-8")
+                      + 'repo = "https://example.com/koekirja-puhe.git"\n', encoding="utf-8")
+    result = subprocess.run([sys.executable, "tyokalut/convert.py"],
+                            cwd=zensical, capture_output=True, text=True)
+    assert result.returncode == 0
+    assert "git clone --depth 1 https://example.com/koekirja-puhe.git" in result.stderr
+    assert "./run.sh puhe" not in result.stderr
 
 
 # --- Merkit eivät muuta sivua ----------------------------------------------------
