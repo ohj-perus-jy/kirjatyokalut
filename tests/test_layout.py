@@ -103,7 +103,10 @@ EDGES = """() => {
         left: rail.left, right: right - grid.right,
         gap: (grid.left - rail.right) / rem,
         logo: box('.md-header__button.md-logo').left - rail.left,
-        search: box('.md-search').right - box('.md-sidebar--secondary .md-nav__list').right,
+        // Yläpalkin viimeinen painike marginaaleineen.
+        controls: box('.jyu-print-button').right
+            + parseFloat(getComputedStyle(document.querySelector('.jyu-print-button')).marginRight)
+            - box('.md-sidebar--secondary .md-nav__list').right,
         footer: [box('.md-footer').left - rail.left, box('.md-footer').right - grid.right],
     }
 }"""
@@ -114,7 +117,8 @@ def test_wide_screen_centres_the_rail_with_the_text(browser, chapter_url, width,
     """Kun kisko, rako ja ruudukko (61rem) mahtuvat ja tilaa jää yli, ne
     keskitetään yhdessä: tyhjä tila jakautuu tasan kiskon vasemmalle ja
     sisällysluettelon oikealle puolelle eikä jää valikon ja tekstin väliin.
-    Logo ja haku siirtyvät mukana, ja alatunniste päättyy ruudukon reunaan.
+    Logo ja yläpalkin painikkeet siirtyvät mukana, ja alatunniste päättyy
+    ruudukon reunaan.
     Kapeammalla kisko on reunassa kuten ennen."""
     context = browser.new_context(viewport={"width": width, "height": 700})
     page = context.new_page()
@@ -124,7 +128,7 @@ def test_wide_screen_centres_the_rail_with_the_text(browser, chapter_url, width,
         assert edges["left"] > 50
         assert edges["left"] == pytest.approx(edges["right"], abs=1)
         assert edges["gap"] == pytest.approx(0.8, abs=0.01)
-        assert edges["search"] == pytest.approx(0, abs=1)
+        assert edges["controls"] == pytest.approx(0, abs=1)
         assert edges["footer"] == pytest.approx([0, 0], abs=1)
     else:
         assert edges["left"] == 0

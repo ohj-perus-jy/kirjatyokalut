@@ -468,8 +468,9 @@ def test_the_hint_names_the_new_choice(browser, base_url):
     page.keyboard.press("Shift+Tab")
     assert active(page) == "jyu-font-button"
     assert hints(page) == ["Leipäteksti: Atkinson, 100 %"]
+    # Seuraava painike (teemanvaihdin) näyttää oman vihjeensä.
     page.keyboard.press("Tab")
-    assert hints(page) == []
+    assert not [hint for hint in hints(page) if hint.startswith("Leipäteksti")]
     assert not title(page)
     assert label(page) == "Leipäteksti: Atkinson, 100 %"
     assert errors == []

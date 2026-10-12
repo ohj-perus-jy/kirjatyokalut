@@ -87,7 +87,9 @@ Sivusto:
 - Alatunnisteeseen sivun muutoshistoria (09-23).
 - Valikko kiskona 1180 px:stä alkaen, 11" iPad vaakatasossa (09-24);
   leveällä näytöllä keskitettynä tekstin kanssa (10-02).
-- Hakukentän paikkamerkki "Hae" (09-25). Otsikon ¶-linkin vihje suomeksi
+- Hakukentän paikkamerkki "Hae" (09-25). Haku yläpalkissa pelkkänä
+  kuvakkeena, nimi ja Ctrl+K / ⌘K vihjeessä, ja kuvakkeet järjestykseen
+  haku, kirjasin, teema, tulostus (10-12). Otsikon ¶-linkin vihje suomeksi
   (`permalink_title`, 10-04); siksi pohjassa on Zensicalin koko
   `markdown_extensions`-oletuslista.
 - Sisällysluettelo: kapealla näytöllä sulkeutuu napautuksesta, seuraa

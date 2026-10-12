@@ -2,10 +2,11 @@
  * Merkkaus: overrides/partials/header.html, toiminta: assets/js/fontmenu.js,
  * kirjasimet ja koko: typography.css.
  *
- * Painike lainaa hakupalkin ulkoasun (korkeus, pyöristys, tausta), jotta
- * vierekkäiset hallinnat näyttävät samalta sarjalta. Siinä on vain kuvake ja
- * nuoli; nykyiset valinnat näkyvät title-vihjeenä, paneelin kokorivillä ja
- * listan valintamerkkinä. Lista on oma elementtinsä eikä <select>, koska
+ * Painike lainaa teeman hakukentän ulkoasun (korkeus, pyöristys, tausta),
+ * vaikka haku on yläpalkissa pelkkä kuvake (layout.css): täyttö kokoaa
+ * kuvakkeen ja nuolen yhdeksi painikkeeksi. Siinä on vain kuvake ja nuoli;
+ * nykyiset valinnat näkyvät title-vihjeenä, paneelin kokorivillä ja listan
+ * valintamerkkinä. Lista on oma elementtinsä eikä <select>, koska
  * kohtien pitää näkyä omalla kirjasimellaan. */
 
 .jyu-font {
@@ -17,7 +18,7 @@
   align-items: center;
   gap: 0.15rem;
   height: 1.6rem;
-  margin: 0.2rem 0.4rem 0.2rem 0.2rem; /* oikealla väli hakupalkkiin */
+  margin: 0.2rem;
   padding: 0 0.35rem 0 0.5rem;
   font: inherit;
   color: var(--md-default-fg-color);
@@ -29,7 +30,7 @@
 
 /* Sama hover-täyttö kuin sivustovalikossa (sitemenu.css). Täyttö vaihtuu
  * kerralla: läpikuultavan taustan häivytys yläpalkin sumennuksen päällä
- * välkkyi osalla näytönohjaimista. Sama haussa (layout.css). */
+ * välkkyi osalla näytönohjaimista. */
 .jyu-font__button:hover,
 .jyu-font__button:focus-visible,
 .jyu-font__button[aria-expanded="true"] {
@@ -71,7 +72,7 @@
 .jyu-font__panel {
   position: absolute;
   top: 100%;
-  right: 0.4rem; /* painikkeen oikea marginaali */
+  right: 0.2rem; /* painikkeen oikea marginaali */
   z-index: 5;
   min-width: 13rem;
   margin: 0.1rem 0 0;

@@ -1,4 +1,4 @@
-"""Hakuikkuna koekirjalla, selaimessa.
+"""Hakuikkuna ja yläpalkin hakupainike koekirjalla, selaimessa.
 
 Zensicalin hakuikkuna on shadow DOM:issa, johon sivun CSS ei ulotu, joten
 assets/js/search.js liittää assets/css/search.css:n sinne itse. Tarkistetaan
@@ -128,6 +128,40 @@ def test_the_field_placeholder_is_finnish(browser, base_url):
     assert page.evaluate(placeholder) == "Hae"
     assert errors == []
     page.close()
+
+
+@pytest.mark.parametrize("platform, shortcut",
+                         [("Linux x86_64", "Ctrl+K"), ("MacIntel", "⌘K")])
+def test_the_header_button_is_an_icon_with_a_tooltip(browser, base_url, platform, shortcut):
+    """Yläpalkissa haku on pelkkä suurennuslasi tulostuspainikkeen kokoisena,
+    ilman teeman kentän täyttöä, nimeä ja Ctrl+K:ta. Nimi ja pikanäppäin ovat
+    teeman vihjeessä, Macissa ⌘K kuten teeman kentässä, ja nimi jää napin
+    tekstiksi. Kuvakkeet ovat järjestyksessä haku, kirjasin, teema ja
+    tulostus."""
+    context = browser.new_context(viewport={"width": 1600, "height": 900})
+    context.add_init_script(
+        "Object.defineProperty(Navigator.prototype, 'platform',"
+        f" {{get: () => '{platform}'}})")
+    page = context.new_page()
+    page.goto(base_url, wait_until="load")
+    button = page.evaluate("""() => {
+        const b = document.querySelector('.md-search__button'), style = getComputedStyle(b)
+        return {fill: style.backgroundColor, fontSize: style.fontSize,
+                text: b.textContent.trim(), after: getComputedStyle(b, '::after').display}
+    }""")
+    assert button == {"fill": "rgba(0, 0, 0, 0)", "fontSize": "0px", "text": "Haku",
+                      "after": "none"}
+    boxes = [page.locator(selector).bounding_box() for selector in (
+        ".md-search__button", ".jyu-font__button",
+        "[data-md-component=palette] label:not([hidden])", ".jyu-print-button")]
+    search, print_ = boxes[0], boxes[-1]
+    assert (search["width"], search["height"]) == (print_["width"], print_["height"])
+    assert [box["x"] for box in boxes] == sorted(box["x"] for box in boxes)
+
+    page.hover(".md-search__button")
+    page.wait_for_selector(".md-tooltip2--active")
+    assert page.text_content(".md-tooltip2--active").strip() == f"Haku ({shortcut})"
+    context.close()
 
 
 def test_the_rules_do_not_leak_into_the_page(browser, base_url):

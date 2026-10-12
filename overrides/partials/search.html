@@ -1,0 +1,17 @@
+{#-
+  Kopio teeman partials/search.html:stä (zensical 0.0.68), johon on lisätty
+  title. Yläpalkissa haku on pelkkä suurennuslasi kuten viereiset kuvakkeet
+  (layout.css), joten nimi ja pikanäppäin näkyvät teeman vihjeessä. Merkkaus
+  on muuten teeman: bundle.js kuuntelee napin klikkausta, ja search.js sulkee
+  ikkunan sitä klikkaamalla.
+-#}
+<div class="md-search" data-md-component="search" role="dialog" aria-label="{{ lang.t('search') }}">
+  <button type="button" class="md-search__button" title="{{ lang.t('search') }} (Ctrl+K)">
+    {{ lang.t('search') }}
+  </button>
+</div>
+{#- Macissa ⌘K samalla ehdolla kuin teeman kentässä ([data-platform^=Mac]);
+    teema asettaa attribuutin jo <head>issa (partials/javascripts/base.html).
+    Heti napin jälkeen, koska teema ja tooltips.js ottavat titlen talteen
+    käynnistyessään. -#}
+<script>if(/^Mac/.test(document.documentElement.dataset.platform))document.querySelectorAll(".md-search__button").forEach(b=>b.title=b.title.replace("Ctrl+K","⌘K"))</script>

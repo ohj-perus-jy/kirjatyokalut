@@ -155,17 +155,36 @@
   outline-color: var(--md-accent-fg-color);
 }
 
-/* Hakupainikkeen hover samalla täytöllä kuin sivusto- ja kirjasinvalikon
- * (sitemenu.css, fontmenu.css); teeman --md-default-fg-color--lighter on
- * liian tumma. Teeman 0,4 s:n häivytys pois kuten niissäkin (syy
- * fontmenu.css:ssä). */
-.md-search__button {
-  transition: none;
+/* Hakupainike pelkkänä suurennuslasina kuten viereiset kuvakkeet, ilman
+ * teeman kenttää: nimi ja Ctrl+K ovat vihjeessä (overrides/partials/
+ * search.html). Mitat ja hover teeman .md-header__buttonista: 1 rem kuvake,
+ * 0,4 rem täyte, 0,2 rem marginaali ja himmennys. Nimi jää napin tekstiksi
+ * ruudunlukijalle, font-size: 0 vain piilottaa sen. Alle 60 em:n teema
+ * näyttää napin sijaan oman kuvakkeensa (header.html: label).
+ * .md-search-etuliite ohittaa teeman [dir]- ja :focus-säännöt. */
+.md-search .md-search__button {
+  width: 1.8rem;
+  height: 1.8rem;
+  margin: 0 0.2rem;
+  padding: 0;
+  font-size: 0;
+  background-color: transparent;
+  outline-color: var(--md-accent-fg-color);
+  transition: opacity 0.25s;
 }
 
-.md-search__button:focus,
-.md-search__button:hover {
-  background-color: var(--jyu-rule);
+.md-search .md-search__button:hover {
+  opacity: 0.7;
+}
+
+/* Kuvake keskelle; teema asemoi sen kentän vasempaan reunaan. */
+.md-search .md-search__button::before {
+  inset: 0;
+  margin: auto;
+}
+
+.md-search .md-search__button::after {
+  display: none;
 }
 
 /* Kun teema on vaihtanut nimen tilalle sivun otsikon, läpinäkyvä nimi olisi
@@ -431,8 +450,9 @@
 
   /* 3. Yläpalkin rivi reunasta reunaan, jotta logo ja kurssin nimi
    *    asettuvat kiskon päälle. Leveällä näytöllä rivi siirtyy kiskon
-   *    mukana: vasemmalla teeman 0,4rem kiskon reunasta, ja oikealla haku
-   *    päättyy sisällysluettelon tekstin kohdalle (sen 0,6rem:n sisennys).
+   *    mukana: vasemmalla teeman 0,4rem kiskon reunasta, ja oikealla
+   *    viimeinen painike (tulostus) marginaaleineen päättyy
+   *    sisällysluettelon tekstin kohdalle (sen 0,6rem:n sisennys).
    *    max() pitää kapeammalla 1,2rem:n välin vierityspalkkiin. */
   .md-header__inner {
     max-width: none;
