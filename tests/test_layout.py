@@ -4,6 +4,8 @@ Asettelu näkyy vasta selaimessa, ja teeman JavaScript mittaa sen, joten sivu
 avataan oikeasti. Matala ikkuna, jotta luvun otsikon voi vierittää yläreunaan.
 """
 
+import base64
+
 import pytest
 
 TOC = ".md-sidebar--secondary"
@@ -108,9 +110,13 @@ EDGES = """() => {
             + parseFloat(getComputedStyle(document.querySelector('.jyu-print-button')).marginRight)
             - box('.md-sidebar--secondary .md-nav__list').right,
         toc: box('.md-sidebar--secondary').left - grid.right,
-        footer: [box('.md-footer').left - rail.left,
+        // Alatunniste alkaa kiskon reunaviivan (0,9 px) jälkeen ja päättyy
+        // levyn reunaan, joka on luettelon sarakkeen reunassa 4 px:n
+        // ruudukkoon pyöristettynä.
+        footer: [box('.md-footer').left - rail.right,
                  box('.md-footer').right - box('.md-sidebar--secondary').left],
         toc_left: box('.md-sidebar--secondary').left, rail_right: rail.right,
+        levy_right: box('.md-footer').right,
         header_bottom: box('.md-header').bottom,
     }
 }"""
@@ -131,28 +137,122 @@ def test_wide_screen_centres_the_rail_with_the_text(browser, chapter_url, width,
     edges = page.evaluate(EDGES)
     if centred:
         assert edges["left"] > 50
-        assert edges["left"] == pytest.approx(edges["right"], abs=1)
+        # Oikealle jää lisäksi reunojen pyöristyksen jäännös (alle 4 px).
+        assert edges["left"] == pytest.approx(edges["right"], abs=4)
         assert edges["gap"] == pytest.approx(0.8, abs=0.01)
         assert edges["controls"] == pytest.approx(0, abs=1)
     else:
         assert edges["left"] == 0
     assert 0 < edges["logo"] < 30
     assert edges["toc"] < -200
-    assert edges["footer"] == pytest.approx([0, 0], abs=1)
-    # Pinnat kuvasta: yhden pikselin kaappaukset ovat tavuittain samat, kun
-    # väri on sama. Kisko ja luettelon sarake ovat samaa pintaa, kiskon ja
+    assert edges["footer"][0] == pytest.approx(0.9, abs=0.05)
+    assert edges["footer"][1] == pytest.approx(0, abs=2)
+    # Pinnat kuvasta. Kisko ja luettelon sarake ovat samaa pintaa, kiskon ja
     # ruudukon rako ja tekstipalstan oikea marginaali levyä, ja niiden
-    # välissä on levyn reunan hiusviiva. y on heti yläpalkin alla, jossa
-    # viivan on jo alettava eikä vielä ole tekstiä.
+    # välissä ovat reunaviivat: kiskon reuna raon ensimmäinen pikseli, levyn
+    # reuna luettelon sarakkeen ensimmäinen. Viivat ovat läpinäkymättömät,
+    # joten ne ovat samat vaikka alusta on eri. y on heti yläpalkin alla,
+    # jossa viivan on jo alettava eikä vielä ole tekstiä.
     y = edges["header_bottom"] + 4
-    pixel = lambda x: page.screenshot(clip={"x": x, "y": y, "width": 1, "height": 1})
-    rail, toc = pixel(edges["left"] + 5), pixel(edges["toc_left"] + 3)
-    gap, margin, rule = (pixel(edges["rail_right"] + 4), pixel(edges["toc_left"] - 8),
-                         pixel(edges["toc_left"] - 1))
-    assert rail == toc
-    assert gap == margin
-    assert rail != gap
-    assert rule not in (rail, gap)
+    rail, toc = pixel(page, edges["left"] + 5, y), pixel(page, edges["levy_right"] + 4, y)
+    gap, margin = pixel(page, edges["rail_right"] + 4, y), pixel(page, edges["levy_right"] - 8, y)
+    left_rule, right_rule = pixel(page, edges["rail_right"], y), pixel(page, edges["levy_right"], y)
+    assert same(rail, toc)
+    assert same(gap, margin)
+    assert not same(rail, gap)
+    assert not same(left_rule, rail) and not same(left_rule, gap)
+    assert same(right_rule, left_rule)
+    # Yläpalkin alareunan viiva on sama väri koko matkalta, myös kiskon
+    # päällä ja pystyviivojen kohdalla: risteys ei ole tummempi tai
+    # vaaleampi kuin viivat (läpikuultava viiva toisen päällä olisi).
+    top = edges["header_bottom"] - 1
+    for x in (edges["left"] + 5, edges["rail_right"], edges["rail_right"] + 4,
+              edges["levy_right"], edges["levy_right"] + 4):
+        assert same(pixel(page, x, top), left_rule), x
+    # Alatunnisteen reuna jatkaa samaa viivaa samalla värillä. Kisko on
+    # kiinteä ja koko korkuinen, joten sen reuna on vertailukohta sielläkin.
+    page.evaluate("document.querySelector('.md-footer').scrollIntoView()")
+    footer_y = page.evaluate(
+        "document.querySelector('.md-footer-meta').getBoundingClientRect().top + 4")
+    assert same(pixel(page, edges["levy_right"], footer_y), pixel(page, edges["rail_right"], footer_y))
+    context.close()
+
+
+# Yhden rivin pikselit kaappauksesta (r, g, b) -listana. PNG puretaan
+# selaimessa canvasiin, koska testeillä ei ole kuvakirjastoa.
+DECODE_ROW = """async src => {
+    const img = new Image()
+    img.src = "data:image/png;base64," + src
+    await img.decode()
+    const canvas = document.createElement("canvas")
+    canvas.width = img.width; canvas.height = img.height
+    const context = canvas.getContext("2d")
+    context.drawImage(img, 0, 0)
+    const data = context.getImageData(0, 0, img.width, 1).data
+    return Array.from({length: img.width}, (_, i) => [data[i * 4], data[i * 4 + 1], data[i * 4 + 2]])
+}"""
+
+
+def row(page, x, y, width):
+    """Pikselirivi (x, y):stä width:n verran oikealle, laitepikseleinä."""
+    shot = page.screenshot(clip={"x": x, "y": y, "width": width, "height": 1})
+    return [tuple(p) for p in page.evaluate(DECODE_ROW, base64.b64encode(shot).decode())]
+
+
+def pixel(page, x, y):
+    return row(page, x, y, 1)[0]
+
+
+def same(a, b):
+    """Sama väri. Liukuvärin rasterointi vaihtelee ±1 kanavaa kohti
+    (sekoitus eli dithering), joten tasavertailu ei kelpaa."""
+    return all(abs(p - q) <= 1 for p, q in zip(a, b))
+
+
+@pytest.mark.parametrize("scale, pixels", [(1, 1), (1.25, 1), (1.5, 1), (1.75, 2), (2, 2)])
+@pytest.mark.parametrize("width", [1280, 1600, 1920, 2800])
+def test_edges_are_whole_device_pixels_at_any_scaling(browser, chapter_url, width,
+                                                      scale, pixels):
+    """Kiskon ja levyn reunan viivat ovat teräviä ja yhtä leveitä myös
+    murtoskaalauksilla (Windowsin 125–175 %): jokainen pikseli on joko viivan
+    tai pinnan värinen, ei haalea välimuoto, ja viiva on kokonaisia
+    laitepikseleitä: 0,9 px:n raita on 100–150 %:lla yksi laitepikseli ja
+    175 %:sta ylöspäin kaksi (ks. --jyu-hair). Reunaviivana tai varjona 1px
+    pehmenisi kahdeksi haaleaksi."""
+    context = browser.new_context(viewport={"width": width, "height": 700},
+                                  device_scale_factor=scale)
+    page = context.new_page()
+    page.goto(chapter_url, wait_until="load")
+    edges = page.evaluate(EDGES)
+    y = edges["header_bottom"] + 4
+    for x in (edges["rail_right"], edges["levy_right"]):
+        strip = row(page, x - 4, y, 8)
+        left, right = strip[0], strip[-1]
+        line = [i for i, p in enumerate(strip) if not same(p, left) and not same(p, right)]
+        assert len(line) == pixels, strip
+        assert line == list(range(line[0], line[0] + pixels)), strip
+        assert all(same(strip[i], strip[line[0]]) for i in line), strip
+    context.close()
+
+
+def test_edge_reaches_the_footer_on_a_short_page(browser, book, serve):
+    """Levyn oikean reunan viiva ulottuu alatunnisteeseen asti, vaikka
+    tekstiä on vain muutama rivi: levy ja viivat ovat pääsisällön ja
+    alatunnisteen yhteisen isännän tausta, eivät tekstipalstan."""
+    context = browser.new_context(viewport={"width": 1280, "height": 1400})
+    page = context.new_page()
+    page.goto(f"{serve(book.site)}/osa1/", wait_until="load")
+    edges = page.evaluate("""() => {
+        const box = s => document.querySelector(s).getBoundingClientRect()
+        return {rail_right: box('.md-sidebar--primary').right, levy_right: box('.md-footer').right,
+                header_bottom: box('.md-header').bottom, footer_top: box('.md-footer').top}
+    }""")
+    assert edges["footer_top"] > 1000
+    top, bottom = edges["header_bottom"] + 4, edges["footer_top"] - 3
+    line = pixel(page, edges["rail_right"], top)
+    assert same(pixel(page, edges["levy_right"], bottom), line)
+    assert same(pixel(page, edges["rail_right"], bottom), line)
+    assert same(pixel(page, edges["levy_right"], top), line)
     context.close()
 
 

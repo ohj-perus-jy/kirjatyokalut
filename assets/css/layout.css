@@ -34,6 +34,11 @@
    * sivu piilottaa luettelon (hide: toc, esim. tulosta.md), ks. alempana. */
   --jyu-toc: 12.1rem;
 
+  /* Levyn oikea reuna: sisällysluettelon sarakkeen vasen reuna, mitattuna
+   * sivun levyisen isännän vasemmasta reunasta (100 % = isännän leveys).
+   * Tästä lasketaan levyn liukuväri ja alatunnisteen oikea marginaali. */
+  --jyu-levy-right: calc(100% - var(--jyu-side) - var(--jyu-toc));
+
   /* Kiskon vierityspalkin väri hiiren ollessa valikon päällä, ks. alempana. */
   --jyu-rail-scrollbar: color-mix(in srgb, var(--md-accent-fg-color) 80%, white);
 
@@ -42,6 +47,25 @@
    * täyttöjen (alatunnisteen palkki, valikon hover) väri. Käytössä myös
    * tasks.css:ssä ja print.css:ssä. */
   --jyu-rule: #00000033;
+
+  /* Levyn reunat (kiskon oikea reuna, tekstipalstan ja alatunnisteen oikea
+   * reuna) ovat läpinäkymättömät: sama sävy kuin --jyu-rule kiskon taustan
+   * päällä (20 % mustaa), mutta alustasta riippumaton. Kiskon reuna
+   * piirretään kiskon ulkopuolelle levyn päälle ja palstan reuna luettelon
+   * sarakkeeseen kiskon värin päälle; läpikuultavana ne olisivat eri
+   * sävyiset. Pidettävä --jyu-rulen ja --jyu-rail-bg:n mukana. */
+  --jyu-edge: color-mix(in srgb, #f4f5f7, #000 20%);
+
+  /* Reunaviivojen paksuus. Viivat ovat liukuväriraitoja (ks. .md-container
+   * alempana) ja niiden sijainnit pyöristetään 4 px:n ruudukkoon, jotta
+   * raita alkaa kokonaisesta laitepikselistä Windowsin skaalauksilla
+   * 125, 150, 175 ja 200 % (4 px on niillä 5, 6, 7 ja 8 laitepikseliä).
+   * Raita kattaa ne pikselit, joiden keskipiste on sen sisällä: 0,9 px on
+   * 100–150 %:lla 0,9–1,35 laitepikseliä eli yksi pikseli ja 175–200 %:lla
+   * 1,575–1,8 eli kaksi, eikä koskaan kaksi haaleaa. Ei tasan 1px, koska
+   * 150 %:lla raja osuisi tasan toisen pikselin keskipisteeseen ja Chrome
+   * lukisi sen mukaan tai ei pyöristysvirheen mukaan. */
+  --jyu-hair: 0.9px;
 
   /* Kiskon tausta: hieman sivun pohjasta poikkeava pinta, jotta valikko
    * erottuu sisältöalueesta pintana eikä vain reunaviivalla. Vaaleassa
@@ -55,6 +79,23 @@
   --jyu-footer-bg: #e3e6ec;
 }
 
+/* Kiskon leveys sekä kiskon ja levyn reunan sijainnit 4 px:n ruudukkoon
+ * (ks. --jyu-hair), alaspäin, jotta kisko ei levene eikä levy ulotu
+ * luettelon alle. Keskitys siirtyy enintään 4 px ja tekstipalsta on
+ * 61rem ± muutaman pikselin, mitä ei huomaa. round() on Chromessa
+ * 125:stä, Firefoxissa 118:sta ja Safarissa 15.4:stä; vanhemmissa
+ * selaimissa sijainnit jäävät pyöristämättä ja viivat voivat olla kahden
+ * pikselin levyiset. Prosentti pyöristyksen sisällä ratkeaa vasta
+ * käyttöpaikassa, joten sama muuttuja antaa saman tuloksen .md-containerin
+ * taustassa, pääsisällön täytteessä ja alatunnisteen marginaalissa. */
+@supports (width: round(50% + 1px, 4px)) {
+  :root {
+    --jyu-rail: round(down, clamp(15rem, 100vw - 62rem - var(--jyu-gap), 16rem), 4px);
+    --jyu-side: round(down, max(0px, 50% - (var(--jyu-rail) + var(--jyu-gap) + 61rem) / 2), 4px);
+    --jyu-levy-right: round(down, 100% - var(--jyu-side) - var(--jyu-toc), 4px);
+  }
+}
+
 /* Tumman teeman pohja teeman 5 %:sta 10,5 %:n kirkkauteen ja sinertävämmäksi,
  * jotta kisko (8 %) mahtuu sen alle ja sisältöalue on sivun vaalein pinta
  * koodilohkoa (code.css: 18 %) lukuun ottamatta. Teeman --light, --lighter
@@ -64,6 +105,7 @@
   --jyu-rail-scrollbar: color-mix(in srgb, var(--md-accent-fg-color) 80%, black);
   --jyu-rule: hsla(var(--md-hue), 15%, 90%, 0.2);
   --jyu-rail-bg: hsla(var(--md-hue), 20%, 8%, 1);
+  --jyu-edge: color-mix(in srgb, var(--jyu-rail-bg), hsl(var(--md-hue), 15%, 90%) 20%);
   --jyu-footer-bg: hsla(var(--md-hue), 20%, 15%, 1);
   --md-default-bg-color: hsla(var(--md-hue), 20%, 10.5%, 1);
   --md-default-bg-color--light: hsla(var(--md-hue), 20%, 10.5%, 0.54);
@@ -312,7 +354,7 @@
 
 @media screen and (min-width: 73.75em) {
 
-  /* 1. Kisko: kiinteä, koko korkeus, oma tausta ja erotinviiva; leveällä
+  /* 1. Kisko: kiinteä, koko korkeus ja oma tausta; leveällä
    *    näytöllä irti reunasta (--jyu-side). Yläosaan jää yläpalkin
    *    korkeuden verran tilaa kurssin nimelle. !important, koska
    *    Zensicalin JavaScript kirjoittaa sivupalkille inline-tyylit (top ja
@@ -326,7 +368,8 @@
     height: 100vh;
     padding: 2.4rem 0 0;
     background-color: var(--jyu-rail-bg);
-    border-right: 1px solid var(--jyu-rule);
+    /* Ei reunaviivaa: kiskon reuna on .md-containerin taustan raita heti
+     * kiskon oikealla puolella (ks. alempana). */
     z-index: 3;
   }
 
@@ -418,45 +461,52 @@
    *    ruudukolle jää tasan sen oma leveys ja se asettuu kiskon viereen.
    *    Alatunniste on vain tekstipalstan levyinen: oikealla marginaaliin
    *    tulee myös sisällysluettelon sarake, jolloin nuolirivi ja sävytetty
-   *    kaista päättyvät levyn reunaan eivätkä jatku luettelon alle, ja
-   *    oikea reuna jatkaa levyn hiusviivaa (.md-content yllä). Teeman
-   *    .md-grid (61rem) kutistuu itsestään marginaalien väliin. */
+   *    kaista päättyvät levyn reunaan eivätkä jatku luettelon alle.
+   *    Oikea täyte lasketaan levyn pyöristetystä reunasta (--jyu-levy-right)
+   *    eikä --jyu-sidesta, jotta luettelon sarake alkaa tasan reunaviivasta;
+   *    ilman pyöristystä mitat ovat samat. Ruudukko täyttää täytteiden
+   *    välin kokonaan (max-width pois), jotta se ei keskity pyöristyksen
+   *    jäännökseen ja siirrä rakoa kiskon ja tekstin välissä. */
   .md-main {
-    padding-right: var(--jyu-side);
+    padding-right: calc(100% - var(--jyu-levy-right) - var(--jyu-toc));
     padding-left: calc(var(--jyu-side) + var(--jyu-rail) + var(--jyu-gap));
-    /* Sivun pohja vain kiskon ja tekstipalstan alueelle: levy päättyy
-     * sisällysluettelon sarakkeen vasempaan reunaan, ja luettelo sekä
-     * siitä oikealle jäävä reuna ovat kiskon väriset kuten levyn
-     * ulkopuolinen reuna vasemmallakin (--jyu-side). Liukuväri terävin
-     * rajoin eikä background-size/position, koska niissä --jyu-siden 50 %
-     * laskettaisiin eri mitasta (alue miinus kuva); liukuvärin pysäytys-
-     * prosentit ovat elementin leveydestä kuten täytteenkin. Kisko peittää
-     * oman osuutensa, rako kiskon ja ruudukon välissä jää sivun väriseksi. */
-    background-image: linear-gradient(
-      to right,
-      var(--jyu-rail-bg) var(--jyu-side),
-      var(--md-default-bg-color) var(--jyu-side)
-        calc(100% - var(--jyu-side) - var(--jyu-toc)),
-      var(--jyu-rail-bg) calc(100% - var(--jyu-side) - var(--jyu-toc))
-    );
   }
 
-  /* Levyn oikea reuna: sama hiusviiva kuin kiskon oikea reuna, tekstipalstan
-   * ja sisällysluettelon väliin. Tekstipalstan (.md-content) sisäreunaan
-   * upotettuna varjona, joka ei vie palstasta pikseliäkään toisin kuin
-   * reunaviiva. Ei liukuvärin raitana, koska selain pyöristää laatikon
-   * pikseliin mutta ei liukuvärin pysäytystä: puolen pikselin kohdalla raita
-   * levenisi kahdeksi haaleaksi. Ei myöskään asemoituna pseudoelementtinä:
-   * position pääsisällön esivanhemmalla muuttaisi otsikoiden offsetTopin,
-   * josta teema laskee sisällysluettelon korostuksen. Luettelon sarakkeeseen
-   * ei voi piirtää, koska teema pitää sen nollan korkuisena (sticky).
-   * Palsta venytetään ruudukon yläreunan marginaalin (1.5rem) yli, jotta
-   * viiva alkaa yläpalkista kuten kiskon reuna; täyte palauttaa tekstin
-   * paikalleen. Alatunniste jatkaa viivaa omana reunanaan (alempana). */
-  .md-content {
-    margin-top: -1.5rem;
-    padding-top: 1.5rem;
-    box-shadow: inset -1px 0 0 var(--jyu-rule);
+  .md-main__inner {
+    max-width: none;
+  }
+
+  /* Sivun pohja (levy) ja sen reunaviivat yhtenä liukuvärinä pääsisällön
+   * ja alatunnisteen yhteisellä isännällä, jotta levy ja viivat jatkuvat
+   * yläpalkista alatunnisteen pohjaan myös lyhyellä sivulla: pääsisältö
+   * venyy ikkunan korkuiseksi, mutta sen tekstipalsta ei. Levy on kiskon
+   * ja tekstipalstan alueella; luettelon sarake ja levyn ulkopuolinen
+   * reuna (--jyu-side) ovat kiskon väriset. Kisko (kiinteä) peittää oman
+   * osuutensa. Viivat ovat raidat heti kiskon oikealla puolella ja levyn
+   * oikeassa reunassa, luettelon sarakkeen ensimmäisessä pikselissä.
+   *
+   * Raita eikä reunaviiva tai varjo, koska Chrome pehmentää laatikon
+   * reunan ja varjon reunan (antialiasointi): murtoskaalauksella (125 %)
+   * 1 px:n viiva on 1,25 laitepikseliä ja piirtyy yhdeksi täydeksi ja
+   * yhdeksi haaleaksi pikseliksi, murtosijainnissa kahdeksi haaleaksi.
+   * Liukuvärin terävä raja sen sijaan näytteistetään pikselin keskeltä:
+   * jokainen pikseli on joko viivan tai pinnan värinen. Sijainnit
+   * pyöristetään ruudukkoon (ks. --jyu-hair), jotta raitojen leveys on
+   * sama. Ei background-size/position, koska niissä --jyu-siden 50 %
+   * laskettaisiin eri mitasta (alue miinus kuva); pysäytysprosentit ovat
+   * elementin leveydestä kuten täytteenkin. Väri on läpinäkymätön
+   * --jyu-edge, koska vasen raita on levyn ja oikea kiskon värin päällä. */
+  .md-container {
+    background-image: linear-gradient(
+      to right,
+      var(--jyu-rail-bg) calc(var(--jyu-side) + var(--jyu-rail)),
+      var(--jyu-edge) calc(var(--jyu-side) + var(--jyu-rail))
+        calc(var(--jyu-side) + var(--jyu-rail) + var(--jyu-hair)),
+      var(--md-default-bg-color) calc(var(--jyu-side) + var(--jyu-rail) + var(--jyu-hair))
+        var(--jyu-levy-right),
+      var(--jyu-edge) var(--jyu-levy-right) calc(var(--jyu-levy-right) + var(--jyu-hair)),
+      var(--jyu-rail-bg) calc(var(--jyu-levy-right) + var(--jyu-hair))
+    );
   }
 
   /* Sisällysluettelon sticky-otsikko peittää alleen vierivät kohdat teeman
@@ -477,20 +527,25 @@
     background-color: var(--jyu-rail-bg);
   }
 
+  /* Marginaalit levyn reunaviivoista (samat pyöristetyt mitat kuin
+   * liukuvärissä), jotta alatunnisteen omat taustat päättyvät tasan
+   * viivoihin eivätkä peitä niitä tai jätä rakoa: vasemmalla kiskon ja
+   * sen reunaviivan jälkeen, oikealla levyn reunaviivaan. Kisko (kiinteä)
+   * peittäisi alatunnisteen alkupään muutenkin, mutta viiva on kiskon
+   * ulkopuolella ja jäisi alatunnisteen taustan alle. */
   .md-footer {
-    margin-right: calc(var(--jyu-side) + var(--jyu-toc));
-    margin-left: var(--jyu-side);
-    padding-left: calc(var(--jyu-rail) + var(--jyu-gap));
-    border-right: 1px solid var(--jyu-rule);
+    margin-right: calc(100% - var(--jyu-levy-right));
+    margin-left: calc(var(--jyu-side) + var(--jyu-rail) + var(--jyu-hair));
+    padding-left: calc(var(--jyu-gap) - var(--jyu-hair));
   }
 
-  /* Alatunnisteen sävytetty kaista (.md-footer-meta) silti kiinni kiskoon:
-   * yllä oleva täyte jättäisi kiskon ja kaistan väliin loven sivun taustaa.
-   * Negatiivinen marginaali vetää reunan kiskoon ja saman kokoinen täyte
-   * palauttaa sisällön paikalleen. */
+  /* Alatunnisteen sävytetty kaista (.md-footer-meta) silti kiinni kiskon
+   * reunaviivaan: yllä oleva täyte jättäisi viivan ja kaistan väliin loven
+   * sivun taustaa. Negatiivinen marginaali vetää reunan viivaan ja saman
+   * kokoinen täyte palauttaa sisällön paikalleen. */
   .md-footer-meta {
-    margin-left: calc(-1 * var(--jyu-gap));
-    padding-left: var(--jyu-gap);
+    margin-left: calc(var(--jyu-hair) - var(--jyu-gap));
+    padding-left: calc(var(--jyu-gap) - var(--jyu-hair));
   }
 
   /* 3. Yläpalkin rivi reunasta reunaan, jotta logo ja kurssin nimi
@@ -502,8 +557,24 @@
   .md-header__inner {
     max-width: none;
     margin: 0;
-    padding-right: max(1.2rem, var(--jyu-side) + 0.6rem);
+    padding-right: max(1.2rem, 100% - var(--jyu-levy-right) - var(--jyu-toc) + 0.6rem);
     padding-left: calc(var(--jyu-side) + 0.4rem);
+  }
+
+  /* Yläpalkin alareunan viiva samana läpinäkymättömänä raitana kuin levyn
+   * reunat, yläpalkin viimeiselle riville sen sumennetun taustan päälle.
+   * Teeman varjo (ks. .md-header--shadow ylempänä) piirtyisi läpikuultavana
+   * levyn ensimmäiselle riville pystyviivojen päälle, jolloin risteyskohta
+   * olisi tummempi (tummassa teemassa vaaleampi) kuin viivat; ja varjon
+   * reuna pehmenee murtoskaalauksella kuten reunaviivan (ks. .md-container).
+   * Yläpalkin korkeus (2.4rem = 48 px) on 4 px:n ruudukossa. */
+  .md-header--shadow {
+    box-shadow: none;
+  }
+
+  .md-header--shadow::before {
+    background-image: linear-gradient(
+      to top, var(--jyu-edge) var(--jyu-hair), transparent var(--jyu-hair));
   }
 
   /* Kiskon otsikko on kurssin nimi, ei sivun otsikko: Zensical vaihtaa ne
