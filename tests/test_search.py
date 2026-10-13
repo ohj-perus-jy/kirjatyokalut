@@ -36,7 +36,7 @@ def open_search(browser, url, query, viewport=(1600, 900)):
     # Ikkuna kohdistaa kentän vasta avauduttuaan; sitä ennen kirjoitus hukkuu.
     page.wait_for_function(f"{SHADOW}.activeElement?.tagName === 'INPUT'")
     page.keyboard.type(query)
-    page.wait_for_function(f"{SHADOW}.querySelectorAll('.b li').length > 0")
+    page.wait_for_function(f"{SHADOW}.querySelectorAll('.h li').length > 0")
     return page, errors
 
 
@@ -65,7 +65,7 @@ def test_the_stylesheet_is_attached_and_the_text_is_page_sized(browser, base_url
 
     assert font_size(page, ".x") >= body       # tuloksen otsikko
     assert font_size(page, ".s input") >= body  # hakukenttä
-    assert font_size(page, ".u") >= nav         # ote
+    assert font_size(page, ".p") >= nav         # ote
     assert font_size(page, ".n") >= 0.9 * nav   # polku
     assert errors == []
     page.close()
@@ -76,10 +76,10 @@ def test_the_filter_panel_and_its_button_are_gone(browser, base_url):
     suodatinpaneelia ei näy vaikka sen tila olisi avoin."""
     page, errors = open_search(browser, base_url, "maailma")
     buttons = page.evaluate(
-        f"[...{SHADOW}.querySelectorAll('.k button')]"
+        f"[...{SHADOW}.querySelectorAll('.w button')]"
         ".map(b => [b.className, b.getClientRects().length > 0])")
-    assert buttons == [["r", True], ["r", False], ["r jyu-close", True]]
-    assert not is_shown(page, ".a")
+    assert buttons == [["a", True], ["a", False], ["a jyu-close", True]]
+    assert not is_shown(page, ".t")
     assert errors == []
     page.close()
 
@@ -93,9 +93,9 @@ def test_the_close_button_closes_the_window(browser, base_url, viewport):
     page, errors = open_search(browser, base_url, "maailma", viewport)
     # Ikkuna aukeaa skaalaten (transition); mitat vasta sen päätyttyä.
     page.wait_for_function(
-        f"getComputedStyle({SHADOW}.querySelector('.l')).transform === 'none'")
+        f"getComputedStyle({SHADOW}.querySelector('.e')).transform === 'none'")
     window, button = page.evaluate(
-        f"['.l', '.jyu-close'].map(s => {SHADOW}.querySelector(s).getBoundingClientRect().toJSON())")
+        f"['.e', '.jyu-close'].map(s => {SHADOW}.querySelector(s).getBoundingClientRect().toJSON())")
     if viewport[0] <= 740:
         assert (window["width"], window["height"]) == viewport
     assert button["right"] > window["right"] - 20
@@ -103,12 +103,12 @@ def test_the_close_button_closes_the_window(browser, base_url, viewport):
     assert page.evaluate(f"{SHADOW}.querySelector('.jyu-close').ariaLabel") == "Sulje haku"
 
     page.evaluate(f"{SHADOW}.querySelector('.jyu-close').click()")
-    page.wait_for_function(f"{SHADOW}.querySelector('.l').classList.contains('d')")
+    page.wait_for_function(f"{SHADOW}.querySelector('.e').classList.contains('d')")
     page.wait_for_function(f"{SHADOW}.activeElement === null")
 
     page.click("label[for=__search]" if viewport[0] <= 740 else ".md-search__button")
     page.wait_for_function(f"{SHADOW}.activeElement?.tagName === 'INPUT'")
-    assert not page.evaluate(f"{SHADOW}.querySelector('.l').classList.contains('d')")
+    assert not page.evaluate(f"{SHADOW}.querySelector('.e').classList.contains('d')")
     assert page.evaluate(f"{SHADOW}.querySelectorAll('.jyu-close').length") == 1
     assert errors == []
     page.close()
@@ -182,7 +182,7 @@ def test_arrow_keys_leave_only_the_selected_result_highlighted(browser, base_url
     korostus hyppisi rivien mukana. Nuolinäppäin sammuttaa hiiren korostuksen,
     ja hiiren liike palauttaa sen."""
     page, errors = open_search(browser, base_url, "a")
-    results = f"[...{SHADOW}.querySelectorAll('.b .i')]"
+    results = f"[...{SHADOW}.querySelectorAll('.h .o')]"
     assert page.evaluate(f"{results}.length") >= 3
     highlighted = (
         f"{results}.map((a, i) => [i, getComputedStyle(a, '::before').opacity])"

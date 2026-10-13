@@ -13,8 +13,9 @@
  *
  * Ja sulkunappi (×) kenttärivin oikeaan päähän: puhelimella ikkuna täyttää
  * koko ruudun, eikä Escape-näppäintä tai napautettavaa taustaa ole. Zensicalin
- * oma sulkija on rivin ensimmäinen nappi, mutta sen kuvake on suurennuslasi,
- * josta sulkemista ei arvaa. */
+ * oma sulkija on rivin ensimmäinen nappi ("Close search"), mutta sen kuvake
+ * on suurennuslasi, josta sulkemista ei arvaa. Luokkanimet ovat Zensicalin
+ * minifioimia, ks. search.css. */
 
 (() => {
   "use strict";
@@ -48,7 +49,7 @@
     ' stroke-linecap="round" stroke-linejoin="round">' +
     '<path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
 
-  /* Nappi Zensicalin nappien luokkaa (.r, search.css), jotta se näyttää
+  /* Nappi Zensicalin nappien luokkaa (.a, search.css), jotta se näyttää
    * samalta. Sulkeminen klikkaa yläpalkin hakunappia, jonka klikkausta
    * Zensical kuuntelee ja joka avaa ja sulkee ikkunan vuorotellen: ikkunan
    * omaan koodiin ei tarvitse koskea. Kohdistus pois napista, koska suljettu
@@ -58,7 +59,7 @@
   const addCloseButton = (controls) => {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "r jyu-close";
+    button.className = "a jyu-close";
     button.setAttribute("aria-label", "Sulje haku");
     button.innerHTML = CLOSE_ICON;
     button.addEventListener("click", () => {
@@ -77,7 +78,7 @@
       const input = root.querySelector('input[placeholder="Search"]');
       if (!input) return false;
       input.placeholder = "Hae";
-      addCloseButton(input.closest(".k"));
+      addCloseButton(input.closest(".w"));
       return true;
     };
     if (ready()) return;

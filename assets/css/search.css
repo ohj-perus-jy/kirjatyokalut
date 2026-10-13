@@ -5,14 +5,15 @@
  * Metatiedot (määrä, polku) ovat valikon kokoluokkaa eivätkä kasva.
  * Ikkuna on shadow DOM:issa, johon assets/js/search.js liittää tämän
  * tiedoston; :host-etuliite pitää säännöt poissa sivulta. Luokkanimet ovat
- * Zensicalin 0.0.62 minifioimia (bundle.js: ht, st, Ta); tests/test_search.py
+ * Zensicalin 0.0.70 (UI 0.0.37) minifioimia (bundle.js); tests/test_search.py
  * kertoo, jos ne vaihtuvat.
- *   .e juuri  .l ikkuna  .k kenttärivi  .s kenttä  .a suodatinpaneeli
- *   .B tulosten määrä  .x otsikko  .u ote  .n polku  .E lisärivi
- *   .i tulos (linkki)  .h valittu tulos  .r nappi (kenttärivin ja oma
- *   sulkunappi .jyu-close, search.js) */
+ *   .r juuri (dialog)  .l tausta  .e ikkuna  .w kenttärivi  .s kenttä
+ *   .t suodatinpaneeli  .f tulosten määrä (role=status)  .h tuloslista
+ *   .o tulos (linkki)  .B valittu tulos  .x otsikko  .n polku  .p ote
+ *   .a nappi (kenttärivin ja oma sulkunappi .jyu-close, search.js)
+ * Lisää tuloksia latautuu listaa vieritettäessä; erillistä lisäriviä ei ole. */
 
-:host .e {
+:host .r {
   --space-1: 0.2rem; /* Zensical: 4 px */
   --font-size: calc(0.8rem * var(--jyu-text-base, 1));
 }
@@ -20,7 +21,7 @@
 /* 36 rem = Zensicalin 720 px perusmitassa (1 rem = 20 px). Kapealla näytöllä
  * Zensicalin oma koko ruudun sääntö (max-width: 740px). */
 @media (min-width: 741px) {
-  :host .l {
+  :host .e {
     width: 36rem;
   }
 }
@@ -30,33 +31,32 @@
   font-size: calc(0.8rem * var(--jyu-text-base, 1));
 }
 
-:host .u {
+:host .p {
   font-size: calc(0.7rem * var(--jyu-text-base, 1));
 }
 
-:host .B,
-:host .n,
-:host .E {
+:host .f,
+:host .n {
   font-size: 0.64rem;
 }
 
 :host .x code,
-:host .u code {
+:host .p code {
   font-size: 0.85em;
 }
 
 /* Suodatinpaneeli ("Filters / Tags") ja sen painike (kentän jälkeinen; rivin
  * viimeinen on oma sulkunappi) pois: materiaalissa ei ole tageja, joten
  * paneeli on aina tyhjä. */
-:host .a,
-:host .k > .s + button {
+:host .t,
+:host .w > .s + button {
   display: none;
 }
 
 /* Nuolinäppäimillä liikuttaessa vain valittu tulos on korostettu, ei hiiren
  * alla oleva (search.js asettaa attribuutin ja poistaa sen hiiren liikkuessa).
  * Arvot ovat Zensicalin korostamattoman tuloksen. */
-:host([data-jyu-keys]) .i:not(.h):hover::before {
+:host([data-jyu-keys]) .o:not(.B):hover::before {
   opacity: 0;
   transform: scale(0.9);
 }
