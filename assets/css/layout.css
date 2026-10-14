@@ -358,14 +358,25 @@
    *    näytöllä irti reunasta (--jyu-side). Yläosaan jää yläpalkin
    *    korkeuden verran tilaa kurssin nimelle. !important, koska
    *    Zensicalin JavaScript kirjoittaa sivupalkille inline-tyylit (top ja
-   *    vieritysalueen korkeus) olettaen sen olevan yläpalkin alla. */
+   *    vieritysalueen korkeus) olettaen sen olevan yläpalkin alla.
+   *    Korkeus tulee reunoista (top ja bottom), ei 100vh:sta: iOS Safarissa
+   *    vh on suuren näkymän korkeus eli työkalupalkki pienennettynä, joten
+   *    sivun ollessa ylhäällä 100vh-korkuisen kiskon alapää ja valikon
+   *    viimeiset kohdat jäisivät palkin alle (iPad vaakatasossa). Kiinteä
+   *    elementti, jolla on top ja bottom, seuraa näkyvää aluetta. height:
+   *    auto, koska teema antaa sivupalkille korkeuden 0 leveällä näytöllä.
+   *    align-self: auto, koska teeman flex-start mitoittaisi reunojen väliin
+   *    sijoitetun kiskon sisällön mukaan eikä venyttäisi sitä: sivupalkki on
+   *    flex-säiliön (.md-main__inner) lapsi, ja absoluuttisesti sijoitetun
+   *    lapsen koko reunojen välissä riippuu align-selfistä. */
   .md-sidebar--primary {
     position: fixed;
     top: 0 !important;
     bottom: 0;
     left: var(--jyu-side);
     width: var(--jyu-rail);
-    height: 100vh;
+    height: auto;
+    align-self: auto;
     padding: 2.4rem 0 0;
     background-color: var(--jyu-rail-bg);
     /* Ei reunaviivaa: kiskon reuna on .md-containerin taustan raita heti
@@ -373,8 +384,9 @@
     z-index: 3;
   }
 
+  /* Vieritysalue kiskon sisäkorkeuden (täytteen alapuolinen osa) korkuinen. */
   .md-sidebar--primary .md-sidebar__scrollwrap {
-    height: calc(100vh - 2.4rem) !important;
+    height: 100% !important;
     margin: 0;
     overflow-y: auto;
   }

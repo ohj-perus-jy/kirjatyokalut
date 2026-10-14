@@ -44,6 +44,26 @@ def test_contents_stays_put_when_scrolling(page):
     assert title.bounding_box()["y"] == pytest.approx(start, abs=1)
 
 
+def test_rail_is_sized_by_the_viewport_edges_not_vh(page):
+    """Kisko ja sen vieritysalue ulottuvat ikkunan alareunaan ilman vh-yksikköä.
+    iOS Safarissa 100vh on suuren näkymän korkeus (työkalupalkki pienennettynä),
+    joten sivun ollessa ylhäällä 100vh-korkuisen kiinteän kiskon alapää ja
+    valikon viimeiset kohdat jäävät työkalupalkin alle. Kiinteä elementti,
+    jolla on top ja bottom, seuraa näkyvää aluetta."""
+    rail, wrap = ".md-sidebar--primary", ".md-sidebar--primary .md-sidebar__scrollwrap"
+    vh_rules = page.evaluate("""() => [...document.styleSheets]
+        .flatMap(sheet => { try { return [...sheet.cssRules] } catch { return [] } })
+        .flatMap(rule => rule.cssRules ? [...rule.cssRules] : [rule])
+        .filter(rule => rule.selectorText?.includes(".md-sidebar--primary")
+                        && /vh/.test(rule.style?.height ?? ""))
+        .map(rule => `${rule.selectorText} { height: ${rule.style.height} }`)""")
+    assert vh_rules == []
+    height = page.evaluate("innerHeight")
+    for selector in (rail, wrap):
+        box = page.locator(selector).bounding_box()
+        assert box["y"] + box["height"] == pytest.approx(height, abs=1), selector
+
+
 # Luvun avausnuolen kulma asteina chevron-rightistä: 90 alas, -90 ylös, 0 oikealle.
 ARROW_ANGLE = """item => {
     const icon = item.querySelector(":scope > .md-nav__container .md-nav__icon")
