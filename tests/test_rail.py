@@ -129,6 +129,40 @@ def test_the_rest_of_the_page_stays_put(browser, base_url):
     assert errors == []
 
 
+# Pitkä kappale sivun alkuun, jotta teksti rivittyy eri korkuiseksi kiskon
+# paikalle levetessään: koekirjan omat kappaleet ovat lyhyitä.
+LONG_PARAGRAPH = """() => {
+    const p = document.createElement('p')
+    p.textContent = 'Pitkä kappale, joka rivittyy eri tavalla eri levyisellä palstalla. '.repeat(60)
+    document.querySelector('.md-content__inner h1').after(p)
+}"""
+
+
+@pytest.mark.parametrize("motion", [False, True])
+def test_the_reading_position_stays_when_the_rail_goes_and_comes(browser, base_url, motion):
+    """Kiskon piilotus leventää tekstipalstan, jolloin kohdan yläpuolinen
+    sisältö lyhenee; luettu kohta pysyy silti ruudulla paikallaan, myös
+    liu'un aikana ja kiskon palatessa."""
+    page, errors = open_page(browser, f"{base_url}/osa1/01-hei/", motion=motion)
+    page.evaluate(LONG_PARAGRAPH)
+    # Toinen väliotsikko keskelle ruutua: yläpuolella rivittyvä kappale ja
+    # alapuolella niin paljon sisältöä, ettei sivun loppu rajoita vieritystä.
+    heading = page.locator(".md-content__inner h2").nth(1)
+    heading.evaluate("h => h.scrollIntoView()")
+    page.evaluate("scrollBy(0, -200)")
+    page.wait_for_timeout(100)
+    top = heading.bounding_box()["y"]
+    assert page.evaluate("scrollY") > 0
+    assert page.evaluate("scrollY + innerHeight") < page.evaluate("document.body.scrollHeight") - 400
+    for _ in range(2):
+        page.click(BUTTON)
+        page.wait_for_timeout(50)
+        assert heading.bounding_box()["y"] == pytest.approx(top, abs=1)
+        page.wait_for_timeout(400)
+        assert heading.bounding_box()["y"] == pytest.approx(top, abs=1)
+    assert errors == []
+
+
 def test_the_change_fades_unless_motion_is_reduced(browser, base_url):
     """Kisko liukuu ruudun ulkopuolelle ja levyn reuna sen perässä kiskon
     paikalle (rekisteröidyt muuttujat bodyllä); vähemmän liikettä pyytävälle

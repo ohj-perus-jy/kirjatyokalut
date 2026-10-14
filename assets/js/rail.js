@@ -50,9 +50,58 @@
     wrap.scrollTop += box.top - area.top - (area.height - box.height) / 2;
   };
 
+  /* Luettu kohta pysyy paikallaan. Kiskon mukana tekstipalsta levenee tai
+   * kapenee, jolloin kohdan yläpuolinen sisältö rivittyy eri korkuiseksi,
+   * mutta vieritys (scrollY) ei muutu, ja kohta karkaisi ruudulta. Selaimen
+   * oma ankkurointi ei auta: Chrome keskeyttää sen, kun isännän täyte
+   * muuttuu, eikä Safari tee sitä lainkaan. Ankkuri on tekstipalstan
+   * ensimmäinen ruudulla alkava lohko (kappale, otsikko, koodilohko): sen
+   * yläreuna pidetään samassa kohdassa ruutua liu'un ajan (layout.css:
+   * 0,25 s), jonka aikana palsta levenee joka kehyksellä. Lohko, joka
+   * alkaa ruudun yläpuolelta, ei kelpaa, koska sen omat rivit rivittyvät;
+   * jos muuta ei ole (yksi pitkä lohko), sen yläreuna on silti parempi
+   * kuin ei mitään. Rivinsisäisestä osumasta (linkki, koodi) noustaan
+   * lohkoon, jonka rivit rivittyvät. */
+  const anchor = () => {
+    const content = document.querySelector(".md-content__inner");
+    if (!content || !scrollY) return null;
+    const column = content.getBoundingClientRect();
+    const x = column.left + column.width / 2;
+    const header = document.querySelector(".md-header")?.getBoundingClientRect().bottom ?? 0;
+    let fallback = null;
+    for (let y = header + 1; y < innerHeight; y += 8) {
+      let element = document.elementFromPoint(x, y);
+      if (!element || element === content || !content.contains(element)) continue;
+      while (element.parentElement !== content
+             && getComputedStyle(element).display.startsWith("inline")) {
+        element = element.parentElement;
+      }
+      const box = element.getBoundingClientRect();
+      if (box.top >= header) return { element, top: box.top };
+      fallback ??= { element, top: box.top };
+      y = Math.max(y, box.bottom);
+    }
+    return fallback;
+  };
+
+  const hold = (anchored) => {
+    if (!anchored) return;
+    const until = performance.now() + 400;
+    const step = () => {
+      const top = anchored.element.getBoundingClientRect().top;
+      if (Math.abs(top - anchored.top) >= 0.5) {
+        scrollTo({ top: scrollY + top - anchored.top, behavior: "instant" });
+      }
+      if (performance.now() < until) requestAnimationFrame(step);
+    };
+    step();
+  };
+
   const toggle = () => {
+    const anchored = anchor();
     if (isHidden()) root.removeAttribute("data-jyu-rail");
     else root.setAttribute("data-jyu-rail", "hidden");
+    hold(anchored);
     describe();
     if (!isHidden()) reveal();
     try {
