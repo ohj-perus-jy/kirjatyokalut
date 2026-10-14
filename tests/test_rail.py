@@ -6,6 +6,7 @@ assets/css/layout.css). Vain työpöydällä eli kiskon leveyksillä.
 """
 
 import pytest
+from test_layout import pixel, same
 
 KEY = "jyu-rail"
 BUTTON = ".jyu-rail-button"
@@ -24,9 +25,12 @@ def base_url(book, serve):
     return serve(book.site)
 
 
-def open_page(browser, url, viewport=DESKTOP, init_script=None):
-    """Avaa sivun omassa kontekstissa ja kerää skriptivirheet. -> (sivu, virheet)."""
-    context = browser.new_context(viewport=viewport)
+def open_page(browser, url, viewport=DESKTOP, init_script=None, motion=False):
+    """Avaa sivun omassa kontekstissa ja kerää skriptivirheet. -> (sivu, virheet).
+    Ilman liikettä, jotta mitat ovat lopulliset heti painalluksen jälkeen;
+    häivytys testataan erikseen (motion=True)."""
+    context = browser.new_context(viewport=viewport,
+                                  reduced_motion="no-preference" if motion else "reduce")
     page = context.new_page()
     errors = []
     page.on("pageerror", lambda error: errors.append(str(error)))
@@ -99,6 +103,34 @@ def test_the_rest_of_the_page_stays_put(browser, base_url):
         assert after[key] == before[key], key
     assert after["content_left"] == before["content_left"] - rail["width"]
     assert after["plate"] == pytest.approx(rail["x"] + 0.9, abs=0.05)
+    # Levyn vasemmalla puolella on sivun pohjaa ikkunan reunaan asti eikä
+    # kiskon reunaviivaa: kiskon paikka, sen entinen reuna ja levyn
+    # ulkopuolinen reuna ovat tekstipalstan väriset. y heti yläpalkin alla.
+    y = page.locator(".md-header").bounding_box()["height"] + 4
+    content = pixel(page, after["content_left"] + 4, y)
+    for x in (2, rail["x"] + 5, rail["x"] + rail["width"], rail["x"] + rail["width"] + 1):
+        assert same(pixel(page, x, y), content), x
+    assert errors == []
+
+
+def test_the_change_fades_unless_motion_is_reduced(browser, base_url):
+    """Kisko häipyy ja levyn reuna liukuu kiskon paikalle (rekisteröidyt
+    muuttujat bodyllä); vähemmän liikettä pyytävälle tila vaihtuu kerralla."""
+    page, errors = open_page(browser, base_url, motion=True)
+    page.click(BUTTON)
+    # Muut siirtymät (painikkeen hover, kiskon vierityspalkki) eivät kuulu tähän.
+    running = page.evaluate("""document.getAnimations().map(a =>
+        `${a.effect.target.localName}:${a.transitionProperty}`)""")
+    assert {"body:--jyu-levy-left", "body:--jyu-levy-edge", "body:--jyu-levy-hair",
+            "body:--jyu-left-bg", "div:opacity", "div:transform",
+            "div:visibility"} <= set(running)
+    page.wait_for_timeout(400)
+    assert page.is_hidden(RAIL)
+    assert errors == []
+
+    still, errors = open_page(browser, base_url)
+    still.click(BUTTON)
+    assert still.evaluate("document.getAnimations().length") == 0
     assert errors == []
 
 

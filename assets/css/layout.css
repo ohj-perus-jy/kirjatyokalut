@@ -28,11 +28,6 @@
    * levyisestä isännästä, kummastakin ilman vierityspalkkia. */
   --jyu-side: max(0px, 50% - (var(--jyu-rail) + var(--jyu-gap) + 61rem) / 2);
 
-  /* Levyn vasen reuna eli kiskon oikea reuna: siitä alkavat sisältö, levyn
-   * reunaviiva ja alatunniste. Piilotetulla valikolla (alempana) kiskon
-   * paikka: levy levenee kiskon päälle, eikä muu sivu liiku. */
-  --jyu-levy-left: calc(var(--jyu-side) + var(--jyu-rail));
-
   /* Sisällysluettelon sarakkeen leveys: kopio teeman .md-sidebar-leveydestä
    * (12.1rem), koska levyn oikea reuna ja alatunnisteen leveys lasketaan
    * siitä. Jos teema muuttaa mittaa, tämä on päivitettävä käsin. Nolla, kun
@@ -101,16 +96,62 @@
   }
 }
 
-/* Piilotettu valikko (header.html: painike, assets/js/rail.js): levyn vasen
- * reuna siirtyy kiskon paikalle. Sisältö, levyn reunaviiva ja alatunniste
- * lasketaan samasta muuttujasta, joten ne levenevät kiskon päälle ilman omia
- * sääntöjä; --jyu-rail ja siitä laskettu --jyu-side eivät muutu, joten
- * sisällysluettelo, levyn oikea reuna ja yläpalkin painikkeet pysyvät
- * paikallaan eikä sivu kapene. Samalla elementillä kuin määrittely, koska
- * muuttuja lasketaan :rootissa sen omasta --jyu-sidesta. Kisko itse
- * piilotetaan työpöydän säännöissä. */
-:root[data-jyu-rail="hidden"] {
+/* Levyn vasen reuna ja valikon piilotus (header.html: painike,
+ * assets/js/rail.js).
+ *
+ * --jyu-levy-left on levyn vasen reuna eli kiskon oikea reuna, josta sisältö
+ * ja alatunniste alkavat. Piilotetulla valikolla se on kiskon paikka: levy
+ * levenee kiskon päälle, ja koska --jyu-rail ja siitä laskettu --jyu-side
+ * eivät muutu, sisällysluettelo, levyn oikea reuna ja yläpalkki pysyvät
+ * paikallaan eikä sivu kapene. --jyu-levy-edge ja --jyu-levy-hair ovat
+ * kiskon reunaviivan paikka ja leveys levyn liukuvärissä (.md-container
+ * alempana): piilotettuna viivaa ei ole, ja levyn vasemmalla puolella on
+ * kiskon pinnan (--jyu-left-bg) sijaan sivun pohjaa ikkunan reunaan asti.
+ *
+ * Rekisteröinti (@property) tekee muuttujista animoitavia: tilan vaihtuessa
+ * ne liukuvat (transition työpöydän säännöissä), ja täyte, alatunnisteen
+ * marginaali ja liukuväri lasketaan niistä joka kehyksellä, vaikka
+ * liukuväriä itseään selain ei animoi. Rekisteröity muuttuja lasketaan
+ * määrittelypaikassaan, joten muuttujat ovat bodyllä eivätkä :rootissa:
+ * teeman tumma paletti ([data-md-color-scheme]) on bodyllä, eikä sen
+ * kiskon väri näkyisi :rootiin. Selain, joka ei tunne @propertya, vaihtaa
+ * tilan kerralla. Kisko itse piilotetaan työpöydän säännöissä. */
+@property --jyu-levy-left {
+  syntax: "<length-percentage>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+@property --jyu-levy-edge {
+  syntax: "<length-percentage>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+@property --jyu-levy-hair {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+@property --jyu-left-bg {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+body {
+  --jyu-levy-left: calc(var(--jyu-side) + var(--jyu-rail));
+  --jyu-levy-edge: var(--jyu-levy-left);
+  --jyu-levy-hair: var(--jyu-hair);
+  --jyu-left-bg: var(--jyu-rail-bg);
+}
+
+:root[data-jyu-rail="hidden"] body {
   --jyu-levy-left: var(--jyu-side);
+  --jyu-levy-edge: 0px;
+  --jyu-levy-hair: 0px;
+  --jyu-left-bg: var(--md-default-bg-color);
 }
 
 /* Tumman teeman pohja teeman 5 %:sta 10,5 %:n kirkkauteen ja sinertävämmäksi,
@@ -405,13 +446,36 @@
     /* Ei reunaviivaa: kiskon reuna on .md-containerin taustan raita heti
      * kiskon oikealla puolella (ks. alempana). */
     z-index: 3;
+    /* Piilotus häivyttää kiskon (alla). Kesto ja käyrä teeman laatikosta.
+     * visibility ilman viivettä: sen välivaiheet ovat "visible", joten
+     * kisko näkyy häivytyksen loppuun ja heti palatessaan. */
+    transition: opacity 0.25s, transform 0.25s, visibility 0.25s;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  /* Piilotettu valikko (ks. :root[data-jyu-rail] ylempänä): kisko pois ja
-   * painike näkyviin. Vain tässä, jotta kapealla näytöllä tallennettu
-   * piilotus ei vie laatikkoa. */
+  /* Piilotettu valikko (ks. @property ylempänä): kisko häipyy hieman
+   * vasemmalle ja painike näkyy. visibility eikä display, jotta häivytys
+   * on mahdollinen ja kiskolla on mitat (rail.js vierittää sen). Vain tässä,
+   * jotta kapealla näytöllä tallennettu piilotus ei vie laatikkoa. */
   :root[data-jyu-rail="hidden"] .md-sidebar--primary {
-    display: none;
+    visibility: hidden;
+    opacity: 0;
+    transform: translateX(-0.5rem);
+  }
+
+  /* Levyn reunan muuttujat liukuvat kiskon häivytyksen tahdissa (ks.
+   * @property ylempänä). */
+  body {
+    transition: --jyu-levy-left 0.25s, --jyu-levy-edge 0.25s,
+      --jyu-levy-hair 0.25s, --jyu-left-bg 0.25s;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    body,
+    .md-sidebar--primary {
+      transition: none;
+    }
   }
 
   .md-header__button.jyu-rail-button {
@@ -547,10 +611,10 @@
   .md-container {
     background-image: linear-gradient(
       to right,
-      var(--jyu-rail-bg) var(--jyu-levy-left),
-      var(--jyu-edge) var(--jyu-levy-left)
-        calc(var(--jyu-levy-left) + var(--jyu-hair)),
-      var(--md-default-bg-color) calc(var(--jyu-levy-left) + var(--jyu-hair))
+      var(--jyu-left-bg) var(--jyu-levy-edge),
+      var(--jyu-edge) var(--jyu-levy-edge)
+        calc(var(--jyu-levy-edge) + var(--jyu-levy-hair)),
+      var(--md-default-bg-color) calc(var(--jyu-levy-edge) + var(--jyu-levy-hair))
         var(--jyu-levy-right),
       var(--jyu-edge) var(--jyu-levy-right) calc(var(--jyu-levy-right) + var(--jyu-hair)),
       var(--jyu-rail-bg) calc(var(--jyu-levy-right) + var(--jyu-hair))
@@ -803,13 +867,14 @@ details:not([open]) :is(h1, h2, h3, h4, h5, h6):not(summary *) {
     left: 0;
   }
 
+  /* Ei transition: none, koska kiskolla on nyt oma häivytys (ylempänä),
+   * joka ohittaa teeman laatikon siirtymän. */
   .md-sidebar--primary {
     border-radius: 0;
     box-shadow: none;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     transform: none;
-    transition: none;
   }
 
   .md-sidebar--primary .md-sidebar__scrollwrap {
