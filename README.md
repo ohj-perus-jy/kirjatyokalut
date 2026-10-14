@@ -64,7 +64,7 @@ Kielet: `csharp`, `java`, `javascript` (korostetut rivit: `csharp`, `java`, `jso
 | Ominaisuus | Toteutus |
 | --- | --- |
 | Valikko kiinteänä kiskona 1180 px:stä alkaen (11" iPad vaakatasossa), leveällä näytöllä keskitettynä tekstin kanssa; luvun avaus vierittää valikon kohdalleen | layout.css, nav-scroll.js |
-| Valikon piilotus yläpalkin ensimmäisestä painikkeesta tai `b`-näppäimellä: kisko häipyy ja teksti levenee sen paikalle, levyn vasemmalla puolella on sivun pohjaa ilman reunaviivaa, muu sivu (yläpalkki, sisällysluettelo, oikea reuna) ei liiku; valinta muistetaan selaimessa (localStorage `jyu-rail`). Yläpalkissa ei ole kirjakuvaketta, nimi on kotilinkki | header.html, rail.js, layout.css |
+| Valikon piilotus yläpalkin ensimmäisestä painikkeesta tai `b`-näppäimellä: kisko liukuu ruudun ulkopuolelle ja teksti levenee sen paikalle, levyn vasemmalla puolella on sivun pohjaa ilman reunaviivaa ja alatunnisteen viiva ja kaista jatkuvat ikkunan reunaan, muu sivu (yläpalkki, sisällysluettelo, oikea reuna) ei liiku; valinta muistetaan selaimessa (localStorage `jyu-rail`). Yläpalkissa ei ole kirjakuvaketta, nimi on kotilinkki | header.html, rail.js, layout.css |
 | Nappien vihjeet (title) teeman tyyliin myös skriptien lisäämille napeille; napautuksen jälkeen vihje ei jää näkyviin | tooltips.js |
 | Sisällysluettelo kapealla näytöllä alakulman napista; kohdan tai ulkopuolen napautus sulkee sen | toc.js |
 | Sisällysluettelo seuraa lukukohtaa (`toc.follow`); oma vierityspalkki vain osoittimella, häivytys ylä- ja alareunassa kertoo, että listaa on lisää | mkdocs-pohja.yml, layout.css, toc.js |

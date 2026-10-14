@@ -86,7 +86,11 @@ PLACES = """() => {
     return { button: box('.jyu-rail-button').left, title: box('.jyu-sites').left,
              toc: box('.md-sidebar--secondary').left, footer: box('.md-footer').right,
              content_left: content.left, content_right: content.right,
-             plate: parseFloat(getComputedStyle(document.querySelector('.md-footer')).marginLeft) }
+             footer_left: box('.md-footer').left,
+             footer_text: box('.md-footer__inner').left, copyright: box('.md-copyright').left,
+             // Viivan ja kaistan jatkeet alatunnisteen reunasta vasemmalle.
+             line_ext: parseFloat(getComputedStyle(document.querySelector('.md-footer'), '::before').width),
+             band_ext: parseFloat(getComputedStyle(document.querySelector('.md-footer-meta'), '::before').width) }
 }"""
 
 
@@ -101,8 +105,20 @@ def test_the_rest_of_the_page_stays_put(browser, base_url):
     after = page.evaluate(PLACES)
     for key in ("button", "title", "toc", "footer", "content_right"):
         assert after[key] == before[key], key
-    assert after["content_left"] == before["content_left"] - rail["width"]
-    assert after["plate"] == pytest.approx(rail["x"] + 0.9, abs=0.05)
+    # Teksti ja alatunnisteen sisältö (nuolirivi, tekijät) siirtyvät kiskon
+    # leveyden verran; alatunnisteen viiva ja kaista alkoivat kiskon
+    # reunaviivan jälkeen ja ulottuvat nyt ikkunan reunaan.
+    for key in ("content_left", "footer_text", "copyright"):
+        assert after[key] == pytest.approx(before[key] - rail["width"], abs=0.1), key
+    # Alatunniste alkoi kiskon reunaviivan jälkeen, ja kaista ulottui
+    # viivaan asti (raon verran taaksepäin); nyt se alkaa levyn reunasta, ja
+    # viiva ja kaista jatkuvat siitä ikkunan reunaan.
+    assert before["footer_left"] == pytest.approx(rail["x"] + rail["width"] + 0.9, abs=0.05)
+    assert before["line_ext"] == 0
+    assert before["band_ext"] == pytest.approx(before["footer_text"] - before["footer_left"], abs=1)
+    assert after["footer_left"] == rail["x"]
+    assert after["line_ext"] >= after["footer_left"]
+    assert after["band_ext"] >= after["footer_left"]
     # Levyn vasemmalla puolella on sivun pohjaa ikkunan reunaan asti eikä
     # kiskon reunaviivaa: kiskon paikka, sen entinen reuna ja levyn
     # ulkopuolinen reuna ovat tekstipalstan väriset. y heti yläpalkin alla.
@@ -114,16 +130,17 @@ def test_the_rest_of_the_page_stays_put(browser, base_url):
 
 
 def test_the_change_fades_unless_motion_is_reduced(browser, base_url):
-    """Kisko häipyy ja levyn reuna liukuu kiskon paikalle (rekisteröidyt
-    muuttujat bodyllä); vähemmän liikettä pyytävälle tila vaihtuu kerralla."""
+    """Kisko liukuu ruudun ulkopuolelle ja levyn reuna sen perässä kiskon
+    paikalle (rekisteröidyt muuttujat bodyllä); vähemmän liikettä pyytävälle
+    tila vaihtuu kerralla."""
     page, errors = open_page(browser, base_url, motion=True)
     page.click(BUTTON)
     # Muut siirtymät (painikkeen hover, kiskon vierityspalkki) eivät kuulu tähän.
     running = page.evaluate("""document.getAnimations().map(a =>
         `${a.effect.target.localName}:${a.transitionProperty}`)""")
     assert {"body:--jyu-levy-left", "body:--jyu-levy-edge", "body:--jyu-levy-hair",
-            "body:--jyu-left-bg", "div:opacity", "div:transform",
-            "div:visibility"} <= set(running)
+            "body:--jyu-left-bg", "body:--jyu-footer-left", "body:--jyu-footer-ext",
+            "div:left", "div:visibility"} <= set(running)
     page.wait_for_timeout(400)
     assert page.is_hidden(RAIL)
     assert errors == []

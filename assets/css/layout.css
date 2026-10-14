@@ -140,11 +140,29 @@
   initial-value: transparent;
 }
 
+/* Alatunnisteen vasen reuna: kiskon reunaviivan jälkeen, piilotettuna levyn
+ * reunassa. Jatke (--jyu-footer-ext) on, kuinka paljon alatunnisteen viiva
+ * ja kaista jatkuvat sen reunasta vasemmalle: piilotettuna ikkunan reunaan
+ * asti (.md-footer alempana). */
+@property --jyu-footer-left {
+  syntax: "<length-percentage>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+@property --jyu-footer-ext {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
 body {
   --jyu-levy-left: calc(var(--jyu-side) + var(--jyu-rail));
   --jyu-levy-edge: var(--jyu-levy-left);
   --jyu-levy-hair: var(--jyu-hair);
   --jyu-left-bg: var(--jyu-rail-bg);
+  --jyu-footer-left: calc(var(--jyu-levy-left) + var(--jyu-hair));
+  --jyu-footer-ext: 0px;
 }
 
 :root[data-jyu-rail="hidden"] body {
@@ -152,6 +170,8 @@ body {
   --jyu-levy-edge: 0px;
   --jyu-levy-hair: 0px;
   --jyu-left-bg: var(--md-default-bg-color);
+  --jyu-footer-left: var(--jyu-side);
+  --jyu-footer-ext: 100vw;
 }
 
 /* Tumman teeman pohja teeman 5 %:sta 10,5 %:n kirkkauteen ja sinertävämmäksi,
@@ -446,28 +466,34 @@ body {
     /* Ei reunaviivaa: kiskon reuna on .md-containerin taustan raita heti
      * kiskon oikealla puolella (ks. alempana). */
     z-index: 3;
-    /* Piilotus häivyttää kiskon (alla). Kesto ja käyrä teeman laatikosta.
-     * visibility ilman viivettä: sen välivaiheet ovat "visible", joten
-     * kisko näkyy häivytyksen loppuun ja heti palatessaan. */
-    transition: opacity 0.25s, transform 0.25s, visibility 0.25s;
+    /* Piilotus liu'uttaa kiskon ruudun ulkopuolelle (alla). Kesto ja käyrä
+     * teeman laatikosta. Läpinäkymättömänä eikä häipyen: levyn reuna ja
+     * teksti liikkuvat samaan aikaan kiskon alla, ja häipyvän kiskon läpi
+     * ne näkyivät leikkauksina. visibility ilman viivettä: sen välivaiheet
+     * ovat "visible", joten kisko näkyy liu'un loppuun ja heti palatessaan. */
+    transition: left 0.25s, visibility 0.25s;
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  /* Piilotettu valikko (ks. @property ylempänä): kisko häipyy hieman
-   * vasemmalle ja painike näkyy. visibility eikä display, jotta häivytys
-   * on mahdollinen ja kiskolla on mitat (rail.js vierittää sen). Vain tässä,
-   * jotta kapealla näytöllä tallennettu piilotus ei vie laatikkoa. */
+  /* Piilotettu valikko (ks. @property ylempänä): kisko liukuu kokonaan
+   * ikkunan vasemman reunan taakse ja painike näkyy. Kiskon oikea reuna
+   * kulkee liu'un ajan tasan levyn reunan (--jyu-levy-edge) kanssa, koska
+   * kummankin matka on sama (kiskon leveys plus levyn ulkopuolinen reuna)
+   * samalla käyrällä, joten kisko peittää levenevän tekstin alleen.
+   * visibility eikä display, jotta liuku on mahdollinen ja kiskolla on
+   * mitat (rail.js vierittää sen). Vain tässä, jotta kapealla näytöllä
+   * tallennettu piilotus ei vie laatikkoa. */
   :root[data-jyu-rail="hidden"] .md-sidebar--primary {
+    left: calc(-1 * var(--jyu-rail));
     visibility: hidden;
-    opacity: 0;
-    transform: translateX(-0.5rem);
   }
 
-  /* Levyn reunan muuttujat liukuvat kiskon häivytyksen tahdissa (ks.
-   * @property ylempänä). */
+  /* Levyn reunan muuttujat liukuvat kiskon tahdissa (ks. @property
+   * ylempänä). */
   body {
     transition: --jyu-levy-left 0.25s, --jyu-levy-edge 0.25s,
-      --jyu-levy-hair 0.25s, --jyu-left-bg 0.25s;
+      --jyu-levy-hair 0.25s, --jyu-left-bg 0.25s, --jyu-footer-left 0.25s,
+      --jyu-footer-ext 0.25s;
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   }
 
@@ -478,8 +504,16 @@ body {
     }
   }
 
+  /* Levossa himmeä ja osoittimen alla tai kohdistettuna täysi, toisin
+   * kuin teeman muut painikkeet (täysi, hover 0,7): kytkin on kurssin
+   * nimen vieressä eikä saa kilpailla sen kanssa. */
   .md-header__button.jyu-rail-button {
     display: inline-block;
+    opacity: 0.6;
+  }
+
+  .md-header__button.jyu-rail-button:is(:hover, :focus-visible) {
+    opacity: 1;
   }
 
   /* Vieritysalue kiskon sisäkorkeuden (täytteen alapuolinen osa) korkuinen. */
@@ -646,18 +680,55 @@ body {
    * peittäisi alatunnisteen alkupään muutenkin, mutta viiva on kiskon
    * ulkopuolella ja jäisi alatunnisteen taustan alle. */
   .md-footer {
+    position: relative; /* jatkeiden isäntä (alla) */
     margin-right: calc(100% - var(--jyu-levy-right));
-    margin-left: calc(var(--jyu-levy-left) + var(--jyu-hair));
-    padding-left: calc(var(--jyu-gap) - var(--jyu-hair));
+    margin-left: var(--jyu-footer-left);
+    /* Sisältö levyn reunasta raon verran: kiskon reunaviivan jälkeen rako
+     * miinus viiva, piilotettuna koko rako. Prosentit (--jyu-side) vain
+     * alatunnisteen omassa marginaalissa, jonka isäntä on sivun levyinen;
+     * täytteessä ne supistuvat pois. */
+    padding-left: calc(var(--jyu-levy-left) + var(--jyu-gap) - var(--jyu-footer-left));
   }
 
-  /* Alatunnisteen sävytetty kaista (.md-footer-meta) silti kiinni kiskon
-   * reunaviivaan: yllä oleva täyte jättäisi viivan ja kaistan väliin loven
-   * sivun taustaa. Negatiivinen marginaali vetää reunan viivaan ja saman
-   * kokoinen täyte palauttaa sisällön paikalleen. */
+  /* Piilotetulla valikolla alatunnisteen viiva jatkuu sen reunasta ikkunan
+   * reunaan (--jyu-footer-ext). Viivan paikka ja paksuus teeman
+   * border-topista (.md-footer ylempänä). */
+  .md-footer::before {
+    position: absolute;
+    top: -0.05rem;
+    right: 100%;
+    width: var(--jyu-footer-ext);
+    height: 0.05rem;
+    background-color: var(--jyu-rule);
+    content: "";
+  }
+
+  /* Alatunnisteen sävytetty kaista (.md-footer-meta) kiinni alatunnisteen
+   * reunaan: yllä oleva täyte jättäisi reunan ja kaistan väliin loven sivun
+   * taustaa. Kaista jatketaan vasemmalle täytteen verran, piilotetulla
+   * valikolla ikkunan reunaan asti. Leveys ilman prosentteja (ks. yllä),
+   * joten jatke päättyy tasan reunaan eikä peitä kiskon reunaviivaa. */
   .md-footer-meta {
-    margin-left: calc(var(--jyu-hair) - var(--jyu-gap));
-    padding-left: calc(var(--jyu-gap) - var(--jyu-hair));
+    position: relative;
+  }
+
+  .md-footer-meta::before {
+    position: absolute;
+    top: 0;
+    right: 100%;
+    bottom: 0;
+    width: calc(var(--jyu-gap) - var(--jyu-hair) + var(--jyu-footer-ext));
+    background-color: var(--jyu-footer-bg);
+    content: "";
+  }
+
+  /* Alatunnisteen ruudukot täyttävät levyn kuten sisällön ruudukko
+   * (.md-main__inner yllä), jotta nuolirivi ja tekijät pysyvät tekstin
+   * reunassa myös, kun levy on piilotetulla valikolla ruudukkoa leveämpi;
+   * teeman 61rem:n enimmäisleveys keskittäisi ne. */
+  .md-footer__inner,
+  .md-footer-meta__inner {
+    max-width: none;
   }
 
   /* 3. Yläpalkin rivi reunasta reunaan, jotta logo ja kurssin nimi
