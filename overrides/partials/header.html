@@ -1,9 +1,10 @@
 {#-
   Kopio teeman partials/header.html:stä (zensical 0.0.59), johon on lisätty
-  kotilinkki kurssin nimeen, sivustovalikko, ääneenluvun kaiutin, tulostuspainike ja leipätekstin
-  kirjasinvalikko (merkityt kohdat alempana) ja jossa kuvakkeet ovat eri
-  järjestyksessä. Yläpalkkiin ei ole laajennuspistettä, joten
-  lisäykset vaativat kopion; jos Zensical muuttaa yläpalkkiaan, tämä on
+  päävalikon piilotuspainike, kotilinkki kurssin nimeen, sivustovalikko,
+  ääneenluvun kaiutin, tulostuspainike ja leipätekstin kirjasinvalikko
+  (merkityt kohdat alempana), josta kirjakuvake on poistettu ja jossa
+  kuvakkeet ovat eri järjestyksessä. Yläpalkkiin ei ole laajennuspistettä,
+  joten lisäykset vaativat kopion; jos Zensical muuttaa yläpalkkiaan, tämä on
   päivitettävä käsin.
 -#}
 {% set class = "md-header" %}
@@ -14,9 +15,21 @@
 {% endif %}
 <header class="{{ class }}" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="{{ lang.t('header') }}">
-    <a href="{{ config.extra.homepage | d(nav.homepage.url, true) | url }}" title="{{ config.site_name | e }}" class="md-header__button md-logo" aria-label="{{ config.site_name }}" data-md-component="logo">
-      {% include "partials/logo.html" %}
-    </a>
+    {#- Päävalikon piilotus työpöydällä, jossa valikko on kiinteä kisko
+        (layout.css). Painike on yläpalkin ensimmäisenä kuten Clauden
+        sivupalkin kytkin, ja kurssin nimi jää yläpalkkiin otsikoksi. Teeman
+        kirjakuvake (md-logo) on poistettu: nimi on jo kotilinkki, ja kuvake
+        olisi kytkimen ja nimen välissä. Laatikon otsikossa kuvake on yhä.
+        Kapealla näytöllä painike on piilossa ja teeman hampurilainen (alla)
+        avaa laatikon. Toiminta assets/js/rail.js; tila on html-elementin
+        attribuutti, jonka skripti alla asettaa ennen sisältöä kuten
+        kirjasinvalinnan. -#}
+    <button type="button" class="md-header__button md-icon jyu-rail-button" id="jyu-rail-button"
+            title="Piilota valikko" aria-label="Piilota valikko"
+            aria-expanded="true" aria-controls="jyu-rail" aria-keyshortcuts="b">
+      {% include ".icons/lucide/panel-left.svg" %}
+    </button>
+    <script>try{if(localStorage.getItem("jyu-rail")==="hidden")document.documentElement.setAttribute("data-jyu-rail","hidden")}catch(e){}</script>
     <label class="md-header__button md-icon" for="__drawer" aria-label="{{ lang.t('nav') }}">
       {% set icon = config.theme.icon.menu or "material/menu" %}
       {% include ".icons/" ~ icon ~ ".svg" %}

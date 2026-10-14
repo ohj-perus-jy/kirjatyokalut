@@ -28,6 +28,11 @@
    * levyisestä isännästä, kummastakin ilman vierityspalkkia. */
   --jyu-side: max(0px, 50% - (var(--jyu-rail) + var(--jyu-gap) + 61rem) / 2);
 
+  /* Levyn vasen reuna eli kiskon oikea reuna: siitä alkavat sisältö, levyn
+   * reunaviiva ja alatunniste. Piilotetulla valikolla (alempana) kiskon
+   * paikka: levy levenee kiskon päälle, eikä muu sivu liiku. */
+  --jyu-levy-left: calc(var(--jyu-side) + var(--jyu-rail));
+
   /* Sisällysluettelon sarakkeen leveys: kopio teeman .md-sidebar-leveydestä
    * (12.1rem), koska levyn oikea reuna ja alatunnisteen leveys lasketaan
    * siitä. Jos teema muuttaa mittaa, tämä on päivitettävä käsin. Nolla, kun
@@ -96,6 +101,18 @@
   }
 }
 
+/* Piilotettu valikko (header.html: painike, assets/js/rail.js): levyn vasen
+ * reuna siirtyy kiskon paikalle. Sisältö, levyn reunaviiva ja alatunniste
+ * lasketaan samasta muuttujasta, joten ne levenevät kiskon päälle ilman omia
+ * sääntöjä; --jyu-rail ja siitä laskettu --jyu-side eivät muutu, joten
+ * sisällysluettelo, levyn oikea reuna ja yläpalkin painikkeet pysyvät
+ * paikallaan eikä sivu kapene. Samalla elementillä kuin määrittely, koska
+ * muuttuja lasketaan :rootissa sen omasta --jyu-sidesta. Kisko itse
+ * piilotetaan työpöydän säännöissä. */
+:root[data-jyu-rail="hidden"] {
+  --jyu-levy-left: var(--jyu-side);
+}
+
 /* Tumman teeman pohja teeman 5 %:sta 10,5 %:n kirkkauteen ja sinertävämmäksi,
  * jotta kisko (8 %) mahtuu sen alle ja sisältöalue on sivun vaalein pinta
  * koodilohkoa (code.css: 18 %) lukuun ottamatta. Teeman --light, --lighter
@@ -124,13 +141,19 @@
   background-color: var(--jyu-footer-bg);
 }
 
-/* Kirjakuvake teeman linkkivärillä (vaaleassa indigo, tummassa sen
- * vaalennus), ei tekstin värillä: yläpalkin ainoa värillinen merkki. Sama
- * kapean näytön valikkolaatikon otsikkoriville, jossa teema näyttää
- * kuvakkeen yläpalkin sijaan. */
-.md-header__button.md-logo,
+/* Kirjakuvake kapean näytön valikkolaatikon otsikkorivillä teeman
+ * linkkivärillä (vaaleassa indigo, tummassa sen vaalennus), ei tekstin
+ * värillä. Yläpalkissa kuvaketta ei ole (header.html). */
 .md-nav__button.md-logo {
   color: var(--md-typeset-a-color);
+}
+
+/* Päävalikon piilotuspainike (header.html, assets/js/rail.js) vain
+ * työpöydällä eli kiskon leveyksillä (alempana); kapealla näytöllä valikko
+ * on laatikko, jonka teeman hampurilainen avaa. Kaksi luokkaa ohittaa teeman
+ * .md-header__button:not([hidden]). */
+.md-header__button.jyu-rail-button {
+  display: none;
 }
 
 /* Teeman omat hiusviivat samaan sävyyn; yläpalkin alareuna on se viiva, jonka
@@ -384,6 +407,17 @@
     z-index: 3;
   }
 
+  /* Piilotettu valikko (ks. :root[data-jyu-rail] ylempänä): kisko pois ja
+   * painike näkyviin. Vain tässä, jotta kapealla näytöllä tallennettu
+   * piilotus ei vie laatikkoa. */
+  :root[data-jyu-rail="hidden"] .md-sidebar--primary {
+    display: none;
+  }
+
+  .md-header__button.jyu-rail-button {
+    display: inline-block;
+  }
+
   /* Vieritysalue kiskon sisäkorkeuden (täytteen alapuolinen osa) korkuinen. */
   .md-sidebar--primary .md-sidebar__scrollwrap {
     height: 100% !important;
@@ -483,7 +517,7 @@
    *    jäännökseen ja siirrä rakoa kiskon ja tekstin välissä. */
   .md-main {
     padding-right: calc(100% - var(--jyu-levy-right) - var(--jyu-toc));
-    padding-left: calc(var(--jyu-side) + var(--jyu-rail) + var(--jyu-gap));
+    padding-left: calc(var(--jyu-levy-left) + var(--jyu-gap));
   }
 
   .md-main__inner {
@@ -513,10 +547,10 @@
   .md-container {
     background-image: linear-gradient(
       to right,
-      var(--jyu-rail-bg) calc(var(--jyu-side) + var(--jyu-rail)),
-      var(--jyu-edge) calc(var(--jyu-side) + var(--jyu-rail))
-        calc(var(--jyu-side) + var(--jyu-rail) + var(--jyu-hair)),
-      var(--md-default-bg-color) calc(var(--jyu-side) + var(--jyu-rail) + var(--jyu-hair))
+      var(--jyu-rail-bg) var(--jyu-levy-left),
+      var(--jyu-edge) var(--jyu-levy-left)
+        calc(var(--jyu-levy-left) + var(--jyu-hair)),
+      var(--md-default-bg-color) calc(var(--jyu-levy-left) + var(--jyu-hair))
         var(--jyu-levy-right),
       var(--jyu-edge) var(--jyu-levy-right) calc(var(--jyu-levy-right) + var(--jyu-hair)),
       var(--jyu-rail-bg) calc(var(--jyu-levy-right) + var(--jyu-hair))
@@ -549,7 +583,7 @@
    * ulkopuolella ja jäisi alatunnisteen taustan alle. */
   .md-footer {
     margin-right: calc(100% - var(--jyu-levy-right));
-    margin-left: calc(var(--jyu-side) + var(--jyu-rail) + var(--jyu-hair));
+    margin-left: calc(var(--jyu-levy-left) + var(--jyu-hair));
     padding-left: calc(var(--jyu-gap) - var(--jyu-hair));
   }
 
@@ -759,10 +793,6 @@ details:not([open]) :is(h1, h2, h3, h4, h5, h6):not(summary *) {
   .md-nav .md-nav__title[for=__drawer],
   .md-overlay {
     display: none;
-  }
-
-  .md-header__button.md-logo {
-    display: inline-block;
   }
 
   .md-nav--primary {
