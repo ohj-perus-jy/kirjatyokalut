@@ -441,10 +441,12 @@
 
   /* Ilmaa listan päihin: ensimmäinen kohta irti kurssin nimestä, viimeinen
    * irti ruudun alareunasta. Padding listalla eikä vieritysalueella, koska
-   * listan täyte kasvattaa vieritettävää korkeutta kaikissa selaimissa. */
+   * listan täyte kasvattaa vieritettävää korkeutta kaikissa selaimissa.
+   * Alhaalla 1,6rem, koska iPadilla kisko päättyy laitteen reunaan ja 1rem
+   * tuntui liian ahtaalta. */
   .md-sidebar--primary .md-nav--primary > .md-nav__list {
     padding-top: 0.4rem;
-    padding-bottom: 1rem;
+    padding-bottom: 1.6rem;
   }
 
   /* Yhdistävä viiva avatun luvun alalukujen vasemmalle puolelle, jotta
