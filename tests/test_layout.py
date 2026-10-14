@@ -116,6 +116,37 @@ def test_rail_fits_an_11_inch_ipad_in_landscape(browser, chapter_url, width, rai
     context.close()
 
 
+MARGINS = """() => {
+    const box = s => document.querySelector(s).getBoundingClientRect()
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize)
+    const text = box('.md-content__inner')
+    return {
+        left: (text.left - box('.md-sidebar--primary').right) / rem,
+        right: (box('.md-sidebar--secondary').left - text.right) / rem,
+        prev: (text.left - box('.md-footer__link--prev').left) / rem,
+        next: (box('.md-footer__link--next').right - text.right) / rem,
+    }
+}"""
+
+
+@pytest.mark.parametrize("width", [1180, 1219, 1220, 1280, 1920])
+def test_text_is_equally_far_from_both_edges_of_the_page(browser, chapter_url, width):
+    """Tekstipalsta on yhtä kaukana levyn vasemmasta reunasta (kiskon
+    reunaviiva) ja oikeasta (sisällysluettelon sarakkeen reuna), myös
+    1180–1219 px:llä, jolla teeman oma oikea marginaali ei vielä päde.
+    Alatunnisteen nuolet ulottuvat tekstin yli yhtä paljon kummallakin
+    puolella, kuten teemassa (1rem)."""
+    context = browser.new_context(viewport={"width": width, "height": 700})
+    page = context.new_page()
+    page.goto(chapter_url, wait_until="load")
+    margins = page.evaluate(MARGINS)
+    assert margins["left"] == pytest.approx(1.6, abs=0.01)
+    assert margins["right"] == pytest.approx(1.6, abs=0.01)
+    assert margins["prev"] == pytest.approx(1, abs=0.01)
+    assert margins["next"] == pytest.approx(1, abs=0.01)
+    context.close()
+
+
 EDGES = """() => {
     const box = s => document.querySelector(s).getBoundingClientRect()
     const rem = parseFloat(getComputedStyle(document.documentElement).fontSize)

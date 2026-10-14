@@ -10,10 +10,23 @@
  * muutetaan vain avausnuolen suunta ja vierityspalkin pituus (ks. alempana). */
 
 :root {
-  /* Rako kiskon ja sisällön väliin: sama kuin sisällysluettelon tekstin
-   * sisennys omassa sarakkeessaan, jotta vasen ja oikea rako ovat yhtä
-   * leveät. */
+  /* Rako kiskon ja ruudukon (.md-main__inner) väliin. Tekstin etäisyys
+   * kiskosta on tämä plus palstan vasen marginaali, ks. --jyu-margin. */
   --jyu-gap: 0.8rem;
+
+  /* Tekstipalstan etäisyys levyn reunaviivoista, sama kummallakin
+   * puolella: vasemmalla kiskon reunasta, oikealla sisällysluettelon
+   * sarakkeen reunasta. Vasemmalla siitä on --jyu-gap ruudukon rakoa ja
+   * loput palstan marginaalia, oikealla kaikki marginaalia (ks.
+   * .md-content__inner alempana). Teeman omat marginaalit ovat 1,2rem,
+   * joten raon kanssa vasen rako oli 2,0rem ja oikea 1,2rem; palstan
+   * leveys on sama kuin teemalla. */
+  --jyu-margin: 1.6rem;
+
+  /* Alatunnisteen täyte levyn reunoista: nuolet ja tekijät ulottuvat
+   * tekstin yli yhtä paljon kuin teemassa, jonka palstan marginaali on
+   * 1,2rem ja alatunnisteen täyte 0,2rem. */
+  --jyu-footer-pad: calc(var(--jyu-margin) - 1.2rem);
 
   /* Kiskon leveys: 15rem kuten mdBookissa, ja leveämmällä näytöllä siitä
    * kourusta, joka jää ruudukon (61rem) ja vierityspalkin yli, enintään
@@ -622,6 +635,16 @@ body {
     max-width: none;
   }
 
+  /* Tekstipalsta --jyu-margin:n päähän levyn kummastakin reunasta. Teeman
+   * omat marginaalit (1,2rem, vasen 1220 px:stä ja oikea sisällysluettelon
+   * kanssa) kumotaan samoilla valitsimilla, jotta tarkkuus riittää; ilman
+   * luetteloa (hide: toc) oikean marginaalin asettaa ensimmäinen. */
+  [dir=ltr] .md-sidebar--primary:not([hidden]) ~ .md-content > .md-content__inner,
+  [dir=ltr] .md-sidebar--secondary:not([hidden]) ~ .md-content > .md-content__inner {
+    margin-right: var(--jyu-margin);
+    margin-left: calc(var(--jyu-margin) - var(--jyu-gap));
+  }
+
   /* Sivun pohja (levy) ja sen reunaviivat yhtenä liukuvärinä pääsisällön
    * ja alatunnisteen yhteisellä isännällä, jotta levy ja viivat jatkuvat
    * yläpalkista alatunnisteen pohjaan myös lyhyellä sivulla: pääsisältö
@@ -683,11 +706,12 @@ body {
     position: relative; /* jatkeiden isäntä (alla) */
     margin-right: calc(100% - var(--jyu-levy-right));
     margin-left: var(--jyu-footer-left);
-    /* Sisältö levyn reunasta raon verran: kiskon reunaviivan jälkeen rako
-     * miinus viiva, piilotettuna koko rako. Prosentit (--jyu-side) vain
-     * alatunnisteen omassa marginaalissa, jonka isäntä on sivun levyinen;
-     * täytteessä ne supistuvat pois. */
-    padding-left: calc(var(--jyu-levy-left) + var(--jyu-gap) - var(--jyu-footer-left));
+    /* Sisältö levyn reunoista täytteen (--jyu-footer-pad) verran: vasemmalla
+     * kiskon reunaviivan jälkeen täyte miinus viiva, piilotettuna koko täyte.
+     * Prosentit (--jyu-side) vain alatunnisteen omassa marginaalissa, jonka
+     * isäntä on sivun levyinen; täytteessä ne supistuvat pois. */
+    padding-right: var(--jyu-footer-pad);
+    padding-left: calc(var(--jyu-levy-left) + var(--jyu-footer-pad) - var(--jyu-footer-left));
   }
 
   /* Piilotetulla valikolla alatunnisteen viiva jatkuu sen reunasta ikkunan
@@ -704,22 +728,32 @@ body {
   }
 
   /* Alatunnisteen sävytetty kaista (.md-footer-meta) kiinni alatunnisteen
-   * reunaan: yllä oleva täyte jättäisi reunan ja kaistan väliin loven sivun
-   * taustaa. Kaista jatketaan vasemmalle täytteen verran, piilotetulla
-   * valikolla ikkunan reunaan asti. Leveys ilman prosentteja (ks. yllä),
-   * joten jatke päättyy tasan reunaan eikä peitä kiskon reunaviivaa. */
+   * reunoihin: yllä oleva täyte jättäisi reunan ja kaistan väliin loven sivun
+   * taustaa. Kaista jatketaan kummallekin puolelle täytteen verran,
+   * piilotetulla valikolla vasemmalla ikkunan reunaan asti. Leveys ilman
+   * prosentteja (ks. yllä), joten jatke päättyy tasan reunaan eikä peitä
+   * kiskon reunaviivaa. */
   .md-footer-meta {
     position: relative;
   }
 
-  .md-footer-meta::before {
+  .md-footer-meta::before,
+  .md-footer-meta::after {
     position: absolute;
     top: 0;
-    right: 100%;
     bottom: 0;
-    width: calc(var(--jyu-gap) - var(--jyu-hair) + var(--jyu-footer-ext));
     background-color: var(--jyu-footer-bg);
     content: "";
+  }
+
+  .md-footer-meta::before {
+    right: 100%;
+    width: calc(var(--jyu-footer-pad) - var(--jyu-hair) + var(--jyu-footer-ext));
+  }
+
+  .md-footer-meta::after {
+    left: 100%;
+    width: var(--jyu-footer-pad);
   }
 
   /* Alatunnisteen ruudukot täyttävät levyn kuten sisällön ruudukko
@@ -950,9 +984,5 @@ details:not([open]) :is(h1, h2, h3, h4, h5, h6):not(summary *) {
 
   .md-sidebar--primary .md-sidebar__scrollwrap {
     position: static;
-  }
-
-  [dir=ltr] .md-sidebar--primary:not([hidden]) ~ .md-content > .md-content__inner {
-    margin-left: 1.2rem;
   }
 }
