@@ -350,8 +350,24 @@
     let ringsShown = false;
     let cursor = { x: 640, y: 420 };
 
-    const wait = (ms, token) => new Promise((resolve) => setTimeout(resolve, ms))
-      .then(() => { if (token !== run) throw STOP; });
+    /* Piilossa oleva selaimen välilehti pysäyttää animaation siihen, missä
+     * se on, kuten videon: ajastimet kävisivät muuten taustalla, ja lukija
+     * palaisi valmiiseen kuvaan. Tauko alkaa odotuksen kummassakin päässä,
+     * jotta vaihe näkyy kokonaan, kun välilehti tulee taas esiin. */
+    const shown = () => new Promise((resolve) => {
+      const listener = () => {
+        if (document.hidden) return;
+        document.removeEventListener("visibilitychange", listener);
+        resolve();
+      };
+      document.addEventListener("visibilitychange", listener);
+    });
+    const wait = async (ms, token) => {
+      if (document.hidden) await shown();
+      await new Promise((resolve) => setTimeout(resolve, ms));
+      if (document.hidden) await shown();
+      if (token !== run) throw STOP;
+    };
 
     const moveCursor = (x, y, animate) => {
       const pointer = canvas.querySelector(".jw-cursor");
@@ -611,6 +627,19 @@
     const voice = new Audio();
     document.addEventListener("jyu-aani", (event) => {
       if (event.detail !== "walk") voice.pause();
+    });
+    /* Piilossa oleva selaimen välilehti pysäyttää soivan äänen kuvan tavoin
+     * (player), ja ääni jatkuu samasta kohdasta, kun välilehti tulee esiin.
+     * Ääni, joka ei soinut (kaiutin pois, leike loppunut), pysyy hiljaa. */
+    let resumeVoice = false;
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) {
+        resumeVoice = !voice.paused && !voice.ended;
+        if (resumeVoice) voice.pause();
+      } else if (resumeVoice) {
+        resumeVoice = false;
+        voice.play().catch(() => {});
+      }
     });
     const notice = $(".jw-notice");
     const ticks = [...shell.querySelectorAll(".jw-tick")];
@@ -887,7 +916,8 @@
    * Kohtaus piirretään tagin sisällön eteen, ja sisältö piiloutuu näytöltä
    * mutta jää ruudunlukijalle ja tulosteeseen (walkthrough.css). Kohtaus soi
    * kerran, kun näyttämöstä näkyy puolet: sivua vieritettäessä tai kun sen
-   * välilehti avataan. Siihen asti näkyy animaation alku. Vähemmän liikettä
+   * välilehti avataan. Siihen asti näkyy animaation alku. Piilossa oleva
+   * selaimen välilehti pysäyttää soivan animaation (player). Vähemmän liikettä
    * pyytäneelle kohtaus piirretään valmiina, kun se tulee näkyviin, koska
    * piilossa olevalta välilehdeltä ei voi mitata kursorin ja kehysten
    * paikkaa. Kapeassa palstassa on lähikuva kuten ohjeessa (camera). Jos

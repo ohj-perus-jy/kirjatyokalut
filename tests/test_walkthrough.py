@@ -649,3 +649,89 @@ def test_without_scenes_the_animation_shows_its_content(opened):
     page.click(".tabbed-labels label:has-text('Toka')")
     assert page.locator(".jyu-anim--live").count() == 0
     assert page.is_visible(".jyu-anim a.glightbox img")
+
+
+# Selaimen välilehden piilotus: document.hidden ja visibilityState selaimesta
+# riippumatta, visibilitychange lähetetään itse.
+VISIBILITY = """
+window.koeHidden = false;
+for (const [name, value] of [["hidden", () => koeHidden],
+                             ["visibilityState", () => koeHidden ? "hidden" : "visible"]]) {
+  Object.defineProperty(Document.prototype, name, { get: value, configurable: true });
+}
+window.koeNayta = (visible) => {
+  koeHidden = !visible;
+  document.dispatchEvent(new Event("visibilitychange"));
+};
+"""
+
+
+def test_animation_pauses_while_the_browser_tab_is_hidden(opened):
+    """Toiseen selaimen välilehteen vaihdettaessa animaatio pysähtyy siihen,
+    missä on, ja jatkuu, kun välilehti tulee taas näkyviin."""
+    page, errors = opened(init=VISIBILITY)
+    open_animation_tab(page)
+    page.wait_for_function(f"{ANIMATION_TEXT}.length >= 1")
+    page.evaluate("koeNayta(false)")
+    page.wait_for_timeout(300)
+    text = page.evaluate(ANIMATION_TEXT)
+    page.wait_for_timeout(2500)
+    assert page.evaluate(ANIMATION_TEXT) == text
+    assert page.locator(".jyu-anim .jw-ring").count() == 0
+    assert "jw-on" not in page.get_attribute(".koe-anim-nappi", "class")
+    page.evaluate("koeNayta(true)")
+    page.wait_for_selector(".jyu-anim .jw-ring")
+    assert page.evaluate(ANIMATION_TEXT) == "Moi"
+    assert errors == []
+
+
+def test_audio_pauses_while_the_browser_tab_is_hidden(opened):
+    """Kaiutin päällä: kun selaimen välilehti menee piiloon, ääni ja vaiheen
+    kuva pysähtyvät paikoilleen, ja kun välilehti tulee esiin, molemmat
+    jatkuvat samasta kohdasta. Oikea toisto (KEEP_AUDIO)."""
+    page, errors = opened(init=KEEP_AUDIO + VISIBILITY)
+    typed = "document.querySelector('.koe-teksti').textContent"
+    page.click(".jw-speak")
+    page.wait_for_function("window.voice && voice.currentTime > 0.5")
+    page.evaluate("koeNayta(false)")
+    page.wait_for_function("voice.paused")
+    page.wait_for_timeout(300)
+    position = page.evaluate("voice.currentTime")
+    text = page.evaluate(typed)
+    assert 0.5 < position < 2.5
+    page.wait_for_timeout(1000)
+    assert page.evaluate("voice.currentTime") == position
+    assert page.evaluate(typed) == text
+    page.evaluate("koeNayta(true)")
+    page.wait_for_function(f"!voice.paused && voice.currentTime > {position}")
+    assert page.evaluate("voice.currentTime") < position + 1
+    page.wait_for_function(f"{typed} === 'Hei'")
+    assert errors == []
+
+
+def test_finished_audio_stays_silent_after_the_browser_tab_returns(opened):
+    """Leike ehti loppuun ennen piilotusta: paluu ei aloita sitä uudelleen."""
+    page, errors = opened(init=KEEP_AUDIO + VISIBILITY)
+    page.click(".jw-speak")
+    page.wait_for_function("window.voice && voice.ended")
+    page.evaluate("koeNayta(false)")
+    page.evaluate("koeNayta(true)")
+    page.wait_for_timeout(500)
+    assert page.evaluate("voice.ended && voice.paused")
+    assert errors == []
+
+
+def test_switched_off_speaker_stays_silent_after_the_browser_tab_returns(opened):
+    """Kaiutin kytketty pois kesken vaiheen: piilotus ja paluu eivät soita
+    mitään, eivätkä ne pysäytä jo pysäytettyä ääntä uudelleen."""
+    page, errors = opened(init=RECORD_AUDIO + VISIBILITY)
+    page.click(".jw-speak")
+    assert page.evaluate("played") == ["selain"]
+    page.click(".jw-speak")
+    paused = page.evaluate("paused")
+    page.evaluate("koeNayta(false)")
+    page.evaluate("koeNayta(true)")
+    page.wait_for_timeout(500)
+    assert page.evaluate("played") == ["selain"]
+    assert page.evaluate("paused") == paused
+    assert errors == []
