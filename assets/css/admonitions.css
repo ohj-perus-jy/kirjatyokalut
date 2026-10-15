@@ -5,7 +5,9 @@
  *
  * Kaksi poikkeamaa classicista: tekstikoko on leipätekstin (font-size:
  * inherit, kuten mdBookissa; seuraa myös print.css:n kokoa), ja väljyys on
- * suurempi, koska kokoeroa ei enää ole erottamaan laatikkoa.
+ * suurempi, koska kokoeroa ei enää ole erottamaan laatikkoa. Varjoa ei ole:
+ * reunus ja otsikkopalkki riittävät erottamaan laatikon, ja varjo tekee
+ * siitä raskaan.
  *
  * Tarkkuus: teeman säännöt ovat tyyppikohtaisia (.md-typeset .admonition.note)
  * ja tämä tiedosto ladataan teeman jälkeen, joten sama tarkkuus voittaa mutta
@@ -25,11 +27,12 @@
 .md-typeset .admonition,
 .md-typeset details {
   font-size: inherit;
-  padding: 0 1rem;
+  margin: 1.5em 0;
+  padding: 0 .9rem;
   background-color: var(--md-default-bg-color);
   border: .075rem solid var(--adm, #448aff);
   border-radius: .2rem;
-  box-shadow: var(--md-shadow-z1);
+  box-shadow: none;
 }
 
 /* Teeman tyyppikohtainen taustaväri pois; [class] vain nostaa tarkkuuden. */
@@ -41,7 +44,7 @@
 /* Alalaitaan sama väljyys kuin sivuille; teeman sääntö on html-etuliitteinen. */
 html .md-typeset .admonition > :last-child,
 html .md-typeset details > :last-child {
-  margin-bottom: 1rem;
+  margin-bottom: .8rem;
 }
 
 /* Otsikkorivi omaksi palkikseen laatikon yläreunaan. Negatiivinen
@@ -49,8 +52,10 @@ html .md-typeset details > :last-child {
  * paddingissa. */
 [dir=ltr] .md-typeset .admonition-title,
 [dir=ltr] .md-typeset summary {
-  margin: 0 -1rem 1em;
-  padding: .5rem 1rem .5rem 2.8rem;
+  margin: 0 -.9rem .7em;
+  padding: .4rem .9rem .4rem 2.3rem;
+  font-size: .95em;
+  line-height: 1.5;
   background-color: color-mix(in srgb, var(--adm, #448aff) 10%, transparent);
   border-radius: .1rem .1rem 0 0;
 }
@@ -59,8 +64,29 @@ html .md-typeset details > :last-child {
  * on laskettu ilman palkkia. */
 [dir=ltr] .md-typeset .admonition-title:before,
 [dir=ltr] .md-typeset summary:before {
-  top: .9em;
-  left: 1rem;
+  top: .55em;
+  left: .8rem;
+  width: .9rem;
+  height: .9rem;
+}
+
+/* Puhelin: reunat kapeammiksi, jotta tekstille jää tilaa. */
+@media screen and (max-width: 44.984375em) {
+  .md-typeset .admonition,
+  .md-typeset details {
+    padding: 0 .7rem;
+  }
+
+  [dir=ltr] .md-typeset .admonition-title,
+  [dir=ltr] .md-typeset summary {
+    margin: 0 -.7rem .6em;
+    padding: .35rem .7rem .35rem 2rem;
+  }
+
+  [dir=ltr] .md-typeset .admonition-title:before,
+  [dir=ltr] .md-typeset summary:before {
+    left: .65rem;
+  }
 }
 
 

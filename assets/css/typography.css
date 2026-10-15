@@ -12,6 +12,9 @@
   /* Kumoaa modern-teeman tiivistyksen (.md-typeset: -0.01em). Otsikoiden
    * omat arvot jäävät voimaan. */
   letter-spacing: normal;
+  /* Teeman 1.8 on serifille 16,5 px:ssä liian ilmava: rivit eivät pysy
+   * yhdessä, eikä kappaleväli (1 em) erotu rivivälistä. */
+  line-height: 1.6;
 }
 
 /* Lukijan valitsema kirjasin (yläpalkin valikko, fontmenu.js). Oletus on
@@ -57,6 +60,78 @@ body[data-jyu-font="literata"] .md-content__inner {
  * ja summary ovat otsikoita, sisältö leipätekstiä. */
 .md-content__inner :is(h1, h2, h3, h4, h5, h6, .admonition-title, summary) {
   font-family: var(--md-text-font-family);
+}
+
+/* Otsikon jälkeen väli on otsikon oma (alla), ei kappaleen ylämarginaali.
+ * Vain tässä: kappaleen yleinen ylämarginaali jää, koska välilehden,
+ * laatikon ja kortin ensimmäinen kappale saa välinsä siitä. */
+.md-typeset :is(h1, h2, h3, h4, h5, h6) + p {
+  margin-top: 0;
+}
+
+/* Otsikot. Teeman h1 (1.875em) on vain 1,25 × h2, joten sivun otsikko ei
+ * erotu väliotsikoista; 2.25em tekee suhteesta 1,5. Väliotsikoilla
+ * enemmän tilaa ylle ja vähemmän alle, jotta otsikko kuuluu seuraavaan
+ * tekstiin eikä leiju kappaleiden välissä. Rivikorkeus tiukempi kuin
+ * leipätekstin, koska otsikko rivittyy harvoin ja isona 1.4 hajoaa. */
+.md-typeset h1 {
+  margin: .1em 0 .8em;
+  font-size: 2.25em;
+  line-height: 1.15;
+  letter-spacing: -.02em;
+}
+
+.md-typeset h2 {
+  margin: 2em 0 .55em;
+  font-size: 1.5em;
+  line-height: 1.25;
+}
+
+.md-typeset h3 {
+  margin: 1.8em 0 .5em;
+  font-size: 1.2em;
+  line-height: 1.3;
+}
+
+.md-typeset h2 + h3 {
+  margin-top: 1em;
+}
+
+/* Listat: kohtien väli puoleen teeman .5em:stä, jotta lista on yksi ryhmä
+ * eikä jono kappaleita; listan oma yläväli pienempi, jotta se liittyy
+ * edeltävään lauseeseen ("…seuraavat asiat:"). */
+.md-typeset :is(ul, ol) {
+  margin: .75em 0 1em;
+}
+
+.md-typeset :is(ul, ol) li {
+  margin-bottom: .25em;
+}
+
+.md-typeset :is(ul, ol) li > p {
+  margin: .25em 0;
+}
+
+.md-typeset :is(ul, ol) li :is(ul, ol) {
+  margin: .25em 0 .5em;
+}
+
+/* Puhelin: reunat .8rem -> 1rem (16 -> 20 px), sivun otsikko pienempi,
+ * koska 2.25em (37 px) rivittyy kapealla kolmelle riville. Raja on teeman
+ * puhelinraja. */
+@media screen and (max-width: 44.984375em) {
+  .md-content__inner {
+    margin-right: 1rem;
+    margin-left: 1rem;
+  }
+
+  .md-typeset h1 {
+    font-size: 1.7em;
+  }
+
+  .md-typeset h2 {
+    font-size: 1.35em;
+  }
 }
 
 /* Tekstin väri jyrkemmäksi: vaalea .87 -> .92, tumma #e1e1e1.
