@@ -62,10 +62,11 @@ body[data-jyu-font="literata"] .md-content__inner {
   font-family: var(--md-text-font-family);
 }
 
-/* Kappaleväli vain alle: otsikon jälkeen väli on otsikon oma (alla), ei
- * kappaleen ylämarginaali. */
-.md-typeset p {
-  margin: 0 0 1em;
+/* Otsikon jälkeen väli on otsikon oma (alla), ei kappaleen ylämarginaali.
+ * Vain tässä: kappaleen yleinen ylämarginaali jää, koska välilehden,
+ * laatikon ja kortin ensimmäinen kappale saa välinsä siitä. */
+.md-typeset :is(h1, h2, h3, h4, h5, h6) + p {
+  margin-top: 0;
 }
 
 /* Otsikot. Teeman h1 (1.875em) on vain 1,25 × h2, joten sivun otsikko ei
@@ -113,19 +114,6 @@ body[data-jyu-font="literata"] .md-content__inner {
 
 .md-typeset :is(ul, ol) li :is(ul, ol) {
   margin: .25em 0 .5em;
-}
-
-/* Tekstipalstan leveys. Työpöydällä palsta on 816 px eli noin 100 merkkiä
- * riviä kohti, mikä on serifille liikaa: silmä putoaa riviltä. Teksti
- * rajataan 33 rem:iin (noin 80 merkkiä); koodi, kuvat, taulukot ja laatikot
- * saavat edelleen koko palstan. Vain suorat lapset: laatikoiden ja
- * tehtäväkorttien sisällä leveys on laatikon. Lista, jossa on kuva, koodi
- * tai taulukko, jää rajaamatta. Raja on teeman tabletti-/työpöytäraja. */
-@media screen and (min-width: 60em) {
-  .md-content__inner > :is(p, h1, h2, h3, h4, blockquote, dl),
-  .md-content__inner > :is(ul, ol):not(:has(img, pre, table)) {
-    max-width: 33rem;
-  }
 }
 
 /* Puhelin: reunat .8rem -> 1rem (16 -> 20 px), sivun otsikko pienempi,
