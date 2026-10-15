@@ -22,7 +22,7 @@ Koeputken tarkistuslista: mdBookin ominaisuus ja sen vastine.
 | --- | --- |
 | `SUMMARY.md`: numeroidut luvut, osan otsikko linkkinä osan etusivulle | `build_nav`, `navigation.indexes` |
 | `{{#include tiedosto}}` | `convert_includes` |
-| `> [!VINKKI]` ym. | `convert_alerts`, teeman admonition |
+| `!!! tip "Vinkki"` ym. | teeman admonition, admonitions.css |
 | `<details>` | `convert_details` (`markdown="1"`) |
 | `<task>`, `<points>`, `<handout>` | `convert_tasks`, tasks.css: riippuva numerointi laatikon sijaan |
 | `<div class="ht-reqs">` | `convert_divs`, requirements.css: numerointi 1.1, 1.2, … CSS-laskurista |
@@ -56,7 +56,7 @@ ohj1 lisäsi ohj2:n koeputkeen seuraavat:
   tekstilaatikkoa). Ajopyynnössä on `multifile`-kenttä vain
   monitiedostolohkolla, koska palvelimen C#-polku aikakatkaisee pyynnön,
   jossa on `multifile: false`.
-- Oppaiden alertit Kokeile, Ei toimi vielä ja Kysymys jypelidocsista, jossa
+- Oppaiden laatikot Kokeile, Ei toimi vielä ja Kysymys jypelidocsista, jossa
   ne korvasivat TIM-wikin kuvat.
 - Tiedostot, joista ei tehdä sivua (nyt `kirja.toml`:n `ei_sivuja`): mdBook
   kääntää vain `SUMMARY.md`:n luvut, Zensical jokaisen `.md`:n.

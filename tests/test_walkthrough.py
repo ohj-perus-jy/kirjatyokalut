@@ -115,7 +115,7 @@ def test_the_walkthrough_opens_waiting_for_the_play_button(opened):
 
 def test_markdown_inside_a_step_is_converted(opened):
     """markdown="1": vaiheen sisällä käännetään kuten muualla aidat,
-    alertit (myös niiden luettelo ja aita), luettelo, näppäimet, linkit ja
+    laatikot (myös niiden luettelo ja aita), luettelo, näppäimet, linkit ja
     kuvat."""
     page, errors = opened()
     page.click(".jw-mode")

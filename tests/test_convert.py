@@ -231,8 +231,8 @@ def test_hide_lines_keeps_the_rest_of_the_line_as_it_is():
 
 
 def test_hide_lines_keeps_the_quote_marker():
-    """Alertin sisällä rivillä on ">"-etuliite, jonka convert_alerts purkaa
-    vasta myöhemmin: se on kirjoitettava takaisin."""
+    """Lainauslohkon sisällä rivillä on ">"-etuliite: se on kirjoitettava
+    takaisin."""
     assert convert.hide_lines(["> //-void main() {"], "java") == (
         ["> void main() {"], [1])
 
@@ -445,73 +445,6 @@ def test_convert_files_warns_instead_of_dropping_code(capsys):
     text = "```java\nirrallinen\n// FILE: A.java\na\n```\n"
     assert convert.convert_files(text) == (text, 0, 0, 0, 0)
     assert "koodia ennen ensimmäistä" in capsys.readouterr().err
-
-
-# --- Alertit (README kohta 7) -----------------------------------------------
-
-@pytest.mark.parametrize("label, expected", [
-    ("Osaamistavoitteet", '!!! abstract "Osaamistavoitteet"'),
-    ("HUOMAUTUS", '!!! note "Huomautus"'),
-    ("VINKKI", '!!! tip "Vinkki"'),
-    ("Vinkki", '!!! tip "Vinkki"'),
-    ("TÄRKEÄÄ", '!!! tip "Tärkeää"'),
-    ("VAROITUS", '!!! warning "Varoitus"'),
-    ("todo", '!!! info "Todo"'),
-    ("WIP", '!!! danger "WIP"'),
-    ("KOKEILE", '!!! kokeile "Kokeile käynnistää pelisi"'),
-    ("EI TOIMI VIELÄ", '!!! ei-toimi "Ei toimi vielä"'),
-    ("Kysymys", '!!! kysymys "Kysymys"'),
-])
-def test_convert_alerts_writes_the_title_out(label, expected):
-    """Tunnus -> tyyppi ja otsikko kirjainkoosta riippumatta; otsikko kirjoitetaan
-    aina, koska muuten Material näyttäisi tyypin englanninkielisen nimen."""
-    converted, alerts, unknown = convert.convert_alerts(f"> [!{label}]\n> teksti\n")
-    assert (alerts, unknown) == (1, set())
-    assert converted.startswith(expected)
-
-
-def test_convert_alerts_writes_a_title_only_block():
-    """Oppaiden merkintä on usein pelkkä tunnusrivi; siitä tulee otsikollinen
-    admonition ilman sisältöä, ei tyhjää lainausta."""
-    text = "koodi\n\n> [!KOKEILE]\n\nseuraava\n"
-    converted, alerts, unknown = convert.convert_alerts(text)
-    assert (alerts, unknown) == (1, set())
-    assert converted == 'koodi\n\n!!! kokeile "Kokeile käynnistää pelisi"\n\nseuraava\n'
-
-
-def test_convert_alerts_keeps_an_unknown_label_as_the_title():
-    """Tuntematon tunnus ei katoa: se jää otsikoksi sellaisenaan ja
-    palautuu kutsujalle, joka kertoo siitä ajon lopuksi."""
-    converted, alerts, unknown = convert.convert_alerts(
-        "> [!Tärkeää — invariantti]\n> teksti\n")
-    assert (alerts, unknown) == (1, {"Tärkeää — invariantti"})
-    assert converted.startswith('!!! note "Tärkeää — invariantti"')
-
-
-def test_convert_alerts_keeps_the_block_indentation():
-    """Lainauksen etuliitteestä syödään yksi välilyönti, jolloin lohkon omat
-    sisennykset säilyvät: koodiaita pysyy aitana ja luetelma luetelmana."""
-    text = ("> [!HUOMAUTUS]\n>\n> kappale\n>\n> ```java\n> int x = 1;\n> ```\n"
-            ">\n> - eka\n>   - toka\n")
-    converted, _, _ = convert.convert_alerts(text)
-    assert converted == ('!!! note "Huomautus"\n\n'
-                         "    kappale\n\n"
-                         "    ```java\n    int x = 1;\n    ```\n\n"
-                         "    - eka\n      - toka\n")
-
-
-def test_convert_alerts_leaves_an_ordinary_quote_alone():
-    """Lainaus ilman tunnusriviä on lainaus, ei alertti."""
-    text = "> Tavallinen sitaatti\n> jatkuu\n"
-    assert convert.convert_alerts(text) == (text, 0, set())
-
-
-def test_convert_alerts_keeps_paragraphs_apart():
-    """Tyhjä rivi eteen jos sitä ei ollut, muttei toista perään: lainauksen
-    päättävä tyhjä rivi tulee mukaan sellaisenaan."""
-    text = "edellinen\n> [!VINKKI]\n> vinkki\n\nseuraava\n"
-    converted, _, _ = convert.convert_alerts(text)
-    assert converted == 'edellinen\n\n!!! tip "Vinkki"\n\n    vinkki\n\nseuraava\n'
 
 
 # --- Avattavat osiot (README kohta 8) ----------------------------------------
@@ -1471,7 +1404,7 @@ def test_convert_animations_ignores_tags_inside_code():
 
 
 def test_walkthrough_speech_reads_the_text_without_addresses_or_code():
-    """Otsikko, kappale, luettelon kohta ja alertin otsikko omille riveilleen;
+    """Otsikko, kappale, luettelon kohta ja laatikon otsikko omille riveilleen;
     linkeistä teksti, osoitteet ja koodilohkot pois; polun erottimet,
     näppäimet ja valikkopolku sanoina; tiedostonimen piste säilyy."""
     source = (
@@ -1483,7 +1416,8 @@ def test_walkthrough_speech_reads_the_text_without_addresses_or_code():
         "```bash\ngit clone https://gitlab.jyu.fi/x.git .\n```\n\n"
         "- **Windows**: paina <kbd>Ctrl</kbd> + <kbd>V</kbd> kansiossa\n"
         "  `C:\\Users\\olli\\ohj1` (Git Bashissa `/c/Users/olli/ohj1/`).\n\n"
-        "> [!VAROITUS]\n> Älä anna `git add --all` -komentoa vain `.gitignore`-tiedostolle.\n\n"
+        '!!! warning "Varoitus"\n\n'
+        "    Älä anna `git add --all` -komentoa vain `.gitignore`-tiedostolle.\n\n"
         "</step>\n\n</walkthrough>\n")
     assert convert.walkthrough_speech(source) == (True, {"alku": (
         "Avaa sivu.\n"

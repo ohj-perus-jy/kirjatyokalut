@@ -165,8 +165,8 @@ QUOTED_FENCE_RE = re.compile(
 # mdBookin piilorivit (book.toml: hidelines): "//-"-alkuinen rivi kuuluu
 # ohjelmaan muttei näy. ohj1:n book.toml määrittelee vain csharpin; java ja
 # javascript ovat mukana ohj2:n koekirjan (tests/book) ja testien takia.
-# Lainausmerkit rivin alussa otetaan talteen: alertin sisällä olevassa aidassa
-# ">" on vielä paikallaan, koska convert_alerts ajetaan myöhemmin.
+# Lainausmerkit rivin alussa otetaan talteen, jotta lainauslohkon sisällä
+# oleva aita pysyy lainauksessa.
 HIDELINE_RE = re.compile(r"^((?:[ \t]*>)*[ \t]*)//-")
 HIDELINE_LANGUAGES = ("csharp", "java", "javascript")
 
@@ -186,32 +186,6 @@ HIGHLIGHT_LANGUAGES = ("csharp", "java", "json", "bash")
 
 # mdBookin sisällytysmakro. Polun perässä voi olla rivivalinta, ks. take_lines.
 INCLUDE_RE = re.compile(r"\{\{#include\s+(?P<spec>[^}\s][^}]*?)\s*\}\}")
-
-# mdBookin alertit (mdbook-alerts): lainauslohko, jonka ensimmäinen rivi on
-# pelkkä "[!TUNNUS]". Tunnuksen kirjainkoko vaihtelee lähteessä.
-ALERT_RE = re.compile(r"^>\s*\[!(?P<label>[^\]]+)\]\s*$")
-
-# Tunnus (pienellä) -> admonition-tyyppi ja otsikko. Tyyppi valittu mdBookin
-# värin ja kuvakkeen mukaan. Teeman tyypeistä vain kanoniset: Zensicalin CSS:ssä
-# ei ole aliaksia, joten esim. "important" jäisi tyylittömäksi — siksi Tärkeää
-# on "tip". Oppaiden merkinnät (Kokeile, Ei toimi vielä, Kysymys) ovat omia
-# tyyppejä, joiden väri ja kuvake ovat assets/css/admonitions.css:ssä; ne
-# korvaavat TIM-wikin kuvatiedostot, ja useimmiten lohkossa on pelkkä tunnusrivi.
-ALERT_KINDS = {
-    "osaamistavoitteet": ("abstract", "Osaamistavoitteet"),
-    "huomautus": ("note", "Huomautus"),
-    "vinkki": ("tip", "Vinkki"),
-    "tärkeää": ("tip", "Tärkeää"),
-    "varoitus": ("warning", "Varoitus"),
-    "todo": ("info", "Todo"),
-    "wip": ("danger", "WIP"),
-    "kokeile": ("kokeile", "Kokeile käynnistää pelisi"),
-    "ei toimi vielä": ("ei-toimi", "Ei toimi vielä"),
-    "kysymys": ("kysymys", "Kysymys"),
-}
-
-# Tuntematon tunnus säilyy otsikkona sellaisenaan; tyypiksi tulee neutraalein.
-ALERT_FALLBACK = "note"
 
 # <details>-lohkot. Python-Markdown päästää raa'an HTML-lohkon sisällön läpi
 # jäsentämättä; markdown-attribuutti (md_in_html, Zensicalin oletuslistalla)
@@ -799,7 +773,7 @@ def indent_block(body: list[str]) -> list[str]:
     """Rivit sisäkkäisen lohkon sisällöksi: tyhjät päät pois, muu 4 välilyöntiä
     sisemmäs. Suhteelliset sisennykset säilyvät, joten listat, koodiaidat ja
     raaka HTML pysyvät ennallaan. Sama sisennys kelpaa välilehdelle
-    (convert_tabs, convert_files) ja admonitionille (convert_alerts)."""
+    (convert_tabs, convert_files)."""
     while body and not body[0].strip():
         body = body[1:]
     while body and not body[-1].strip():
@@ -822,8 +796,8 @@ def rendered_body(body: list[str]) -> tuple[int, int]:
     """Piirtyvän rungon rajat aidan sisällä. -> (ensimmäinen, viimeisen jälkeinen).
 
     Markdown pudottaa aidan alun ja lopun tyhjät rivit, joten rivinumerot on
-    laskettava jäljelle jäävästä rungosta. Pelkkä "> " on tyhjä, koska
-    lainausmerkki katoaa myöhemmin (convert_alerts).
+    laskettava jäljelle jäävästä rungosta. Pelkkä "> " on lainauslohkon
+    tyhjä rivi.
     """
     first, last = 0, len(body)
     while first < last and not body[first].strip(" \t>"):
@@ -942,63 +916,6 @@ def convert_fences(text: str) -> tuple[str, int, int, int]:
             open_fence = None
         out.append(line)
     return "\n".join(out), fences, blocks, marked
-
-
-def read_alert(lines: list[str], start: int) -> tuple[list[str], int]:
-    """Lue yhden alertin sisältö riviltä start alkaen (tunnusrivi on start).
-
-    -> (lainauslohkon loput rivit, ensimmäinen rivi lohkon jälkeen). Lohko
-    loppuu ensimmäiseen riviin, joka ei ala ">"-merkillä; laiskoja jatkorivejä
-    ei tueta.
-    """
-    index = start + 1
-    while index < len(lines) and lines[index].startswith(">"):
-        index += 1
-    return lines[start + 1:index], index
-
-
-def alert_body(body: list[str]) -> list[str]:
-    """Lainauslohkon rivit admonitionin sisällöksi: ">" ja yksi välilyönti pois,
-    neljä välilyöntiä sisemmäs. Lohkon omat sisennykset säilyvät."""
-    return indent_block([line[1:].removeprefix(" ") for line in body])
-
-
-def convert_alerts(text: str) -> tuple[str, int, set[str]]:
-    """mdBookin alertit -> admonitionit. -> (teksti, lohkoja, tuntemattomat).
-
-    "> [!VINKKI]" -> '!!! tip "Vinkki"'. Otsikko aina näkyviin, koska muuten
-    Material näyttää tyypin englanninkielisen nimen.
-    """
-    lines = text.split("\n")
-    out: list[str] = []
-    unknown: set[str] = set()
-    alerts = 0
-    index = 0
-    while index < len(lines):
-        match = ALERT_RE.match(lines[index])
-        if not match:
-            out.append(lines[index])
-            index += 1
-            continue
-        label = match["label"].strip()
-        known = ALERT_KINDS.get(label.lower())
-        if known is None:
-            unknown.add(label)
-        kind, title = known or (ALERT_FALLBACK, label)
-        body, index = read_alert(lines, index)
-        alerts += 1
-        if out and out[-1].strip():
-            out.append("")
-        out.append(f'!!! {kind} "{title}"')
-        # Pelkkä tunnusrivi (oppaiden merkinnät) on otsikollinen laatikko ilman
-        # sisältöä; tyhjä rivi kuuluu vain otsikon ja sisällön väliin.
-        if body:
-            out.append("")
-            out.extend(alert_body(body))
-        # Tyhjä rivi perään vain jos lähteessä ei jo ollut.
-        if index < len(lines) and lines[index].strip():
-            out.append("")
-    return "\n".join(out), alerts, unknown
 
 
 def plantuml_encode(source: str) -> str:
@@ -2039,7 +1956,6 @@ def convert_animations(text: str, source_path: str) -> tuple[str, int]:
 SPEECH_KEYS = {"Ctrl": "Control", "Cmd": "Command"}
 SPEECH_HEADING_RE = re.compile(r"^#{1,6}\s+(?P<text>.*?)(?:\s*\{[^}]*\})?\s*$")
 SPEECH_ITEM_RE = re.compile(r"^(?:[-*+]|\d+\.)\s+(?P<text>.*)$")
-SPEECH_ALERT_RE = re.compile(r"^\[!(?P<label>[^\]]+)\]$")
 # Kuvakkeen lyhytkoodi (:material-menu:) on koriste kuten valmis SVG-kuvake;
 # joukot kuten Zensicalin templates/.icons/. Koodin sisällä se on tekstiä.
 SPEECH_ICON_RE = re.compile(
@@ -2101,7 +2017,7 @@ def speech_line(text: str) -> str:
 
 def speech_text(block: str) -> str:
     """Vaiheen Markdown ääneen luettavaksi: kappale, otsikko, luettelon kohta
-    ja alertin otsikko kukin omalle rivilleen (puhe.py: tauko); koodilohkot pois."""
+    ja laatikon otsikko kukin omalle rivilleen (puhe.py: tauko); koodilohkot pois."""
     lines: list[str] = []
     paragraph: list[str] = []
     fence: str | None = None
@@ -2122,10 +2038,11 @@ def speech_text(block: str) -> str:
         if match:
             flush()
             fence = match["fence"]
-        elif alert := SPEECH_ALERT_RE.match(line):
+        elif box := SPEECH_BOX_RE.match(line):
             flush()
-            label = alert["label"]
-            lines.append(ALERT_KINDS.get(label.lower(), ("", label.capitalize()))[1] + ".")
+            if box["title"]:
+                paragraph.append(box["title"])
+                flush()
         elif heading := SPEECH_HEADING_RE.match(line):
             flush()
             paragraph.append(heading["text"])
@@ -3114,7 +3031,6 @@ class PageResult(NamedTuple):
     diagrams: set[str]
     drawings: set[str]
     graphs: set[str]
-    unknown_alerts: set[str]
     clips: set[str]
     silent_steps: list[str]
 
@@ -3139,13 +3055,12 @@ def convert_page(origin: Path, source_path: str, clips: set[str] | None = None) 
     # Visat ennen aitoja: kysymyksen tunniste lasketaan lähteen tekstistä.
     converted, _ = convert_quizzes(converted, source_path)
     # Monitiedostolohkot ennen convert_fencesiä: convert_fences ei koske
-    # niiden valmiisiin aitoihin. Aidat, kaaviot, alertit ja tehtäväkortit
-    # ennen convert_tabsia, koska se sisentää välilehden sisällön, eikä
-    # sisennettyä aitaa, ">":tä tai HTML-lohkoa enää tunnisteta.
+    # niiden valmiisiin aitoihin. Aidat, kaaviot ja tehtäväkortit ennen
+    # convert_tabsia, koska se sisentää välilehden sisällön, eikä sisennettyä
+    # aitaa tai HTML-lohkoa enää tunnisteta.
     converted, *_ = convert_files(converted)
     converted, *_ = convert_fences(converted)
     converted, _, page_used = convert_plantuml(converted, page)
-    converted, _, page_unknown = convert_alerts(converted)
     # details ja drop_breaks: paikalla ei ole väliä.
     converted, *_ = convert_details(converted)
     converted, _ = drop_breaks(converted)
@@ -3167,7 +3082,7 @@ def convert_page(origin: Path, source_path: str, clips: set[str] | None = None) 
     # Animaatiot välilehtien jälkeen, ks. convert_animations.
     converted, _ = convert_animations(converted, source_path)
     return PageResult(converted, page_labels, page_unknown_icons, page_used, page_art,
-                      page_graphs, page_unknown, set(audio.values()), silent)
+                      page_graphs, set(audio.values()), silent)
 
 
 def report_diagrams(pruned: dict[str, int]) -> None:
@@ -3202,7 +3117,6 @@ def main(strict: bool = False) -> int:
     used_drawings: set[str] = set()
     used_graphs: set[str] = set()
     tab_labels: set[str] = set()
-    unknown_alerts: set[str] = set()
     unknown_icons: set[str] = set()
     clips = available_clips()
     used_clips: set[str] = set()
@@ -3230,7 +3144,6 @@ def main(strict: bool = False) -> int:
         used_diagrams |= page.diagrams
         used_drawings |= page.drawings
         used_graphs |= page.graphs
-        unknown_alerts |= page.unknown_alerts
     for asset in ASSETS.rglob("*"):
         if asset.is_file():
             copy_if_changed(asset, DOCS / "assets" / asset.relative_to(ASSETS))
@@ -3255,9 +3168,6 @@ def main(strict: bool = False) -> int:
     if unknown_icons:
         print(f"varoitus: tuntematon ikoni: {', '.join(sorted(unknown_icons))}",
               file=sys.stderr)
-    if unknown_alerts:
-        print("varoitus: tuntematon alertin tunnus: "
-              f"{', '.join(sorted(unknown_alerts))}", file=sys.stderr)
     # Ilman varastoa jokaisen ääneen luettavan vaiheen leike puuttuu, joten
     # silent_steps kertoo, tarvitaanko varastoa vaiheittaisille ohjeille.
     no_store = clips is None and bool(SPEECH_PAGES or silent_steps)

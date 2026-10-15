@@ -6,8 +6,9 @@ muiden testien laskemat luvut ja lohkot eivät muutu.
 - Luettelon ensimmäinen kohta
 - Toinen kohta, jossa on [linkki](https://example.invalid/)
 
-> [!HUOMAUTUS]
-> Laatikon teksti.
+!!! note "Huomautus"
+
+    Laatikon teksti.
 
 ## Oma tunnus {#oma}
 

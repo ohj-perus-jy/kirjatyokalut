@@ -8,7 +8,7 @@ työkaluketju, joka muuntaa markdownilla kirjoitetun lähdeaineiston
 [Zensical](https://zensical.org)-sivustoksi. Kirja käyttää tätä repoa
 git-submodulena, jotta kaikista kirjoista saadaan yhtenäisen näköiset ja ominaisuuksiltaan samanlaiset.
 
-Merkkauksessa on vielä mukana mdBook-murretta (`SUMMARY.md`, `{{#include}}`, `> [!VINKKI]`, `//-`-piilorivit
+Merkkauksessa on vielä mukana mdBook-murretta (`SUMMARY.md`, `{{#include}}`, `//-`-piilorivit
 ym.), koska kirjat kirjoitettiin alun perin mdBookille.
 
 - Miksi mikin ratkaisu on tehty: [PERUSTELUT.md](PERUSTELUT.md).
@@ -29,7 +29,7 @@ kirjoittamalla merkinnän `src/`:ään. Toteutus-sarakkeen funktiot ovat
 | --- | --- | --- |
 | `SUMMARY.md` | navigaatio: osat, numeroidut luvut, osan otsikko linkkinä osan etusivulle; sisennetty etulinkki on edellisen etulinkin alasivu (edellinen on hakemistonsa `index.md`) | `build_nav` |
 | `{{#include tiedosto}}` | tiedoston sisältö tai valitut rivit paikalleen | `convert_includes` |
-| `> [!VINKKI]` ym. | värillinen laatikko: Osaamistavoitteet, Huomautus, Vinkki, Tärkeää, Varoitus, Todo, WIP; oppaiden merkinnät Kokeile, Ei toimi vielä, Kysymys | `convert_alerts`, admonitions.css |
+| `!!! note "Huomautus"` ym. | värillinen laatikko Zensicalin omalla merkinnällä; otsikko kirjoitetaan aina, koska muuten Material näyttää tyypin englanninkielisen nimen. Tyypit: abstract (Osaamistavoitteet), note (Huomautus), tip (Vinkki, Tärkeää), warning (Varoitus), info (Todo), danger (WIP); oppaiden omat tyypit kokeile, ei-toimi, kysymys | admonitions.css |
 | `<details>`, `<summary>` | avattava osio, jonka sisällä Markdown toimii | `convert_details` |
 | `<task>`, `<task-title num>`, `<points>`, `<handout>`, `<task-link>` | tehtäväkortti: numero, pisteet, tehtävänanto; Bonus-liuska, kun otsikossa on bonusmerkki | `convert_tasks`, tasks.css |
 | `<i class="jyu-star"></i>` | bonusmerkki (bonustehtävä, valinnainen lisätieto); nimetään ruudunlukijalle, jos rivillä ei ole sanaa "bonus" tai "valinnais…" | `convert_bonus_marks`, tasks.css |

@@ -1,18 +1,18 @@
 # Huomiot
 
-Alertit (README.md kohta 7): lainauslohko, jonka ensimmäinen rivi on pelkkä
-tunnus. Otsikko kirjoitetaan käännöksessä näkyviin, joten Material ei näytä
-tyypin englanninkielistä nimeä.
+Laatikot (README.md kohta 7): Zensicalin admonition. Otsikko kirjoitetaan
+lähteessä näkyviin, joten Material ei näytä tyypin englanninkielistä nimeä.
 
-> [!VINKKI]
-> Tunnus versaalilla.
+!!! tip "Vinkki"
 
-> [!Huomautus]
-> Sama tunnus toisin kirjoitettuna: otsikko tulee taulukosta eikä lähteen
-> kirjoitusasusta.
->
-> 1. Luetelma säilyy
-> 2. sisennyksineen.
+    Laatikko, jossa on yksi kappale.
+
+!!! note "Huomautus"
+
+    Laatikko, jossa on kappale ja luetelma.
+
+    1. Luetelma säilyy
+    2. sisennyksineen.
 
 ## Ennen laatikkoa
 

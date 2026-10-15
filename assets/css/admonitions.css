@@ -175,7 +175,7 @@ html .md-typeset details[open] > :last-child {
 }
 
 
-/* Oppaiden merkinnät (convert.py: ALERT_KINDS): Kokeile, Ei toimi vielä ja
+/* Oppaiden merkinnät (omat admonition-tyypit): Kokeile, Ei toimi vielä ja
  * Kysymys. TIM-wikissä nämä olivat pieniä PNG-kuvia (play-nappi, punainen
  * rasti, kysymysmerkki), jotka eivät skaalautuneet eivätkä seuranneet teemaa.
  * Nyt ne ovat omia admonition-tyyppejä, useimmiten pelkkä otsikkorivi. Kokeile

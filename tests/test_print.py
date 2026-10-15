@@ -112,7 +112,7 @@ def test_tab_sets_stay_independent(printed):
 
 
 def test_admonitions_keep_their_own_titles(printed):
-    """Alertin otsikko kirjoitetaan näkyviin (kohta 7); muuten Material näyttäisi
+    """Laatikon otsikko kirjoitetaan näkyviin (kohta 7); muuten Material näyttäisi
     tyypin englanninkielisen nimen."""
     assert printed.evaluate(
         "() => [...document.querySelectorAll('.admonition-title')]"

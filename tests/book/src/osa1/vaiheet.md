@@ -33,8 +33,9 @@ git status
 
 ### Kirjaudu
 
-> [!HUOMAUTUS]
-> Alertti vaiheen sisällä.
+!!! note "Huomautus"
+
+    Alertti vaiheen sisällä.
 
 </step>
 
@@ -59,13 +60,14 @@ Valitse *Tiedosto* › *Tallenna* tai paina <kbd>Ctrl</kbd> + <kbd>S</kbd>.
 - `.git/` on **paikallinen** varasto.
 - `a.txt` on uusi tiedosto.
 
-> [!VAROITUS]
-> 1. Polku on *suhteellinen*.
-> 2. Lisää tiedosto:
->
->     ```bash
->     git add a.txt
->     ```
+!!! warning "Varoitus"
+
+    1. Polku on *suhteellinen*.
+    2. Lisää tiedosto:
+
+        ```bash
+        git add a.txt
+        ```
 
 </step>
 

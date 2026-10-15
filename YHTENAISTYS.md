@@ -13,7 +13,7 @@ lähde kirjoitetaan uusiksi ennen kuin osoitin siirtyy versioon ilman muunnosta.
 
 | mdBook | Zensical | ohj1 | ohj2 | jy | ca | convert.py |
 | --- | --- | --- | --- | --- | --- | --- |
-| `> [!VINKKI]` | `!!! tip "Vinkki"` | 22 | 75 | 61 | 77 | `convert_alerts` |
+| `> [!VINKKI]` | `!!! tip "Vinkki"` | 22 | 75 | 61 | 77 | tehty: ohj1, ohj2 ja jy kirjoittavat `!!!`-muodon, `convert_alerts` poistettu |
 | `<details>`, monirivinen `<summary>` | `<details markdown="1">`, `markdown="block"` | 32 | 86 + 6 | 2 | 3 | `convert_details` |
 | ` ```java,ignore ` | ` ```{ .java .ignore } ` | 27 | 289 | 787 | – | `convert_fences` |
 | `(#käyttö)`, `## Otsikko{#id}` | `(#kaytto)`, `## Otsikko {#id}` | 3 | 6 + 1 | – | 2 | `convert_anchors` |
@@ -35,10 +35,10 @@ containerapps kirjoitettiin uusiksi vasta 2026-10-06).
 
 - **Aidat:** `fence_language` on ensin opetettava lukemaan `{ .kieli … }`,
   muuten piilo- ja korostusrivit katoavat (ohj2 66, jy 44 lohkoa).
-- **Alertit:** sisältö sisennetään neljällä välilyönnillä. Zensicalin
-  `callouts`-liitännäinen pitäisi merkinnän `> [!…]`, mutta suomenkieliset
-  tyypit tarvitsisivat oman CSS:n. Kokeilematta.
-- **Välilehdet** viimeisenä, koska sisennetty `> [!` ei ole alertti.
+- **Alertit:** tehty. Lähteet kirjoittavat Zensicalin `!!!`-muodon,
+  ja `convert_alerts` on poistettu.
+- **Välilehdet** viimeisenä, koska sisennettyä aitaa tai HTML-lohkoa ei
+  enää tunnisteta.
   `extra.tab_labels` jää: `content.html` ei linkitä tiedostovälilehtiä.
   Nyt välilehden sisällä oleva `<details>` jää `<p>`-kääreeseen (ohj1 4,
   ohj2 4 lohkoa), koska `convert_tabs` sisentää sen. Tarkista, korjaako
@@ -81,7 +81,7 @@ Vastinetta ei ole, tai se vaatisi laskemaan käsin. Perustelut:
 ## Järjestys ja työtapa
 
 1. Heti: `dedent_headings` (ei esiintymiä).
-2. `convert_page`n järjestyksessä: ankkurit, aidat, alertit, details,
+2. `convert_page`n järjestyksessä: ankkurit, aidat, details,
    `<br />`, divit, ikonit ja välilehdet viimeisenä.
 3. `SUMMARY.md` ja `{{#include}}`, kun numerointi ja snippets on kokeiltu.
 
@@ -123,6 +123,6 @@ kirjoitettu samalla mdBook-murteella.
 
 Avoimet kysymykset:
 
-- Otsikko "Kokeile käynnistää pelisi" (`> [!KOKEILE]`) on Jypeli-sanastoa.
-  Yleisempi oletus vai kirjan oma otsikko `kirja.toml`issa?
+- Otsikko "Kokeile käynnistää pelisi" (`!!! kokeile`) on Jypeli-sanastoa ja
+  kirjoitetaan nyt jokaiseen laatikkoon lähteessä.
 - LICENSE puuttuu tästä reposta.
