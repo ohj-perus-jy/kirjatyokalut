@@ -35,12 +35,13 @@
 
   const create = (element) => {
     /* rows, poster ja controls tulevat tagista (kirjan omat attribuutit);
-     * kirjasinkoko ja fit: false ovat samat kuin theme/asciinema-component.js:ssä. */
+     * fit: false on sama kuin theme/asciinema-component.js:ssä. Kirjasinkoko
+     * on layout.css:ssä eikä terminalFontSize-asetuksena, koska asetus
+     * kirjoittaisi kiinteän koon tyyliattribuuttiin CSS:n ohi. */
     return AsciinemaPlayer.create(element.getAttribute("src"), element, {
       rows: +element.getAttribute("rows") || 24,
       poster: element.getAttribute("poster") || undefined,
       controls: element.hasAttribute("controls"),
-      terminalFontSize: "12px",
       fit: false,
     });
   };
