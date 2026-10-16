@@ -266,10 +266,13 @@ body {
 
 /* Terminaalisoittimen kerrokset (asciinema-player.css: aloituspeite 10,
  * ohjauspalkki 30) omaan pinoamiskontekstiinsa. Muuten ne piirtyvät yläpalkin
- * (4) ja sen valikoiden päälle, kun soitin vierii palkin alle. Tässä eikä
- * soittimen tyylissä, koska se on kolmannen osapuolen tiedosto. */
+ * (4) ja sen valikoiden päälle, kun soitin vierii palkin alle. Soitin
+ * tekstipalstan levyiseksi; muuten se kutistuu nauhoituksen levyiseksi.
+ * Tässä eikä soittimen tyylissä, koska se on kolmannen osapuolen tiedosto
+ * (asciinema-player 3.12.1 sellaisenaan). */
 .ap-player {
   isolation: isolate;
+  width: 100%;
 }
 
 /* Repo-linkin tyhjät kääreet pois. Linkki on tyhjennetty mallista

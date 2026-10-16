@@ -1,7 +1,8 @@
 /* Terminaalinauhoitusten soitin. Lähteen <asciinema src=... rows=... poster=...>
  * menee Markdownin läpi sellaisenaan; ilman soitinta tagi ei näy mitenkään.
  * Soitin on kirjan oma (assets/js/asciinema-player.min.js ja
- * assets/css/asciinema-player.css) ja asetukset samat kuin mdBookin
+ * assets/css/asciinema-player.css: asciinema-player 3.12.1, Apache 2.0,
+ * assets/LICENSE-asciinema-player.txt) ja asetukset samat kuin mdBookin
  * theme/asciinema-component.js:ssä.
  *
  * Toisin kuin mdBookissa, soitin ja sen tyyli haetaan vasta sivulla, jolla on
