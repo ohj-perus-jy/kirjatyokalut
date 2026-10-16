@@ -57,6 +57,18 @@ def test_the_attributes_of_the_tag_reach_the_player(page):
         ["3", 3, False, 0], ["3", 3, True, 1]]
 
 
+def test_a_missing_recording_is_reported(browser, chapter_url):
+    """Puuttuva .cast-tiedosto näkyy virheenä tiedoston nimellä. Soitin ei
+    piirrä silloin posteria, joten odotus päättyy virheeseen eikä jää auki
+    (tulostussivu odottaisi aikarajaansa)."""
+    opened = browser.new_page()
+    opened.route("**/nauhoitus.cast", lambda route: route.fulfill(status=404))
+    with opened.expect_event("pageerror") as error:
+        opened.goto(chapter_url, wait_until="load")
+    assert "images/nauhoitus.cast" in str(error.value)
+    opened.close()
+
+
 def test_the_player_fills_the_column(page):
     """Soitin täyttää tekstipalstan (layout.css) eikä kutistu nauhoituksen
     levyiseksi, kuten se tekisi pelkällä asciinema-player.css:llä."""

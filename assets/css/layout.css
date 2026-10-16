@@ -269,7 +269,7 @@ body {
  * (4) ja sen valikoiden päälle, kun soitin vierii palkin alle. Soitin
  * tekstipalstan levyiseksi; muuten se kutistuu nauhoituksen levyiseksi.
  * Tässä eikä soittimen tyylissä, koska se on kolmannen osapuolen tiedosto
- * (asciinema-player 3.12.1 sellaisenaan). */
+ * (asciinema-player 3.17.0 sellaisenaan). */
 .ap-player {
   isolation: isolate;
   width: 100%;

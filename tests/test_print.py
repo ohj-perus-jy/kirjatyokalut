@@ -95,8 +95,9 @@ def test_images_are_loaded(printed):
 def test_recordings_are_drawn_before_printing(printed):
     """Soitin (kohta 16) haetaan ja piirtää ensimmäisen ruutunsa vasta lukujen
     jälkeen, joten sitä on odotettava. Koekirjan kaksi nauhoitusta ovat
-    kumpikin kolme riviä."""
+    kumpikin kolme riviä, ja kummassakin on tekstiä."""
     assert printed.drawn_lines == [6]
+    assert printed.blank_players == [0]
 
 
 def test_tab_sets_stay_independent(printed):

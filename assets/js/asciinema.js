@@ -1,7 +1,7 @@
 /* Terminaalinauhoitusten soitin. Lähteen <asciinema src=... rows=... poster=...>
  * menee Markdownin läpi sellaisenaan; ilman soitinta tagi ei näy mitenkään.
  * Soitin on kirjan oma (assets/js/asciinema-player.min.js ja
- * assets/css/asciinema-player.css: asciinema-player 3.12.1, Apache 2.0,
+ * assets/css/asciinema-player.css: asciinema-player 3.17.0, Apache 2.0,
  * assets/LICENSE-asciinema-player.txt) ja asetukset samat kuin mdBookin
  * theme/asciinema-component.js:ssä.
  *
@@ -45,34 +45,39 @@
     });
   };
 
-  /* Soitin piirtää terminaalin omassa requestAnimationFrame-kutsussaan vasta
-   * hakunsa jälkeen, joten ruutu ei ole valmis getDuration():n ratketessa.
-   * Siksi odotetaan piirtynyttä riviä, ei ruudunpäivitystä. */
-  const drawn = (element) => new Promise((resolve) => {
-    if (element.querySelector(".ap-line")) return resolve();
+  /* Soitin piirtää rivit tyhjinä heti ja posterin vasta nauhoituksen haun
+   * jälkeen, eikä haun valmistumisesta tule tapahtumaa (getDuration() ei
+   * odota). Siksi odotetaan riviä, jossa on tekstiä. Haun virhe tulee
+   * error-tapahtumana. Ilman posteria soitin hakee nauhoituksen vasta
+   * toistettaessa, joten odotettavaa ei ole. */
+  const drawn = (element, player) => new Promise((resolve, reject) => {
+    const posterDrawn = () => [...element.querySelectorAll(".ap-line")]
+      .some((line) => line.textContent.trim());
+    if (!element.hasAttribute("poster") || posterDrawn()) return resolve();
 
     const observer = new MutationObserver(() => {
-      if (!element.querySelector(".ap-line")) return;
+      if (!posterDrawn()) return;
       observer.disconnect();
       resolve();
     });
-    observer.observe(element, { childList: true, subtree: true });
+    observer.observe(element, { childList: true, subtree: true, characterData: true });
+    player.addEventListener("error", ({ message }) => {
+      observer.disconnect();
+      reject(new Error(`asciinema-nauhoitusta ei saatu: ${element.getAttribute("src")}: ${message}`));
+    });
   });
 
   /* data-ready estää toisen soittimen samaan elementtiin, kun tulostussivu
    * kutsuu uudestaan. Lupaus ratkeaa, kun jokainen soitin on hakenut
-   * nauhoituksensa (getDuration() hylkää, jos tiedosto puuttuu) ja piirtänyt
-   * ensimmäisen ruudun. */
+   * nauhoituksensa ja piirtänyt posterin, ja hylätään, jos tiedosto puuttuu. */
   const play = async (root) => {
     const elements = [...root.querySelectorAll("asciinema[src]:not([data-ready])")];
     if (!elements.length) return;
 
     await load();
-    await Promise.all(elements.map(async (element) => {
+    await Promise.all(elements.map((element) => {
       element.dataset.ready = "";
-      const player = create(element);
-      await player.getDuration();
-      await drawn(element);
+      return drawn(element, create(element));
     }));
   };
 
