@@ -14,6 +14,7 @@ import zlib
 from pathlib import Path
 
 import pytest
+import yaml
 
 import convert
 
@@ -2089,9 +2090,15 @@ def test_build_base_points_the_theme_to_the_tools(tmp_path, monkeypatch):
 @pytest.mark.parametrize("zoom", [False, True])
 def test_build_base_adds_image_zoom_only_when_the_book_asks(monkeypatch, zoom):
     """kirja.toml: kuvasuurennus = true lisää GLightboxin pohjan
-    laajennuslistaan; muut kirjat saavat pohjan sellaisenaan."""
+    laajennuslistaan ja sen kirjaston tyyli- ja skriptilistan loppuun, jottei
+    teema hae sitä unpkg.comista; muut kirjat saavat pohjan sellaisenaan."""
     monkeypatch.setattr(convert, "IMAGE_ZOOM", zoom)
     base = convert.build_base()
     extensions = base.split("\nmarkdown_extensions:\n", 1)[1]
     assert extensions.startswith("  zensical.extensions.glightbox: {}\n") == zoom
     assert ("glightbox" in base) == zoom
+    config = yaml.safe_load(base)
+    assert (config["extra_css"][-1] == "assets/css/glightbox.min.css") == zoom
+    assert (config["extra_javascript"][-1] == "assets/js/glightbox.min.js") == zoom
+    for path in ("assets/css/glightbox.min.css", "assets/js/glightbox.min.js"):
+        assert (convert.TOOL / path).is_file()

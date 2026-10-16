@@ -10,7 +10,7 @@ import re
 
 import pytest
 
-from conftest import GOOGLE_FONTS, google_font_references
+from conftest import google_font_references
 
 PRELOAD = "link[rel=preload][as=font]"
 
@@ -73,10 +73,9 @@ def test_the_fonts_load_without_leaving_the_site(browser, base_url):
     page.evaluate("document.fonts.ready")
     assert "Atkinson Hyperlegible Next" in loaded_families(page)
 
-    # Koekirjan kuvasuurennus hakee GLightboxin tyylin unpkg.comista (Zensicalin
-    # laajennus), joten ulkopuolisia pyyntöjä voi olla; kirjasimia ei.
-    assert [url for url in outside
-            if GOOGLE_FONTS.search(url) or url.endswith((".woff2", ".woff", ".ttf"))] == []
+    # Ei muitakaan ulkopuolisia pyyntöjä: kuvasuurennuksen GLightbox on oma
+    # (convert.py: IMAGE_ZOOM_CSS).
+    assert outside == []
     assert errors == []
     fonts = [url for url in requested if url.endswith(".woff2")]
     assert fonts and all(url.startswith(f"{base_url}/assets/fonts/") for url in fonts)
