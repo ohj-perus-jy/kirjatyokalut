@@ -1,7 +1,9 @@
 # Kirjojen yhteiset Zensical-asetukset. convert.py kirjoittaa tämän kirjan
 # nav.yml:n alkuun (build_base), ja kirjan mkdocs.yml perii sen INHERITillä;
 # kirjan oma arvo voittaa. Tänne lisätään vain se, minkä jokin mdBookin
-# ominaisuus vaatii. Polut ovat suhteessa kirjan mkdocs.yml:ään.
+# ominaisuus vaatii. Polut ovat suhteessa kirjan mkdocs.yml:ään. Kuvasuurennus
+# (kirja.toml) lisää laajennuksen ja tyyli- ja skriptilistan loppuun kirjaston,
+# joten extra_javascript on viimeinen avain (convert.py: build_base).
 docs_dir: docs
 site_dir: site
 

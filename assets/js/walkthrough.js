@@ -544,8 +544,9 @@
     .filter((node) => !node.classList?.contains("headerlink"))
     .map((node) => node.textContent).join("").trim();
 
-  /* Kuvasuurennus (kirja.toml: kuvasuurennus; teema lataa GLightboxin vasta
-   * tämän skriptin jälkeen ja lukee gallerian silloin): vaiheen kuvat ovat
+  /* Kuvasuurennus (kirja.toml: kuvasuurennus; teema luo GLightboxin vasta
+   * DOMContentLoadedissa eli tämän skriptin jälkeen ja lukee gallerian
+   * silloin, ks. convert.py: IMAGE_ZOOM_CSS): vaiheen kuvat ovat
    * oma galleriansa, jottei suurennuksen selaus vie piilossa olevien
    * vaiheiden kuviin. */
   let walks = 0;

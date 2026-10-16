@@ -102,6 +102,22 @@ SPEECH_VOICE: str = SPEECH_CONFIG.get("aani", SPEECH_DEFAULT_VOICE)
 # kirja.toml: kuvasuurennus = true.
 IMAGE_ZOOM: bool = CONFIG.get("kuvasuurennus", False)
 
+# Kuvasuurennuksen kirjasto (GLightbox 3.3.1, MIT, assets/LICENSE-glightbox.txt)
+# pohjan extra_css- ja extra_javascript-listan loppuun, ks. build_base. Teema
+# hakee kirjaston unpkg.comista vain, jos sivulla ei ole valmiiksi
+# GLightbox-oliota, ja luo suurennuksen vasta DOMContentLoadedissa, kun
+# skriptit on ajettu. Loppuun, koska teema lisäsi tiedostot ennenkin kaiken
+# muun perään: tyylien järjestys pysyy samana.
+IMAGE_ZOOM_CSS = """
+  # Kuvasuurennus (kirja.toml), ks. convert.py: IMAGE_ZOOM_CSS.
+  - assets/css/glightbox.min.css
+"""
+IMAGE_ZOOM_JS = """
+  # Kuvasuurennuksen kirjasto, jottei teema hae sitä unpkg.comista. Se ei
+  # muokkaa sivua, joten paikalla ei ole väliä; ks. convert.py: IMAGE_ZOOM_CSS.
+  - assets/js/glightbox.min.js
+"""
+
 # Otsikko, jonka edessä on 1-3 välilyöntiä: CommonMark (mdBook) sallii sen,
 # Python-Markdown ei, vaan jättää risuaidat näkyviin. Ks. dedent_headings.
 INDENTED_HEADING_RE = re.compile(r"^ {1,3}(?=#{1,6}\s)")
@@ -496,12 +512,15 @@ def build_base() -> str:
     Kirjan mkdocs.yml perii nav.yml:n (INHERIT), joten sinne jäävät vain
     kirjan omat rivit. Pohjan TYOKALUT on polku kirjan hakemistosta tähän
     hakemistoon: Zensical ratkaisee custom_dirin mkdocs.yml:n sijainnista.
-    IMAGE_ZOOM lisää laajennuslistaan GLightboxin.
+    IMAGE_ZOOM lisää laajennuslistaan GLightboxin ja tyyli- ja skriptilistan
+    loppuun sen kirjaston (IMAGE_ZOOM_CSS, IMAGE_ZOOM_JS).
     """
     base = (TOOL / "mkdocs-pohja.yml").read_text(encoding="utf-8")
     if IMAGE_ZOOM:
         base = base.replace("\nmarkdown_extensions:\n", "\nmarkdown_extensions:\n"
                             "  zensical.extensions.glightbox: {}\n")
+        base = base.replace("\nextra_javascript:\n",
+                            IMAGE_ZOOM_CSS + "\nextra_javascript:\n") + IMAGE_ZOOM_JS
     tool = Path(os.path.relpath(TOOL, BOOK)).as_posix()
     return ("# Generoitu (convert.py): mkdocs-pohja.yml + navigaatio. Älä muokkaa.\n"
             + base.replace("custom_dir: TYOKALUT/", f"custom_dir: {tool}/") + "\n")

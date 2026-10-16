@@ -35,7 +35,8 @@ def walk_url(book, serve) -> str:
 @pytest.fixture
 def opened(browser, walk_url):
     """opened(ankkuri, reduced_motion, block, viewport, ready) -> (sivu, virheet).
-    ready: odota, että esitys on piirretty."""
+    ready: odota, että esitys on piirretty. unpkg.com on aina estetty, joten
+    teeman sieltä hakema GLightbox jäisi virheeksi (convert.py: IMAGE_ZOOM_CSS)."""
     contexts = []
 
     def open_page(fragment="", reduced_motion="no-preference", block=None,
@@ -50,6 +51,7 @@ def opened(browser, walk_url):
         page.on("pageerror", lambda error: errors.append(str(error)))
         page.on("console", lambda message: message.type == "error"
                 and errors.append(f"{message.text} {message.location['url']}".strip()))
+        page.route("https://unpkg.com/**", lambda route: route.abort())
         if block:
             page.route(block, lambda route: route.abort())
         page.goto(walk_url + fragment, wait_until="load")
@@ -460,7 +462,8 @@ def test_without_scenes_the_walkthrough_stays_text(opened):
 
 
 # --- Kuvasuurennus (koekirjan kirja.toml: kuvasuurennus) ----------------------
-# Luvun Kuvat kahdessa vaiheessa on kuva. Teema lataa GLightboxin unpkg.com:sta.
+# Luvun Kuvat kahdessa vaiheessa on kuva. GLightbox on työkalujen oma
+# (assets/), joten unpkg.com on estetty (opened).
 
 LIGHTBOX = ".glightbox-container .gslide.current img"
 

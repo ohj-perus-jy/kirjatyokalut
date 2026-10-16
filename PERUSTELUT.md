@@ -59,6 +59,15 @@ Kun Zensicalin versio vaihtuu, tarkista käsin:
   (`{% block fonts %}`), jotka `fonts.css` asettaa. `overrides/main.html`
   korvaa teeman `main.html`:n, joka on ollut pelkkä `{% extends "base.html" %}`.
   `tests/test_fonts.py` huomaa, jos kirjasimet eivät enää lataudu.
+- Kuvasuurennuksen GLightbox (3.3.1) on oma (`assets/`), ja teema hakee
+  kirjaston unpkg.comista vain, jos `GLightbox`-oliota ei ole valmiiksi
+  (bundlen `typeof GLightbox`-ehto). Tarkista, että ehto on yhä teemassa ja
+  että oma versio tuntee teeman asetukset (`new GLightbox({...})`:
+  `touchNavigation`, `zoomable`, `openEffect` ym.). Teeman oma versio on
+  `glightbox@3`; `curl -sI https://unpkg.com/glightbox@3/dist/js/glightbox.min.js`
+  kertoo `location`-rivillä, mihin julkaisuun se nyt ohjautuu.
+  `tests/test_zoom.py` ja `test_walkthrough.py` estävät unpkg.comin ja
+  huomaavat, jos teema hakee sieltä.
 
 ## Kirjasimet
 

@@ -267,7 +267,8 @@ def test_every_image_is_loaded(printed):
 
 def test_every_recording_is_drawn(printed):
     """Jokainen nauhoitus (kohta 16) on soittimena ja kokonaan piirrettynä jo
-    tulostushetkellä: rivejä on yhtä monta kuin tageissa rows-määreitä."""
+    tulostushetkellä: rivejä on yhtä monta kuin tageissa rows-määreitä, eikä
+    yksikään soitin ole tyhjä (poster piirretty)."""
     if not source_uses(r"<asciinema"):
         pytest.skip("kirjassa ei ole nauhoituksia")
     recordings = printed.evaluate("""() => {
@@ -281,6 +282,7 @@ def test_every_recording_is_drawn(printed):
     assert recordings["tags"] > 0
     assert recordings["players"] == recordings["tags"]
     assert printed.drawn_lines == [recordings["rows"]]
+    assert printed.blank_players == [0]
 
 
 def test_tab_sets_stay_independent(printed):

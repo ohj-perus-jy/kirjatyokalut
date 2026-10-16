@@ -240,6 +240,7 @@ class PrintPage:
     page: object
     print_calls: list[str] = field(default_factory=list)
     drawn_lines: list[int] = field(default_factory=list)
+    blank_players: list[int] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
 
     def evaluate(self, script):
@@ -250,8 +251,10 @@ def open_print_page(browser, base_url: str, timeout: int = 120_000) -> PrintPage
     """Avaa /tulosta/ ja odota, että sivu on koottu ja tulostusta pyydetty.
 
     window.print korvataan laskurilla: headless-selaimessa tulostusikkunaa ei
-    ole. Kutsun hetkellä talletetaan tilarivi ja piirrettyjen terminaalirivien
-    määrä, koska juuri se tila päätyy paperille.
+    ole. Kutsun hetkellä talletetaan tilarivi, terminaalirivien määrä ja
+    tyhjien soittimien määrä, koska juuri se tila päätyy paperille. Soitin
+    piirtää rivit tyhjinä jo ennen nauhoituksen hakua, joten pelkkä rivien
+    määrä ei kerro, että poster on piirretty.
     """
     page = browser.new_page()
     result = PrintPage(page)
@@ -264,13 +267,18 @@ def open_print_page(browser, base_url: str, timeout: int = 120_000) -> PrintPage
     page.add_init_script(
         "window.__printCalls = [];"
         "window.__drawnLines = [];"
+        "window.__blankPlayers = [];"
         "window.print = () => {"
         "  window.__printCalls.push("
         "    document.getElementById('jyu-print-status').textContent.trim());"
         "  window.__drawnLines.push(document.querySelectorAll('.ap-line').length);"
+        "  window.__blankPlayers.push([...document.querySelectorAll('asciinema')]"
+        "    .filter(tag => ![...tag.querySelectorAll('.ap-line')]"
+        "      .some(line => line.textContent.trim())).length);"
         "};")
     page.goto(f"{base_url}/tulosta/", wait_until="load")
     page.wait_for_function("window.__printCalls.length > 0", timeout=timeout)
     result.print_calls = page.evaluate("window.__printCalls")
     result.drawn_lines = page.evaluate("window.__drawnLines")
+    result.blank_players = page.evaluate("window.__blankPlayers")
     return result

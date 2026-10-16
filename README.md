@@ -77,7 +77,7 @@ Kielet: `csharp`, `java`, `javascript` (korostetut rivit: `csharp`, `java`, `jso
 | Alatunniste: edellinen/seuraava, tekijät ja lisenssi, "Muokkaa", "Muutoshistoria", "Ilmoita ongelma" | copyright.html |
 | Alaviitteet ja `title`-attribuutit tooltipeinä | mkdocs-pohja.yml, typography.css |
 | Koko sivun ääneenluku (`kirja.toml`: `[puhe] sivut`): kaiutin yläpalkissa, soitinpalkki (nopeus 1–2×, jää muistiin), luettava kappale korostettuna; koodista, taulukosta ja kaaviosta vain ilmoitus, välilehdistä lukijan valitsema | `speech_units`, `mark_speech`, puhe.js/css, header.html, `puhe.py` |
-| Kuvan klikkaus avaa sen täysikokoisena (`kirja.toml`: `kuvasuurennus`, kokeilussa ohj2:ssa); kuvan saa pois merkinnällä `{ .off-glb }`. Mermaid-kaavio avautuu 1,5-kertaisena teeman väreissä. Vaiheittaisessa ohjeessa vaiheen kuvat ovat oma galleriansa, ja animaation varakuva ei avaudu | `build_base`, `mermaid_zoom`, Zensicalin GLightbox, diagrams.css, walkthrough.js |
+| Kuvan klikkaus avaa sen täysikokoisena (`kirja.toml`: `kuvasuurennus`, kokeilussa ohj2:ssa); kuvan saa pois merkinnällä `{ .off-glb }`. Mermaid-kaavio avautuu 1,5-kertaisena teeman väreissä. Vaiheittaisessa ohjeessa vaiheen kuvat ovat oma galleriansa, ja animaation varakuva ei avaudu. Kirjasto (GLightbox 3.3.1) on sivuston oma, ei unpkg.comista, joten suurennus toimii ilman verkkoa | `build_base`, `mermaid_zoom`, Zensicalin GLightbox, glightbox.min.js/css, diagrams.css, walkthrough.js |
 | Taulukoiden, koodin ja nappirivin tyyli | tables.css, code.css, codebuttons.css |
 
 ### Ylläpito
@@ -120,7 +120,7 @@ ylähakemisto) ja lukee materiaalin sen viereisestä `src/`:stä.
 | `convert.py` | `../src` → `docs/` ja `nav.yml`; `--watch` vahtii, `--strict` kaatuu puuttuvaan kaavioon (julkaisu) |
 | `mermaid/` | mermaid-kaavioiden piirtäjä (`render.mjs`, Node-paketti beautiful-mermaid); `convert.py` asentaa paketit `npm ci`:llä tarvittaessa. Omat korjaukset piirtäjään ovat `patches/`:ssa (patch-package, `npm ci` ajaa ne): luokkakaaviossa yliluokka aliluokkiensa keskelle ja sen perintäviivat yhteisenä runkona (yksi kolmio, sen alla 10 px:n varsi). Kaavion nimi välimuistissa on lähteen ja piirtäjän (versiot, korjaukset, `render.mjs`) sha1, joten piirtäjän muutos piirtää kirjan kaaviot uudelleen |
 | `mkdocs-pohja.yml` | kirjojen yhteiset Zensical-asetukset: teema, tyylit, skriptit |
-| `assets/`, `overrides/`, `icons/` | tyylit ja skriptit, teeman mallit, kuvakkeiden glyfit |
+| `assets/`, `overrides/`, `icons/` | tyylit ja skriptit, teeman mallit, kuvakkeiden glyfit; GLightbox (`glightbox.min.js/css`) lisenssineen (`LICENSE-glightbox.txt`) npm-paketin `glightbox` versiosta 3.3.1; terminaalisoitin (`asciinema-player.min.js/css`) lisenssineen (`LICENSE-asciinema-player.txt`) npm-paketin `asciinema-player` versiosta 3.17.0 sellaisenaan, omat muutokset layout.css:ssä |
 | `assets/fonts/` | kirjasintiedostot (woff2) ja niiden lisenssit (OFL.txt) perheittäin: Source-perheet Adoben julkaisuista, muut Google Fontsista; `skriptit/fontit.py` hakee ne ja kirjoittaa `assets/css/fonts.css`:n |
 | `puhe.py` | ääneenluvun leikkeet (Azure Speech) äänivarastoon, myös vaiheittaisen ohjeen vaiheiden; `--teksti` näyttää luettavan ja hinta-arvion |
 | `run.sh`, `setup.sh` | ajo ja asennus kirjan hakemistosta käsin; `vaihe.sh` näyttää asennuksen etenemisen |

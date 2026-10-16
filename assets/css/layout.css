@@ -266,10 +266,28 @@ body {
 
 /* Terminaalisoittimen kerrokset (asciinema-player.css: aloituspeite 10,
  * ohjauspalkki 30) omaan pinoamiskontekstiinsa. Muuten ne piirtyvät yläpalkin
- * (4) ja sen valikoiden päälle, kun soitin vierii palkin alle. Tässä eikä
- * soittimen tyylissä, koska se on kolmannen osapuolen tiedosto. */
+ * (4) ja sen valikoiden päälle, kun soitin vierii palkin alle. Soitin
+ * tekstipalstan levyiseksi; muuten se kutistuu nauhoituksen levyiseksi.
+ * Tässä eikä soittimen tyylissä, koska se on kolmannen osapuolen tiedosto
+ * (asciinema-player 3.17.0 sellaisenaan). */
 .ap-player {
   isolation: isolate;
+  width: 100%;
+}
+
+/* Terminaalin kirjasin koodilohkon kokoiseksi (code.css: .875em), mutta
+ * enintään niin suureksi, että 80 merkin terminaali (48em tekstiä ja .75em
+ * reunat) mahtuu palstaan: soitin leikkaa leveämmän terminaalin oikean
+ * reunan, ja nauhoitusten pisimmät rivit ovat lähes 80 merkkiä. Alaraja on
+ * entinen kiinteä 12px; kapealla näytöllä leikkautuu silloin kuten ennenkin.
+ * Koko seuraa fonttivalikkoa, kunnes palsta tulee vastaan. Tarkkuus
+ * soittimen div.ap-wrapper div.ap-player -sääntöä (15px) suurempi. */
+asciinema div.ap-wrapper {
+  container-type: inline-size;
+}
+
+asciinema div.ap-wrapper div.ap-player {
+  font-size: clamp(12px, 100cqi / 49.5, .875em);
 }
 
 /* Repo-linkin tyhjät kääreet pois. Linkki on tyhjennetty mallista
