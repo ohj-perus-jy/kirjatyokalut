@@ -57,6 +57,18 @@ def test_the_attributes_of_the_tag_reach_the_player(page):
         ["3", 3, False, 0], ["3", 3, True, 1]]
 
 
+def test_a_missing_recording_is_reported(browser, chapter_url):
+    """Puuttuva .cast-tiedosto näkyy virheenä tiedoston nimellä. Soitin ei
+    piirrä silloin posteria, joten odotus päättyy virheeseen eikä jää auki
+    (tulostussivu odottaisi aikarajaansa)."""
+    opened = browser.new_page()
+    opened.route("**/nauhoitus.cast", lambda route: route.fulfill(status=404))
+    with opened.expect_event("pageerror") as error:
+        opened.goto(chapter_url, wait_until="load")
+    assert "images/nauhoitus.cast" in str(error.value)
+    opened.close()
+
+
 def test_the_player_fills_the_column(page):
     """Soitin täyttää tekstipalstan (layout.css) eikä kutistu nauhoituksen
     levyiseksi, kuten se tekisi pelkällä asciinema-player.css:llä."""
@@ -64,6 +76,35 @@ def test_the_player_fills_the_column(page):
         "asciinema", "elements => elements.map(element =>"
         "  element.querySelector('.ap-player').getBoundingClientRect().width"
         "  === element.getBoundingClientRect().width)") == [True, True]
+
+
+@pytest.mark.parametrize("width, limit", [(1600, "koodi"), (1280, "palsta"), (390, "alaraja")])
+def test_the_terminal_font_is_code_sized_while_it_fits(browser, chapter_url, width, limit):
+    """Terminaalin kirjasin on koodin kokoinen (layout.css), paitsi jos 80
+    merkin terminaali ei silloin mahtuisi palstaan: silloin niin suuri kuin
+    mahtuu, kuitenkin vähintään 12px. Koekirjan nauhoitus on 80 merkkiä
+    leveä. Koekirjan palsta on 1280 px:n ikkunassa kapeampi (656 px) kuin
+    1600 px:n ikkunassa (918 px)."""
+    opened = browser.new_page(viewport={"width": width, "height": 900})
+    opened.goto(chapter_url, wait_until="load")
+    opened.wait_for_selector("asciinema .ap-line")
+    font, code, term, player = opened.evaluate("""() => {
+      const size = (element) => parseFloat(getComputedStyle(element).fontSize);
+      const tag = document.querySelector('asciinema');
+      const term = tag.querySelector('.ap-term');
+      return [size(term), size(document.querySelector('.md-typeset p code')),
+              term.getBoundingClientRect().width,
+              tag.querySelector('.ap-player').getBoundingClientRect().width];
+    }""")
+    opened.close()
+    if limit == "koodi":
+        assert font == pytest.approx(code, abs=0.01)
+        assert term < player
+    elif limit == "palsta":
+        assert 12 < font < code
+        assert term == pytest.approx(player, abs=1)
+    else:
+        assert font == 12
 
 
 def test_the_player_stays_under_the_header(page):
