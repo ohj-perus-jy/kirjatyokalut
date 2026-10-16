@@ -57,6 +57,15 @@ def test_the_attributes_of_the_tag_reach_the_player(page):
         ["3", 3, False, 0], ["3", 3, True, 1]]
 
 
+def test_the_player_fills_the_column(page):
+    """Soitin täyttää tekstipalstan (layout.css) eikä kutistu nauhoituksen
+    levyiseksi, kuten se tekisi pelkällä asciinema-player.css:llä."""
+    assert page.eval_on_selector_all(
+        "asciinema", "elements => elements.map(element =>"
+        "  element.querySelector('.ap-player').getBoundingClientRect().width"
+        "  === element.getBoundingClientRect().width)") == [True, True]
+
+
 def test_the_player_stays_under_the_header(page):
     """Soittimen aloituspeite (z-index 10) ei saa nousta yläpalkin (4) päälle,
     kun soitin vierii palkin alle: palkin painikkeet ja valikot jäisivät
