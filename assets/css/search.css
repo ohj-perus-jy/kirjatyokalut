@@ -45,6 +45,38 @@
   font-size: 0.85em;
 }
 
+/* Ikkuna irti taustasta. Zensicalin ikkuna on sivun pohjan väriä 70 %:n
+ * peitolla ja sumennuksella, verho saman sävyn tummempaa astetta 54 %:lla
+ * ja reunaviiva tekstin väriä 7 %:lla: tummassa teemassa ikkuna, verho ja
+ * sivu sulautuvat yhdeksi tummaksi pinnaksi, vaaleassa yhdeksi valkoiseksi.
+ * Ikkuna läpinäkymätön ja sivua vaaleampi (--jyu-dialog-bg, layout.css),
+ * reunaviiva kirjan rajaviivojen sävyä ja varjo teeman vahvin; verho
+ * tummentaa sivun kummassakin teemassa, jotta ikkuna on sivun vaalein pinta.
+ * Muuttujat periytyvät bodyltä shadow DOMiin. */
+:host .e {
+  background-color: var(--jyu-dialog-bg, var(--md-default-bg-color));
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  border-color: var(--jyu-rule);
+  box-shadow: var(--md-shadow-z3);
+}
+
+:host .l {
+  background-color: rgba(0, 0, 0, 0.45);
+}
+
+:host .w {
+  border-bottom-color: var(--jyu-rule);
+}
+
+/* Koodin tausta tuloksissa: Zensicalin sävy (tummassa 33 34 38) on
+ * vaaleampaa ikkunaa tummempi ja katoaa. Tekstin väriä läpikuultavana,
+ * kuten sivun koodilla (code.css), jotta se erottuu kummassakin teemassa. */
+:host .x code,
+:host .p code {
+  background-color: color-mix(in srgb, var(--md-default-fg-color) 12%, transparent);
+}
+
 /* Suodatinpaneeli ("Filters / Tags") ja sen painike (kentän jälkeinen; rivin
  * viimeinen on oma sulkunappi) pois: materiaalissa ei ole tageja, joten
  * paneeli on aina tyhjä. */

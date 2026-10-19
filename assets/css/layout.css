@@ -90,6 +90,10 @@
    * vaaleassa lähes sama harmaa kuin levyn ulkopuolinen reuna, jolloin
    * raja ei erotu. Sama viileä sävy kuin reunalla, mutta tummempana. */
   --jyu-footer-bg: #e3e6ec;
+
+  /* Hakuikkunan pinta (search.css): vaaleassa sivun pohja, joka erottuu
+   * tummennetusta verhosta; tummassa sivua vaaleampi, ks. alempana. */
+  --jyu-dialog-bg: var(--md-default-bg-color);
 }
 
 /* Kiskon leveys sekä kiskon ja levyn reunan sijainnit 4 px:n ruudukkoon
@@ -198,6 +202,7 @@ body {
   --jyu-rail-bg: hsla(var(--md-hue), 20%, 8%, 1);
   --jyu-edge: color-mix(in srgb, var(--jyu-rail-bg), hsl(var(--md-hue), 15%, 90%) 20%);
   --jyu-footer-bg: hsla(var(--md-hue), 20%, 15%, 1);
+  --jyu-dialog-bg: hsla(var(--md-hue), 20%, 16%, 1);
   --md-default-bg-color: hsla(var(--md-hue), 20%, 10.5%, 1);
   --md-default-bg-color--light: hsla(var(--md-hue), 20%, 10.5%, 0.54);
   --md-default-bg-color--lighter: hsla(var(--md-hue), 20%, 10.5%, 0.26);

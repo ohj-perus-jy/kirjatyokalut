@@ -19,16 +19,18 @@ def base_url(book, serve):
     return serve(book.site)
 
 
-def open_search(browser, url, query, viewport=(1600, 900)):
+def open_search(browser, url, query, viewport=(1600, 900), color_scheme=None):
     """Avaa sivun, haun ja odota tuloksia. -> (sivu, skriptivirheet).
 
     Oletusleveys 1600 px, jolloin sivun rem on 22 px (teema: 137,5 % kun
     näyttö on vähintään 100 em): silloin kiinteät pikselikoot erottuisivat
     remillä annetuista. Kapealla näytöllä haun avaa yläpalkin kuvake
-    (header.html: label), leveällä teeman oma nappi.
+    (header.html: label), leveällä teeman oma nappi. color_scheme ("light"
+    tai "dark") on käyttöjärjestelmän teema, jota sivu seuraa.
     """
     width, height = viewport
-    page = browser.new_page(viewport={"width": width, "height": height})
+    page = browser.new_page(viewport={"width": width, "height": height},
+                            color_scheme=color_scheme)
     errors = []
     page.on("pageerror", lambda error: errors.append(str(error)))
     page.goto(url, wait_until="load")
@@ -67,6 +69,42 @@ def test_the_stylesheet_is_attached_and_the_text_is_page_sized(browser, base_url
     assert font_size(page, ".s input") >= body  # hakukenttä
     assert font_size(page, ".p") >= nav         # ote
     assert font_size(page, ".n") >= 0.9 * nav   # polku
+    assert errors == []
+    page.close()
+
+
+def rgba(color: str) -> tuple[float, ...]:
+    """Lasketun värin kanavat 0–255 ja peitto 0–1: 'rgb(1, 2, 3)' -> (1, 2, 3, 1).
+    color-mix lasketaan muotoon 'color(srgb 0.5 0.5 0.5 / 0.12)' (0–1)."""
+    parts = color[color.index("(") + 1:-1].replace("/", " ").replace(",", " ").split()
+    scale = 255 if parts[0] == "srgb" else 1
+    values = [float(v) * scale for v in parts if v != "srgb"]
+    return (*values[:3], values[3] / scale if len(values) == 4 else 1.0)
+
+
+@pytest.mark.parametrize("scheme, page_scheme", [("light", "default"), ("dark", "slate")])
+def test_the_window_stands_out_from_the_page(browser, base_url, scheme, page_scheme):
+    """Zensicalin ikkuna on sivun pohjan väriä läpikuultavana, verho samaa
+    sävyä ja reunaviiva tekstin väriä 7 %:n peitolla, jolloin ikkuna sulautuu
+    taustaansa kummassakin teemassa. Ikkuna on läpinäkymätön ja tummassa
+    sivua vaaleampi, verho tummentaa sivun, reunaviiva on kirjan rajaviivan
+    vahvuinen ja tulosten koodilla on ikkunasta erottuva tausta."""
+    page, errors = open_search(browser, base_url, "maailma", color_scheme=scheme)
+    assert page.evaluate("document.body.dataset.mdColorScheme") == page_scheme
+    style = page.evaluate(f"""() => {{
+        const root = {SHADOW}, css = s => getComputedStyle(root.querySelector(s))
+        return {{window: css('.e').backgroundColor, border: css('.e').borderColor,
+                 veil: css('.l').backgroundColor, code: css('.p code').backgroundColor,
+                 page: getComputedStyle(document.body).backgroundColor}}
+    }}""")
+    window, page_bg = rgba(style["window"]), rgba(style["page"])
+    assert window[3] == 1
+    assert sum(window[:3]) >= sum(page_bg[:3])
+    if scheme == "dark":
+        assert sum(window[:3]) > sum(page_bg[:3])
+    assert rgba(style["veil"])[:3] == (0, 0, 0) and rgba(style["veil"])[3] >= 0.4
+    assert rgba(style["border"])[3] >= 0.2
+    assert rgba(style["code"])[3] > 0
     assert errors == []
     page.close()
 
