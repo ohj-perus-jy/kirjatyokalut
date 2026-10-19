@@ -1009,3 +1009,11 @@ details:not([open]) :is(h1, h2, h3, h4, h5, h6):not(summary *) {
     position: static;
   }
 }
+
+/* Teeman vaihdon häivytys (assets/js/theme.js: näkymäsiirtymä). Selaimen
+ * oletus 0,25 s on hätäinen koko sivun värinvaihdolle. Vähemmän liikettä
+ * pyytävälle siirtymää ei käynnistetä (theme.js). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.35s;
+}

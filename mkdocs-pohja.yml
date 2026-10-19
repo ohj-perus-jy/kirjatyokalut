@@ -205,6 +205,9 @@ extra_javascript:
   # Kirjasinvalikon toiminta.
   - assets/js/fontmenu.js
 
+  # Teeman vaihto häivyttäen (yläpalkin nappi).
+  - assets/js/theme.js
+
   # Sivustovalikon avaus ja sulkeminen.
   - assets/js/sitemenu.js
 
