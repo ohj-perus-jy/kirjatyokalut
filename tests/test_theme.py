@@ -64,6 +64,22 @@ def test_the_fade_lasts_long_enough_to_see(browser, base_url):
     assert errors == []
 
 
+def test_nothing_else_animates_during_the_fade(browser, base_url):
+    """Bodyn rekisteröidyillä muuttujilla (layout.css: kiskon liuku) on oma
+    siirtymä, ja kiskon vasemman puolen väri (--jyu-left-bg) vaihtuu teeman
+    mukana: ilman estoa se liukuisi omaan tahtiinsa häivytyksen alla, samoin
+    teeman värisiirtymät. Häivytyksen aikana sivulla ei ole muita
+    animaatioita kuin siirtymän omat."""
+    page, errors = open_page(browser, base_url)
+    page.click(TOGGLE)
+    page.wait_for_function(f"{SCHEME} === 'slate'")
+    others = page.evaluate("""() => document.getAnimations()
+        .filter(a => !a.effect.pseudoElement?.startsWith('::view-transition'))
+        .map(a => `${a.effect.target.localName}:${a.transitionProperty ?? a.animationName}`)""")
+    assert others == []
+    assert errors == []
+
+
 def test_reduced_motion_switches_at_once(browser, base_url):
     """Liikkeen vähennys: ei siirtymää, teema vaihtuu heti."""
     page, errors = open_page(browser, base_url, motion=False)

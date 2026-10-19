@@ -1012,8 +1012,19 @@ details:not([open]) :is(h1, h2, h3, h4, h5, h6):not(summary *) {
 
 /* Teeman vaihdon häivytys (assets/js/theme.js: näkymäsiirtymä). Selaimen
  * oletus 0,25 s on hätäinen koko sivun värinvaihdolle. Vähemmän liikettä
- * pyytävälle siirtymää ei käynnistetä (theme.js). */
+ * pyytävälle siirtymää ei käynnistetä (theme.js). Siirtymän aikana muut
+ * CSS-siirtymät ovat pois: uusi näkymä on siirtymässä elävä, joten sen on
+ * oltava heti lopputilassa. Muuten bodyn rekisteröidyt muuttujat (kiskon
+ * liuku ylempänä; kiskon vasemman puolen väri --jyu-left-bg vaihtuu teeman
+ * mukana) ja teeman värisiirtymät (linkit, napit) liukuisivat omaan
+ * tahtiinsa häivytyksen alla. */
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation-duration: 0.35s;
+}
+
+:root:active-view-transition *,
+:root:active-view-transition *::before,
+:root:active-view-transition *::after {
+  transition: none !important;
 }
