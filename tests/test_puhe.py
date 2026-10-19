@@ -184,6 +184,32 @@ def test_show_texts_lists_the_units_and_estimates_the_cost(store, monkeypatch):
     assert lines[-1].startswith("\n") and f"{total} merkkiä" in lines[-1]
 
 
+def test_a_refused_request_ends_the_run_without_claiming_the_clips_are_done(
+        store, monkeypatch, capsys):
+    """Puhepalvelun virhe (esim. 401 vanhentuneesta avaimesta) päättää ajon
+    virheeseen: tuloste kertoo keskeytyksestä eikä väitä ääniä ajan
+    tasaisiksi."""
+    import io
+    import urllib.error
+
+    monkeypatch.setattr(convert, "SRC", convert.TOOL / "tests" / "book" / "src")
+    monkeypatch.setattr(convert, "SPEECH_PAGES", ("osa1/puhe.md",))
+    monkeypatch.setattr(convert, "SPEECH_REPO", None)
+    monkeypatch.setenv("AZURE_SPEECH_KEY", "vanhentunut")
+    monkeypatch.setenv("AZURE_SPEECH_REGION", "westeurope")
+    monkeypatch.setattr(sys, "argv", ["puhe"])
+
+    def refuse(request, timeout):
+        raise urllib.error.HTTPError(request.full_url, 401, "Unauthorized", {}, io.BytesIO(b""))
+
+    monkeypatch.setattr(puhe.urllib.request, "urlopen", refuse)
+    assert puhe.main() == 1
+    out, err = capsys.readouterr()
+    assert "puhepalvelu vastasi 401" in err and "keskeytyi" in err
+    assert "ajan tasalla" not in out and "tehty" not in out
+    assert not list(store.glob("*.mp3"))
+
+
 def test_an_edit_needs_only_the_changed_paragraph(tmp_path):
     """Leike on kappale: yhden kappaleen korjaus tuottaa yhden uuden tekstin,
     ja muut leikkeet kelpaavat sellaisinaan."""

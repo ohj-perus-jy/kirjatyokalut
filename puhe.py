@@ -264,10 +264,14 @@ def main() -> int:
         texts += [text for path in walkthroughs for text in step_texts(path).values()]
         done = refresh_clips(texts)
     except urllib.error.HTTPError as error:
-        print(f"puhepalvelu vastasi {error.code}: {error.read().decode(errors='replace')}",
-              file=sys.stderr)
+        # Azure vastaa 401 (vanhentunut avain) tyhjällä rungolla, jolloin syy
+        # on tilakoodin selite. Ennen virhettä tehdyt leikkeet on jo lueteltu.
+        detail = error.read().decode(errors="replace").strip() or error.reason
+        print(f"puhepalvelu vastasi {error.code}: {detail}\najo keskeytyi; tehdyt leikkeet "
+              "ovat varastossa ja seuraava ajo jatkaa puuttuvista", file=sys.stderr)
         status = 1
-    print(f"tehty {len(done)} leikettä" if done else "sivujen äänet ovat ajan tasalla")
+    else:
+        print(f"tehty {len(done)} leikettä" if done else "sivujen äänet ovat ajan tasalla")
     # Keskeytyneenkin ajon valmiit leikkeet julkaistaan.
     if repo and not args.ei_julkaisua and not publish():
         status = 1
