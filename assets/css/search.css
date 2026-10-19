@@ -69,12 +69,20 @@
   border-bottom-color: var(--jyu-rule);
 }
 
-/* Koodin tausta tuloksissa: Zensicalin sävy (tummassa 33 34 38) on
- * vaaleampaa ikkunaa tummempi ja katoaa. Tekstin väriä läpikuultavana,
- * kuten sivun koodilla (code.css), jotta se erottuu kummassakin teemassa. */
+/* Valitun tuloksen, hiiren alla olevan tuloksen ja nappien korostus sekä
+ * koodin tausta tuloksissa: Zensicalin sävy (tummassa 33 34 38, vaaleassa
+ * 240) on vaaleampaa ikkunaa tummempi ja katoaa, vaaleassa vain hiukan
+ * valkoista tummempi. Tekstin väriä läpikuultavana, kuten sivun koodilla
+ * (code.css), jotta se erottuu kummassakin teemassa; koodi hieman
+ * vahvempana, jotta se näkyy myös korostetulla rivillä. */
+:host .o::before,
+:host .a::before {
+  background-color: color-mix(in srgb, var(--md-default-fg-color) 10%, transparent);
+}
+
 :host .x code,
 :host .p code {
-  background-color: color-mix(in srgb, var(--md-default-fg-color) 12%, transparent);
+  background-color: color-mix(in srgb, var(--md-default-fg-color) 14%, transparent);
 }
 
 /* Suodatinpaneeli ("Filters / Tags") ja sen painike (kentän jälkeinen; rivin

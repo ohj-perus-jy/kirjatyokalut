@@ -88,13 +88,16 @@ def test_the_window_stands_out_from_the_page(browser, base_url, scheme, page_sch
     sävyä ja reunaviiva tekstin väriä 7 %:n peitolla, jolloin ikkuna sulautuu
     taustaansa kummassakin teemassa. Ikkuna on läpinäkymätön ja tummassa
     sivua vaaleampi, verho tummentaa sivun, reunaviiva on kirjan rajaviivan
-    vahvuinen ja tulosten koodilla on ikkunasta erottuva tausta."""
+    vahvuinen, ja valitulla tuloksella ja tulosten koodilla on ikkunasta
+    erottuva tausta (Zensicalin kiinteä sävy on tummassa ikkunaa tummempi)."""
     page, errors = open_search(browser, base_url, "maailma", color_scheme=scheme)
     assert page.evaluate("document.body.dataset.mdColorScheme") == page_scheme
     style = page.evaluate(f"""() => {{
-        const root = {SHADOW}, css = s => getComputedStyle(root.querySelector(s))
+        const root = {SHADOW}
+        const css = (s, pseudo) => getComputedStyle(root.querySelector(s), pseudo)
         return {{window: css('.e').backgroundColor, border: css('.e').borderColor,
                  veil: css('.l').backgroundColor, code: css('.p code').backgroundColor,
+                 selected: css('.o.B', '::before').backgroundColor,
                  page: getComputedStyle(document.body).backgroundColor}}
     }}""")
     window, page_bg = rgba(style["window"]), rgba(style["page"])
@@ -105,6 +108,11 @@ def test_the_window_stands_out_from_the_page(browser, base_url, scheme, page_sch
     assert rgba(style["veil"])[:3] == (0, 0, 0) and rgba(style["veil"])[3] >= 0.4
     assert rgba(style["border"])[3] >= 0.2
     assert rgba(style["code"])[3] > 0
+    # Korostus ikkunan päälle sekoitettuna: kirkkausero vähintään 20/765
+    # (Zensicalin sävy tummassa: 14 ikkunaa tummempaan suuntaan).
+    selected = rgba(style["selected"])
+    blended = [w + selected[3] * (c - w) for c, w in zip(selected[:3], window[:3])]
+    assert abs(sum(blended) - sum(window[:3])) >= 20
     assert errors == []
     page.close()
 
