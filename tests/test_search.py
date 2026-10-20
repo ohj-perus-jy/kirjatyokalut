@@ -132,10 +132,11 @@ def test_the_filter_panel_and_its_button_are_gone(browser, base_url):
 
 @pytest.mark.parametrize("viewport", [(390, 844), (1600, 900)])
 def test_the_close_button_closes_the_window(browser, base_url, viewport):
-    """Puhelimella ikkuna täyttää koko ruudun, eikä Escapea tai napautettavaa
-    taustaa ole: sulkunappi on ikkunan oikeassa yläkulmassa ja sulkee sen.
-    Nappi ei jää kohdistetuksi näkymättömiin, ja ikkuna aukeaa uudestaan
-    nappeineen."""
+    """Puhelimella ikkuna täyttää ruudun kapeaa reunusta vaille (Zensicalilla
+    koko ruudun ilman kulmien pyöristystä), eikä Escapea tai kunnollista
+    napautettavaa taustaa ole: sulkunappi on ikkunan oikeassa yläkulmassa ja
+    sulkee sen. Nappi ei jää kohdistetuksi näkymättömiin, ja ikkuna aukeaa
+    uudestaan nappeineen."""
     page, errors = open_search(browser, base_url, "maailma", viewport)
     # Ikkuna aukeaa skaalaten (transition); mitat vasta sen päätyttyä.
     page.wait_for_function(
@@ -143,7 +144,13 @@ def test_the_close_button_closes_the_window(browser, base_url, viewport):
     window, button = page.evaluate(
         f"['.e', '.jyu-close'].map(s => {SHADOW}.querySelector(s).getBoundingClientRect().toJSON())")
     if viewport[0] <= 740:
-        assert (window["width"], window["height"]) == viewport
+        width, height = viewport
+        assert 12 <= window["left"] <= 24 and 12 <= window["top"] <= 24
+        assert window["right"] == width - window["left"]
+        assert window["bottom"] == height - window["top"]
+        radius = page.evaluate(
+            f"parseFloat(getComputedStyle({SHADOW}.querySelector('.e')).borderRadius)")
+        assert radius >= 8
     assert button["right"] > window["right"] - 20
     assert button["top"] < window["top"] + 20
     assert page.evaluate(f"{SHADOW}.querySelector('.jyu-close').ariaLabel") == "Sulje haku"

@@ -18,11 +18,23 @@
   --font-size: calc(0.8rem * var(--jyu-text-base, 1));
 }
 
-/* 36 rem = Zensicalin 720 px perusmitassa (1 rem = 20 px). Kapealla näytöllä
- * Zensicalin oma koko ruudun sääntö (max-width: 740px). */
+/* 36 rem = Zensicalin 720 px perusmitassa (1 rem = 20 px). */
 @media (min-width: 741px) {
   :host .e {
     width: 36rem;
+  }
+}
+
+/* Kapealla näytöllä Zensical venyttää ikkunan koko ruutuun ilman kulmien
+ * pyöristystä, jolloin se ei näytä ikkunalta vaan sivulta. Reunus ympärille
+ * (0,8 rem = 16 px, Zensicalin --space-3) ja kulmat takaisin; juuri (.r) on
+ * näkyvän ruudun korkuinen (Zensical: -webkit-fill-available kosketusnäytöllä),
+ * joten prosentit ovat siitä. */
+@media (max-width: 740px) {
+  :host .e {
+    width: calc(100% - 1.6rem);
+    height: calc(100% - 1.6rem);
+    border-radius: 0.8rem;
   }
 }
 

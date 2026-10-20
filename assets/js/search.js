@@ -12,7 +12,8 @@
  * "Search" eikä tule teeman käännöksistä (language: fi).
  *
  * Ja sulkunappi (×) kenttärivin oikeaan päähän: puhelimella ikkuna täyttää
- * koko ruudun, eikä Escape-näppäintä tai napautettavaa taustaa ole. Zensicalin
+ * ruudun kapeaa reunusta vaille (search.css), eikä Escape-näppäintä tai
+ * kunnollista napautettavaa taustaa ole. Zensicalin
  * oma sulkija on rivin ensimmäinen nappi ("Close search"), mutta sen kuvake
  * on suurennuslasi, josta sulkemista ei arvaa. Luokkanimet ovat Zensicalin
  * minifioimia, ks. search.css. */
