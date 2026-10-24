@@ -1,5 +1,5 @@
 {#-
-  Kopio teeman partials/header.html:stä (zensical 0.0.59), johon on lisätty
+  Kopio teeman partials/header.html:stä (zensical 0.0.72), johon on lisätty
   päävalikon piilotuspainike, kotilinkki kurssin nimeen, sivustovalikko,
   ääneenluvun kaiutin, tulostuspainike ja leipätekstin kirjasinvalikko
   (merkityt kohdat alempana), josta kirjakuvake on poistettu ja jossa
@@ -30,9 +30,10 @@
       {% include ".icons/lucide/panel-left.svg" %}
     </button>
     <script>try{if(localStorage.getItem("jyu-rail")==="hidden")document.documentElement.setAttribute("data-jyu-rail","hidden")}catch(e){}</script>
-    <label class="md-header__button md-icon" for="__drawer" aria-label="{{ lang.t('nav') }}">
+    <label class="md-header__button md-icon" for="__drawer">
       {% set icon = config.theme.icon.menu or "material/menu" %}
       {% include ".icons/" ~ icon ~ ".svg" %}
+      <span class="md-visually-hidden">{{ lang.t('nav') }}</span>
     </label>
     <div class="md-header__title" data-md-component="header-title">
       <div class="md-header__ellipsis">
@@ -96,9 +97,10 @@
     {% if "search" in config.plugins %}
       {% set search = config.plugins["search"] | attr("config") %}
       {% if search.enabled %}
-        <label class="md-header__button md-icon" for="__search" aria-label="{{ lang.t('search') }}">
+        <label class="md-header__button md-icon" for="__search">
           {% set icon = config.theme.icon.search or "material/magnify" %}
           {% include ".icons/" ~ icon ~ ".svg" %}
+          <span class="md-visually-hidden">{{ lang.t('search') }}</span>
         </label>
         {% include "partials/search.html" %}
       {% endif %}
