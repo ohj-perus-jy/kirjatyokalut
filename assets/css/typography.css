@@ -133,6 +133,34 @@ body[data-jyu-font="literata"] .md-content__inner {
     margin-left: 1rem;
   }
 
+  /* Teeman välilehtirivi olettaa .8rem:n reunat (marginaali -.8rem,
+   * max-width 100vw), joten 1rem:n reunoilla rivi on 8 px palstaa leveämpi
+   * ja venyttää puhelimen asetteluikkunan sivua leveämmäksi. Samat mitat
+   * 1rem:nä, myös vieritysnuolille. Valitsimet teeman mukaan ([dir=ltr]
+   * tarkkuuden vuoksi; kirjat ovat vasemmalta oikealle). */
+  .md-content__inner > .tabbed-set .tabbed-labels {
+    margin: 0 -1rem;
+    scroll-padding-inline-start: 1rem;
+  }
+
+  [dir=ltr] .md-content__inner > .tabbed-set .tabbed-labels {
+    padding-left: 1rem;
+  }
+
+  [dir=ltr] .md-content__inner > .tabbed-set .tabbed-labels::after {
+    padding-right: 1rem;
+  }
+
+  [dir=ltr] .md-content__inner > .tabbed-set .tabbed-labels ~ .tabbed-control--prev {
+    padding-left: 1rem;
+    margin-left: -1rem;
+  }
+
+  [dir=ltr] .md-content__inner > .tabbed-set .tabbed-labels ~ .tabbed-control--next {
+    padding-right: 1rem;
+    margin-right: -1rem;
+  }
+
   .md-typeset h1 {
     font-size: 1.7em;
   }
