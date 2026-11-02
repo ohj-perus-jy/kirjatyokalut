@@ -209,6 +209,27 @@ body {
   border-top: 0.05rem solid var(--jyu-rule);
 }
 
+/* Edellinen/seuraava-linkkien hover korostaa kuten muualla sivustolla
+ * (sisällysluettelo, leipätekstin linkit): otsikko ja nuoli musteen
+ * väriin. Teeman oletus haalistaa koko linkin 70 %:iin, mikä lukee "ei
+ * käytössä" ja vie jo 70 %:ssa olevan apusanan puoleen. Kesto ja käyrä
+ * paletista. */
+.md-footer__link,
+.md-footer__link:is(:hover, :focus) {
+  opacity: 1;
+  transition: none;
+}
+
+.md-footer__link .md-ellipsis,
+.md-footer__link .md-footer__button {
+  transition: color var(--jyu-fast) var(--jyu-ease);
+}
+
+.md-footer__link:is(:hover, :focus) .md-ellipsis,
+.md-footer__link:is(:hover, :focus) .md-footer__button {
+  color: var(--md-accent-fg-color);
+}
+
 .md-typeset hr {
   border-bottom: 0.05rem solid var(--jyu-rule);
 }
