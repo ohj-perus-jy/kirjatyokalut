@@ -133,10 +133,11 @@ html .md-typeset details:not([open]) > summary {
 
 /* Avattavat osiot: raa'at <details>-lohkot ilman admonition-tyyppiä saavat
  * teemalta note'n sinisen ja paperiliittimen, jolloin ne näyttävät alertilta
- * eivätkä avattavalta osiolta. Väri neutraaliksi ja nuoli otsikkotekstin
- * viereen kuvakkeen paikalle. */
+ * eivätkä avattavalta osiolta. Reunus on sama hiusviiva kuin muilla
+ * laatikoilla (teeman --lighter, 32 %, erottui tummempana) ja nuoli
+ * otsikkotekstin viereen kuvakkeen paikalle. */
 .md-typeset details:not([class]) {
-  border-color: var(--md-default-fg-color--lighter);
+  border-color: var(--jyu-rule);
 }
 
 [dir=ltr] .md-typeset details:not([class]) > summary {
