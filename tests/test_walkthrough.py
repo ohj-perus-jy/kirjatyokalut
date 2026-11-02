@@ -26,6 +26,16 @@ EVERYTHING = ["alku", "avaa-sivu", "anna-komento", "loppu", "kirjaudu",
 CANVAS_PER_STAGE = """() => document.querySelector('.jw-canvas').getBoundingClientRect().width
   / document.querySelector('.jw-stage').clientWidth"""
 
+# Koko ruutu on auki ja kangas sovitettu siihen. Näyttämön leveys tulee
+# asettelusta heti, mutta kankaan skaala vasta ResizeObserverista (walkthrough.js:
+# fit), joten pelkkä leveyden odotus osui hitaalla CI-ajurilla väliin: kangas
+# oli vielä sivun näyttämön 654 px:ssä, kun näyttämö oli jo 864 px (suhde 0.757).
+FULL_SCREEN_FITTED = """() => {
+  const stage = document.querySelector('.jw-stage');
+  const canvas = document.querySelector('.jw-canvas').getBoundingClientRect().width;
+  return stage.clientWidth > 700 && Math.abs(canvas / stage.clientWidth - 1) < 0.01;
+}"""
+
 
 @pytest.fixture(scope="session")
 def walk_url(book, serve) -> str:
@@ -319,7 +329,7 @@ def test_full_screen_puts_the_text_beside_the_scene(opened):
     page.click(".jw-full")
     assert "jyu-walk--full" in page.get_attribute(".jyu-walk", "class")
     assert page.get_attribute(".jw-full", "aria-label") == "Sulje koko ruutu (Esc)"
-    page.wait_for_function("document.querySelector('.jw-stage').clientWidth > 700")
+    page.wait_for_function(FULL_SCREEN_FITTED)
     stage = page.locator(".jyu-walk .jw-stage").bounding_box()
     text = page.locator(".jyu-step--current").bounding_box()
     height = page.evaluate("innerHeight")
