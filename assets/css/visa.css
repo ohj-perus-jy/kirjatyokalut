@@ -86,7 +86,7 @@
   cursor: pointer;
   background: transparent;
   border: 0;
-  border-radius: .2rem;
+  border-radius: .3rem;
 }
 
 .md-typeset .jyu-visa-tt .jyu-visa-nappi {
@@ -120,30 +120,16 @@
 }
 
 .md-typeset .jyu-visa-q:not([data-vastattu]) .jyu-visa-nappi:hover {
-  background-color: color-mix(in srgb, var(--md-accent-fg-color) 12%, transparent);
+  background-color: var(--jyu-raised);
 }
 
 .md-typeset .jyu-visa-q:not([data-vastattu]) .jyu-visa-nappi:active {
-  background-color: color-mix(in srgb, var(--md-accent-fg-color) 20%, transparent);
+  background-color: color-mix(in srgb, var(--md-default-fg-color) 10%, var(--jyu-raised));
 }
 
 .md-typeset .jyu-visa-q:not([data-vastattu]) .jyu-visa-nappi:hover::before {
   color: var(--md-accent-fg-color);
-  background-color: color-mix(in srgb, var(--md-accent-fg-color) 20%, transparent);
-}
-
-/* Tumma tausta imee värin, joten sama erottuvuus vaatii vahvemman sävyn. */
-[data-md-color-scheme="slate"] .md-typeset .jyu-visa-q:not([data-vastattu]) .jyu-visa-nappi:hover {
-  background-color: color-mix(in srgb, var(--md-accent-fg-color) 24%, transparent);
-}
-
-[data-md-color-scheme="slate"] .md-typeset .jyu-visa-q:not([data-vastattu]) .jyu-visa-nappi:active {
-  background-color: color-mix(in srgb, var(--md-accent-fg-color) 34%, transparent);
-}
-
-[data-md-color-scheme="slate"] .md-typeset .jyu-visa-q:not([data-vastattu]) .jyu-visa-nappi:hover::before {
-  color: var(--md-default-fg-color);
-  background-color: color-mix(in srgb, var(--md-accent-fg-color) 45%, transparent);
+  border-color: var(--md-accent-fg-color);
 }
 
 .md-typeset .jyu-visa-nappi:focus-visible {

@@ -73,10 +73,14 @@ body[data-jyu-font="literata"] .md-content__inner {
  * erotu väliotsikoista; 2.25em tekee suhteesta 1,5. Väliotsikoilla
  * enemmän tilaa ylle ja vähemmän alle, jotta otsikko kuuluu seuraavaan
  * tekstiin eikä leiju kappaleiden välissä. Rivikorkeus tiukempi kuin
- * leipätekstin, koska otsikko rivittyy harvoin ja isona 1.4 hajoaa. */
+ * leipätekstin, koska otsikko rivittyy harvoin ja isona 1.4 hajoaa.
+ * Painot 600 ja 500 teeman 700:n sijaan: hierarkia tulee koosta, ja
+ * Source Sans 3:n 700 on serifin vieressä raskas. Negatiivinen välistys
+ * vain h1:llä (37 px); pienemmässä koossa se ahtaa kirjaimet. */
 .md-typeset h1 {
   margin: .1em 0 .8em;
   font-size: 2.25em;
+  font-weight: 600;
   line-height: 1.15;
   letter-spacing: -.02em;
 }
@@ -84,13 +88,17 @@ body[data-jyu-font="literata"] .md-content__inner {
 .md-typeset h2 {
   margin: 2em 0 .55em;
   font-size: 1.5em;
+  font-weight: 600;
   line-height: 1.25;
+  letter-spacing: 0;
 }
 
 .md-typeset h3 {
   margin: 1.8em 0 .5em;
   font-size: 1.2em;
+  font-weight: 500;
   line-height: 1.3;
+  letter-spacing: 0;
 }
 
 .md-typeset h2 + h3 {
@@ -134,34 +142,34 @@ body[data-jyu-font="literata"] .md-content__inner {
   }
 }
 
-/* Tekstin väri jyrkemmäksi: vaalea .87 -> .92, tumma #e1e1e1.
- * Teema johtaa muut tekstivärit tästä perusmuuttujasta, joten yksi arvo per
- * teema riittää; --light on teemassa kiinteä, joten se siirretään erikseen.
- * Vaalealla tarvitaan myös [data-md-color-scheme=default], koska teema
- * määrittelee arvon bodylle ja pelkkä :root häviäisi sille. */
-:root,
-[data-md-color-scheme="default"] {
-  --md-default-fg-color: #000000eb;
-  --md-default-fg-color--light: #00000099;
-}
-
-[data-md-color-scheme="slate"] {
-  --md-default-fg-color: #e1e1e1;
-  --md-default-fg-color--light: hsla(var(--md-hue), 15%, 90%, 0.62);
-}
+/* Tekstin värit ovat paletti.css:ssä (--md-default-fg-color ja --light). */
 
 /* Päävalikon linkit 500: Source Sans 3 jää 14 px:ssä 400:lla haaleaksi.
  * :not jättää pois sisällysluettelon (kapealla näytöllä samassa valikossa)
- * ja valitun rivin, jonka seuraava sääntö nostaa 700:aan. */
+ * ja valitun rivin, jonka seuraava sääntö nostaa 600:aan. */
 .md-nav--primary
   .md-nav__link:not(.md-nav--secondary .md-nav__link, .md-nav__link--active) {
   font-weight: 500;
 }
 
-/* Valittu rivi 700 molemmissa valikoissa: teeman 500 ei erotu, kun muutkin
- * rivit ovat 500, ja väri yksin lukee "linkki", ei "tässä olet". */
+/* Valittu rivi 600 molemmissa valikoissa: teeman 500 ei erotu, kun muutkin
+ * rivit ovat 500, ja väri yksin lukee "linkki", ei "tässä olet". 700 oli
+ * kolmas korostus pinnan ja värin päälle (layout.css). */
 .md-nav__item .md-nav__link--active {
-  font-weight: 700;
+  font-weight: 600;
+}
+
+/* Yläpalkin kurssin nimi 600 teeman 700:n sijaan, kuten otsikot. */
+.md-header__topic .md-ellipsis {
+  font-weight: 600;
+}
+
+/* Sisällysluettelon otsikko on nimilappu, ei otsikko: 500 ja toissijainen
+ * väri, jotta luettelon kohdat erottuvat siitä eikä se kilpaile sivun
+ * otsikon kanssa. */
+.md-sidebar--secondary .md-nav__title {
+  font-weight: 500;
+  color: var(--md-default-fg-color--light);
 }
 
 /* Tooltipit lähemmäs leipätekstin kokoa (.75rem): teeman title-tooltip

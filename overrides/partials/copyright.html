@@ -29,7 +29,9 @@
     Muutoshistorian osoite on sama kuin muokkauslinkin, mutta edit/:n tilalla
     on commits/, joten haara ja src/ tulevat edit_uri:sta.
     Tekstit ovat lyhyitä ja kiinteitä, jotta kolme linkkiä mahtuu puhelimessakin
-    samalle riville (tests/test_layout.py). -#}
+    samalle riville (tests/test_layout.py). Kuvakkeet ovat Lucidesta kuten
+    muu sivusto; GitHub-merkki on Materialin sarjasta, koska Lucidessa ei
+    ole tuotemerkkejä (assets/css/layout.css: .md-copyright--link svg). -#}
 {% set base = "" %}
 {% set history = "" %}
 {% set path = "" %}
@@ -49,7 +51,7 @@
       Muokkaa
     </a>
     <a href="{{ history ~ source }}" class="md-copyright md-copyright--link" title="Sivun muutokset GitHubissa">
-      {% include ".icons/material/history.svg" %}
+      {% include ".icons/lucide/history.svg" %}
       Muutoshistoria
     </a>
   {% endif %}
@@ -59,7 +61,7 @@
       Joka sivulla, myös ilman lähdetiedostoa; silloin polku on docs/:n
       oma. -#}
   <a href="{{ config.repo_url }}/issues/new?template=ilmoita-ongelmasta.yml&amp;url={{ (source or path) | urlencode }}" class="md-copyright md-copyright--link" title="Avaa issue GitHubissa">
-    {% include ".icons/material/flag-outline.svg" %}
+    {% include ".icons/lucide/flag.svg" %}
     Ilmoita ongelma
   </a>
 </div>

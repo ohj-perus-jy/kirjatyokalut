@@ -82,7 +82,7 @@
   height: 0.7rem;
   fill: none;
   stroke: currentcolor;
-  transition: transform 0.25s; /* kuten teeman valikkonuoli */
+  transition: transform var(--jyu-mid) var(--jyu-ease);
 }
 
 .jyu-sites__button[aria-expanded="true"] svg {

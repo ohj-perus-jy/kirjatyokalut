@@ -9,7 +9,7 @@
   "use strict";
 
   const KEY = "jyu-visa";
-  const RESULT = { oikein: "Oikein!", vaarin: "Väärin" };
+  const RESULT = { oikein: "Oikein", vaarin: "Väärin" };
 
   /* localStorage voi puuttua (yksityinen tila); silloin vastaus elää vain sivulla. */
   const stored = () => {

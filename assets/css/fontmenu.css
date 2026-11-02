@@ -55,7 +55,7 @@
 .jyu-font__chevron {
   display: flex;
   flex: none;
-  transition: transform 0.25s; /* kuten teeman valikkonuoli */
+  transition: transform var(--jyu-mid) var(--jyu-ease);
 }
 
 .jyu-font__chevron svg {

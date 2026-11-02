@@ -31,13 +31,13 @@
    * se vaihtuu vasta häivytyksen jälkeen, jotta häivytys näkyy. */
   visibility: hidden;
   opacity: 0;
-  transition: opacity 0.25s, visibility 0s 0.25s;
+  transition: opacity var(--jyu-mid), visibility 0s var(--jyu-mid);
 }
 
 .jyu-copied--shown {
   visibility: visible;
   opacity: 1;
-  transition: opacity 0.25s, visibility 0s;
+  transition: opacity var(--jyu-mid), visibility 0s;
 }
 
 /* Tummassa teemassa teeman --md-default-bg-color on tumma; aksentin päälle

@@ -1,20 +1,13 @@
-/* Koodin erottuminen taustasta: rivitekstin koodin tausta ja tummassa
- * teemassa koodilohkon tausta. Teeman --md-code-bg-color erottuu kummassakin
- * teemassa sivun taustasta hädin tuskin. Ero tehdään pelkällä taustalla, ei
+/* Koodin erottuminen taustasta: rivitekstin koodin tausta ja koodilohkon
+ * mitat. Teeman --md-code-bg-color erottuu kummassakin teemassa sivun
+ * taustasta hädin tuskin (lohkon tausta on paletti.css:ssä). Ero tehdään pelkällä taustalla, ei
  * reunuksella: laatikko joka koodinpätkän ympärillä on levottomampi kuin
  * pinta. Pieni rivitekstin nappula tarvitsee suuremman eron kuin palstan
  * levyinen lohko, joten nappula korjataan kummassakin teemassa, lohko vain
  * tummassa. */
 
-/* Kaikki kolme muuttujaa yhdessä: --light ja --lighter ovat nappirivin
- * tausta (.md-code__nav), joka kelluu lohkon päällä. 18 % on suurin arvo,
- * jolla teeman --lightillä piirtämät kommentit ja operaattorit pysyvät
- * WCAG AA:n yli. */
-[data-md-color-scheme="slate"] {
-  --md-code-bg-color: hsla(var(--md-hue), 20%, 18%, 1);
-  --md-code-bg-color--light: hsla(var(--md-hue), 20%, 18%, 0.9);
-  --md-code-bg-color--lighter: hsla(var(--md-hue), 20%, 18%, 0.54);
-}
+/* Tumman teeman koodilohkon tausta on paletti.css:ssä (--md-code-bg-color
+ * kolmena peittona) kehyksen muiden pintojen rinnalla. */
 
 /* Rivitekstin koodi. Tausta on tekstivärin läpinäkyvä peitto eikä valmis
  * väri, koska nappuloita on myös laatikoissa, taulukoissa ja tehtäväkorteissa,
@@ -39,6 +32,7 @@
  * serifin rinnalla pieneksi. Sama koko lohkossa; sen rivikorkeus 1.55
  * (teeman 1.5) lähemmäs leipätekstin 1.6:ta, ja lohkon ympärille 1.25em
  * (teeman 1em), jotta se erottuu kappaleesta omaksi kokonaisuudekseen.
+ * Pystytäyte .6rem (12 px) teeman .85em:n sijaan: 4 px:n ruudukko.
  * Lohkon sivureunat jäävät teeman 1.25em:iin: korostuskaista
  * (highlights.css) ja nappirivin tila (codebuttons.css) on mitoitettu
  * niille, joten vain pystysuunta muuttuu. */
@@ -48,7 +42,7 @@
 }
 
 .md-typeset pre > code {
-  padding-block: .85em;
+  padding-block: .6rem;
   line-height: 1.55;
 }
 

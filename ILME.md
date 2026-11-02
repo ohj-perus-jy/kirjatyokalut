@@ -12,6 +12,16 @@ kuvakaappauksin 1440, 1180 ja 390 px:n leveyksillä, vaaleana ja tummana,
 sekä lasketuista tyyleistä. Kuvat: etusivu, 2.2 Luokka ja olio, 2.4 Osan
 kaikki tehtävät, osan 2 etusivu, haku, kirjasinvalikko, piilotettu kisko.
 
+## Tila
+
+Läpikäynnit on tehty 2.11.2026 (haara `asettelu-unslop`) kahta poikkeusta
+lukuun ottamatta: laatikoiden tyyppivärien yhdistäminen katsotaan
+myöhemmin, ja "Made with Zensical" jää. Hiusviiva jäi 20 %:iin: 10 % hävitti
+laatikon ja koodinappien reunat, ja hakuikkunan reunan testi vaatii
+vähintään 20 %. Värit ja liikkeen arvot ovat `assets/css/paletti.css`:ssä.
+Mockup, jonka pohjalta suunta hyväksyttiin, ja alla oleva auditointi ovat
+tilanne ennen muutoksia.
+
 ## Tulos lyhyesti
 
 **Kevyt slop, ei raskas.** Rakenne (kiinteä kisko, tekstipalsta,
@@ -49,7 +59,7 @@ Jokainen löydös ja sen korjaus; sijainti suluissa.
 - TIM-napin hover: kaksi värillistä hehkuvarjoa (`tasks.css`,
   `--jyu-task-btn-glow`). → Pintaporras, ei hehkua.
 - Hiusviiva `--jyu-rule` on 20 % mustaa; menetelmän mitta on 6–10 %
-  (`layout.css`). → 8–10 %.
+  (`layout.css`). → Kokeiltu 10 %, palautettu 20 %:iin (ks. Tila).
 - Tumman teeman pinnat 20 %:n kylläisyydellä (hue 225): tausta lukee
   sinisenä (`layout.css`, `code.css`). → Sama sävy, kylläisyys 10–12 %.
 - Visan vaihtoehdot viidessä aksentin tummuusportaassa 12–45 %
@@ -164,7 +174,7 @@ Kontrastit laskettu (WCAG), aksentti tekstinä ja napin pohjana ≥ 7:1.
 | Sivu | `#ffffff` | `hsl(225 12% 10%)` ≈ `#17191d` |
 | Kisko ja alatunniste | `#f4f3f0` | `hsl(225 12% 8%)` ≈ `#121418` |
 | Korotettu pinta (valittu rivi, nappi) | `#eceae6` | `hsl(225 12% 15%)` |
-| Hiusviiva | teksti 10 % | teksti 10 % |
+| Hiusviiva | teksti 20 % | teksti 20 % |
 | Ensisijainen teksti | `#000000eb` (nyk.) | `#e1e1e1` (nyk.) |
 | Toissijainen teksti | `#5e554a` | `#a6a39c` |
 | Vaimea teksti ja kuvakkeet | `#737373` | `#85858b` |
@@ -203,11 +213,10 @@ lähtökohta; mitataan kuvakaappauksista ja korjataan. Tiedostot ovat
 
 - Paletti ylle `:root`iin ja `[data-md-color-scheme=slate]`en yhdessä
   tiedostossa (`typography.css` tai uusi `paletti.css` ennen muita).
-- Laatikot: note, abstract, info, kysymys → muste; tip ja kokeile →
-  hyvä-vihreä; warning → varoitus; danger ja ei-toimi → virhe. Kuvake ja
-  otsikkorivin 10 %:n tausta kantavat värin, reunus hiusviivaksi
-  (`admonitions.css`). Tyypit erottuvat kuvakkeesta ja otsikosta,
-  eivät enää kuudesta sinisen sävystä.
+- Laatikot: reunus hiusviivaksi, tyypin väri kuvakkeessa ja otsikkorivin
+  10 %:n taustassa (`admonitions.css`). Tyyppien yhdistäminen (note,
+  abstract, info, kysymys → muste; tip ja kokeile → hyvä; warning →
+  varoitus; danger ja ei-toimi → virhe) katsotaan myöhemmin.
 - Valittu valikkorivi: korotettu pinta + musteen värinen teksti
   (`layout.css`, `typography.css`).
 - TIM-nappi: muste, hover 10 % tummempi, ei hehkua; tumma teema:
@@ -216,19 +225,19 @@ lähtökohta; mitataan kuvakaappauksista ja korjataan. Tiedostot ovat
   painettu muste; ei varjoa (`codebuttons.css`).
 - Visa: vaihtoehdot neutraalilla pinnalla, valittu musteella; oikein ja
   väärin semanttisilla (`visa.css`).
-- Hiusviiva `--jyu-rule` 10 %; `--jyu-edge` siitä johdettuna
-  (`layout.css`).
+- Hiusviiva `--jyu-rule` jää 20 %:iin; `--jyu-edge` siitä johdettuna
+  (`paletti.css`).
 
 ### 3. Kuvakkeet
 
-- `copyright.html`: `lucide/github`, `lucide/history`, `lucide/flag`.
+- `copyright.html`: `lucide/history`, `lucide/flag`; GitHub-merkki jää
+  Materialin sarjasta, koska Lucidessa ei ole tuotemerkkejä.
 - `mkdocs-pohja.yml`: paletin kuvakkeet `lucide/moon` ja `lucide/sun`.
 - Yksi koko: alatunnisteessa 16 px, yläpalkissa teeman 20 px; viiva 1,5.
 
 ### 4. Tekstit
 
-- "Made with Zensical" → `extra.generator: false` pohjaan; lisenssirivi
-  riittää (`mkdocs-pohja.yml`).
+- "Made with Zensical" jää toistaiseksi.
 - `visa.js`: "Oikein!" → "Oikein".
 - Bonusliuska: HTML:ssä on jo "Bonus"; versaali tulee pelkästä
   `text-transform`ista (`tasks.css`), joten muutos on tyyliin.
@@ -296,11 +305,9 @@ lähtökohta; mitataan kuvakaappauksista ja korjataan. Tiedostot ovat
   koristetta.
 - Ei kurssin nimen, logon tai sisällön muutoksia.
 
-## Avoimet kysymykset
+## Päätökset
 
-1. Aksentti: ehdotettu muste `#1f4fa0` / `#8fb3ff` vai JYU:n virallinen
-   väri? Suunta on päätettävä ennen läpikäyntejä, koska kaikki värit
-   johdetaan siitä.
-2. Laatikoiden tyyppien yhdistäminen neljään väriin: riittääkö kuvake
-   erottamaan Huomautuksen, Osaamistavoitteet ja Todon toisistaan?
-3. "Made with Zensical": pois vai suomeksi?
+1. Aksentti: ehdotettu muste `#1f4fa0` / `#8fb3ff` (2.11.2026).
+2. Laatikoiden tyyppien yhdistäminen neljään väriin: katsotaan myöhemmin.
+3. "Made with Zensical": jää toistaiseksi.
+4. Hiusviiva: 20 %, koska 10 % oli liian haalea (2.11.2026).

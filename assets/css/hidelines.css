@@ -64,12 +64,12 @@
  * visibility vaihtuu vasta siirtymän päätyttyä, näytettäessä heti. */
 .md-typeset .highlight code.jyu-toggled > .boring,
 .md-typeset .highlight code.jyu-toggled .jyu-indent {
-  transition: height 0.3s, width 0.3s, opacity 0.3s, visibility 0s;
+  transition: height var(--jyu-slow) var(--jyu-ease), width var(--jyu-slow) var(--jyu-ease), opacity var(--jyu-slow), visibility 0s;
 }
 
 .md-typeset .highlight code.jyu-toggled.hide-boring > .boring,
 .md-typeset .highlight code.jyu-toggled.hide-boring .jyu-indent {
-  transition: height 0.3s, width 0.3s, opacity 0.3s, visibility 0s 0.3s;
+  transition: height var(--jyu-slow) var(--jyu-ease), width var(--jyu-slow) var(--jyu-ease), opacity var(--jyu-slow), visibility 0s var(--jyu-slow);
 }
 
 @media (prefers-reduced-motion: reduce) {

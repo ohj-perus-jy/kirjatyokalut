@@ -22,17 +22,25 @@
 .md-typeset .warning  { --adm: #ff9100; }
 .md-typeset .danger   { --adm: #ff1744; }
 
-/* Laatikko. Oletusväri on note'n sininen, kuten teemalla: sen saavat
- * tyypittömät <details>-lohkot. */
+/* Laatikko. Reunus on hiusviiva: tyypin väri on otsikkorivissä ja
+ * kuvakkeessa, ja värillinen reunus kehysti joka laatikon eri sävyllä.
+ * Oletusväri on note'n sininen, kuten teemalla: sen saavat tyypittömät
+ * <details>-lohkot. Täyte 16 px ja pyöristys 8 px (4 px:n ruudukko). */
 .md-typeset .admonition,
 .md-typeset details {
   font-size: inherit;
   margin: 1.5em 0;
-  padding: 0 .9rem;
+  padding: 0 .8rem;
   background-color: var(--md-default-bg-color);
-  border: .075rem solid var(--adm, #448aff);
-  border-radius: .2rem;
+  border: .05rem solid var(--jyu-rule);
+  border-radius: .4rem;
   box-shadow: none;
+}
+
+/* Teeman tyyppikohtainen reunaväri pois; [class] vain nostaa tarkkuuden. */
+.md-typeset .admonition[class],
+.md-typeset details[class] {
+  border-color: var(--jyu-rule);
 }
 
 /* Teeman tyyppikohtainen taustaväri pois; [class] vain nostaa tarkkuuden. */
@@ -52,12 +60,14 @@ html .md-typeset details > :last-child {
  * paddingissa. */
 [dir=ltr] .md-typeset .admonition-title,
 [dir=ltr] .md-typeset summary {
-  margin: 0 -.9rem .7em;
-  padding: .4rem .9rem .4rem 2.3rem;
+  margin: 0 -.8rem .7em;
+  padding: .4rem .8rem .4rem 2.2rem;
   font-size: .95em;
+  font-weight: 600;
   line-height: 1.5;
   background-color: color-mix(in srgb, var(--adm, #448aff) 10%, transparent);
-  border-radius: .1rem .1rem 0 0;
+  /* Sisäkkäinen pyöristys: laatikon 8 px miinus reunus. */
+  border-radius: .35rem .35rem 0 0;
 }
 
 /* Kuvake otsikkorivin ensimmäisen tekstirivin keskelle; teeman oma sijainti
@@ -65,7 +75,7 @@ html .md-typeset details > :last-child {
 [dir=ltr] .md-typeset .admonition-title:before,
 [dir=ltr] .md-typeset summary:before {
   top: .55em;
-  left: .8rem;
+  left: .7rem;
   width: .9rem;
   height: .9rem;
 }
@@ -74,18 +84,18 @@ html .md-typeset details > :last-child {
 @media screen and (max-width: 44.984375em) {
   .md-typeset .admonition,
   .md-typeset details {
-    padding: 0 .7rem;
+    padding: 0 .6rem;
   }
 
   [dir=ltr] .md-typeset .admonition-title,
   [dir=ltr] .md-typeset summary {
-    margin: 0 -.7rem .6em;
-    padding: .35rem .7rem .35rem 2rem;
+    margin: 0 -.6rem .6em;
+    padding: .3rem .6rem .3rem 1.9rem;
   }
 
   [dir=ltr] .md-typeset .admonition-title:before,
   [dir=ltr] .md-typeset summary:before {
-    left: .65rem;
+    left: .5rem;
   }
 }
 
@@ -156,7 +166,7 @@ html .md-typeset details[open] > :last-child {
   -webkit-mask-image: var(--md-details-icon);
   mask-image: var(--md-details-icon);
   transform: rotate(90deg);
-  transition: transform .25s;
+  transition: transform var(--jyu-mid) var(--jyu-ease);
 }
 
 .md-typeset details:not([class])[open] > summary:before {

@@ -75,7 +75,7 @@ def test_a_right_answer_shows_the_explanation(page):
     assert question.evaluate(MARKS) == [["totta", False, False], ["tarua", True, True]]
     details = question.locator("details")
     assert details.get_attribute("data-tulos") == "oikein"
-    assert details.locator("summary").inner_text() == "Oikein!"
+    assert details.locator("summary").inner_text() == "Oikein"
     assert details.locator("p").inner_text() == "Tarua. Käännösvirhe estää kääntämisen."
     assert details.locator("p").is_visible()
 
