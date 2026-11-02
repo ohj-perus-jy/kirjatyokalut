@@ -120,7 +120,7 @@ extra_css:
 
   # Värit (aksentti, tekstiroolit, pinnat, hiusviivat) ja liikkeen käyrä ja
   # kestot molemmille teemoille; muut tiedostot viittaavat näihin. Ennen
-  # muita tyylejä, jotta jokainen voi käyttää muuttujia; ks. ILME.md.
+  # muita tyylejä, jotta jokainen voi käyttää muuttujia.
   - assets/css/paletti.css
 
   # Leipätekstin kirjasin; miksi ei theme.font.text, ks. tiedoston alku.

@@ -16,8 +16,6 @@ ym.), koska kirjat kirjoitettiin alun perin mdBookille.
 - Mistä ominaisuudet tulivat (mdBook, ohj1, siirron jälkeen): [TAUSTA.md](TAUSTA.md).
 - Mikä mdBookin merkintä on vielä käytössä, mikä on sen Zensical-vastine ja
   mitkä omat merkinnät jäävät; avoimet kysymykset: [YHTENAISTYS.md](YHTENAISTYS.md).
-- Ulkoasun suunta (paletti, kirjasinpainot, välit) ja mitä siitä on tehty:
-  [ILME.md](ILME.md).
 
 ## Ominaisuudet
 
@@ -73,7 +71,7 @@ Kielet: `csharp`, `java`, `javascript` (korostetut rivit: `csharp`, `java`, `jso
 | Sivustovalikko kurssin nimen vieressä (`extra.sites`) | header.html, sitemenu.js/css |
 | Leipätekstin kirjasin- ja kokovalikko: Source Serif 4, Atkinson Hyperlegible Next, Literata; koko 90–175 %, lukukohta pysyy paikallaan. Perustaso 10 % teeman kokoa suurempi (--jyu-text-base) | header.html, fontmenu.js/css, typography.css, fonts.css |
 | Kirjasimet sivuston omasta `assets/fonts/`-hakemistosta, ei Google Fontsista: sivu näyttää samalta ilman verkkoa ja verkoissa, joista Googleen ei pääse, eikä lukijan osoite mene Googlelle; leipätekstin kirjasin esiladataan | fonts.css, main.html, `skriptit/fontit.py` |
-| Vaalea ja tumma teema käyttöjärjestelmän mukaan, vaihdin yläpalkissa; napin vaihto häivyttäen (näkymäsiirtymä, ei liikkeen vähennyksellä). Värit (muste-aksentti, lämpimään taittuvat neutraalit, hiusviivat) ja liikkeen käyrä ja kestot yhdessä tiedostossa; suunta ja perustelut ILME.md | mkdocs-pohja.yml, theme.js, layout.css, paletti.css |
+| Vaalea ja tumma teema käyttöjärjestelmän mukaan, vaihdin yläpalkissa; napin vaihto häivyttäen (näkymäsiirtymä, ei liikkeen vähennyksellä). Värit (muste-aksentti, lämpimään taittuvat neutraalit, hiusviivat) ja liikkeen käyrä ja kestot yhdessä tiedostossa | mkdocs-pohja.yml, theme.js, layout.css, paletti.css |
 | Haku; hakuikkunan teksti leipätekstin portaissa, kentän paikkamerkki "Hae", sulkunappi kenttärivin päässä (puhelimella ikkuna täyttää ruudun kapeaa reunusta vaille eikä Escapea tai kunnollista taustaa ole) | search.js/css |
 | Tulosta: koko kirja yhdeksi PDF:ksi | `build_print_page`, print.js/css |
 | Alatunniste: edellinen/seuraava, tekijät ja lisenssi, "Muokkaa", "Muutoshistoria", "Ilmoita ongelma" | copyright.html |
