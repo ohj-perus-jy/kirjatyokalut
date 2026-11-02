@@ -649,17 +649,11 @@ asciinema div.ap-wrapper div.ap-player {
    *    ilman pyöristystä mitat ovat samat. Ruudukko täyttää täytteiden
    *    välin kokonaan (max-width pois), jotta se ei keskity pyöristyksen
    *    jäännökseen ja siirrä rakoa kiskon ja tekstin välissä. */
-  /* Lyhyt sivu (osan etusivu): ilman vähimmäiskorkeutta alatunniste jää
-   * ruudun keskelle ja sen alle tyhjä kaista kiskon pohjaa. Säiliö on
-   * teemassa flex-sarake, joten pääalue venyy alatunnisteen yläpuolella. */
-  .md-container {
-    min-height: 100vh;
-  }
-
-  .md-main {
-    flex-grow: 1;
-  }
-
+  /* Lyhyt sivu: ei omaa vähimmäiskorkeutta. Teeman body on flex-sarake
+   * (min-height 100 %), ja .md-container ja .md-main venyvät (flex-grow),
+   * joten alatunniste on ikkunan alareunassa jo sellaisenaan. 100vh
+   * säiliölle työntäisi sivua yläpalkin verran yli, koska yläpalkki
+   * (sticky, vuossa) on säiliön sisar eikä lapsi. */
   .md-main {
     padding-right: calc(100% - var(--jyu-levy-right) - var(--jyu-toc));
     padding-left: calc(var(--jyu-levy-left) + var(--jyu-gap));
