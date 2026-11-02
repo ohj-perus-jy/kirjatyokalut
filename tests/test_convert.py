@@ -487,6 +487,28 @@ def test_convert_details_ignores_a_tag_in_inline_code():
     assert converted == '`<details>` ja <details markdown="1">\n'
 
 
+def test_escape_pi_in_details_turns_code_with_pi_into_raw_code():
+    """md_in_html lukee "<?":n käsittelyohjeeksi (ks. PI_CODE_RE), joten
+    koodijakso kirjoitetaan raakana entiteetein; rivinvaihto jakson sisällä
+    sallitaan."""
+    text = ('<details markdown="1"><summary>S</summary>\n\n'
+            'Tyyppi on `Change<?\nextends E>` eli `List<? extends T>`.\n\n</details>\n')
+    converted, count = convert.escape_pi_in_details(text)
+    assert count == 2
+    assert "<code>Change&lt;?\nextends E&gt;</code>" in converted
+    assert "<code>List&lt;? extends T&gt;</code>" in converted
+
+
+def test_escape_pi_in_details_leaves_other_code_alone():
+    """Vain lohkon sisällä ja vain jaksot, joissa on "<?": muu koodi, lohkon
+    ulkopuolinen teksti ja koodiaidat jäävät ennalleen."""
+    text = ('Ulkona `List<? extends T>`.\n\n'
+            '<details markdown="1"><summary>S</summary>\n\n'
+            '`Change<E>` ja\n\n```xml\n<?xml version="1.0"?>\n```\n\n</details>\n'
+            '<details><summary>Ilman attribuuttia</summary>`<?`</details>\n')
+    assert convert.escape_pi_in_details(text) == (text, 0)
+
+
 def test_convert_details_marks_a_summary_that_is_its_own_block():
     """Monirivinen yhteenveto tarvitsee markdown="block": "1" jäsentäisi
     <summary>-tagin sisällön vain rivinsisäisesti."""

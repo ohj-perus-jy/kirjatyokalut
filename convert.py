@@ -25,6 +25,7 @@ import filecmp
 import fnmatch
 import functools
 import hashlib
+import html
 import json
 import math
 import os
@@ -219,6 +220,17 @@ SUMMARY_RE = re.compile(r"<summary(?![^>]*\bmarkdown=)(?P<attrs>[^>]*)>")
 SUMMARY_END = "</summary>"
 # Rivinsisäinen koodi, jossa tagi on tekstiä (Kirjoita `<summary>`-tagien väliin).
 INLINE_CODE_RE = re.compile(r"(`[^`\n]*`)")
+
+# Rivinsisäinen koodi, jossa on "<?", <details markdown="1">-lohkon sisällä.
+# md_in_html jäsentää lohkon sisällön html.parserilla ennen koodijaksoja, ja
+# se lukee "<?":n XML-käsittelyohjeen aluksi (Change<? extends E>): ohje
+# talletetaan raakana, ja sen jälkeinen osa sivua jäsentyy väärin (esim. ?>
+# jää näkyviin ja seuraava HTML-lohko kääriytyy <p>:hen). Lohkon ulkopuolella
+# Python-Markdown käsittelee saman tekstinä (parse_pi, #1066). Koodijakso voi
+# jatkua seuraavalle riville, mutta ei tyhjän rivin yli; vieressä ei saa olla
+# toista gravista (koodiaita, ``kaksois``-jakso).
+PI_CODE_RE = re.compile(r"(?<!`)`((?:[^`\n]|\n(?!\n))*?<\?(?:[^`\n]|\n(?!\n))*?)`(?!`)")
+DETAILS_BLOCK_RE = re.compile(r"<details[^>]*\bmarkdown=[^>]*>.*?</details>", re.DOTALL)
 
 # Omaksi kappaleekseen jäänyt <br />, lähteessä väljyydeksi lohkojen väliin.
 # Python-Markdown tekee siitä <p><br /></p>, joka moninkertaistaa lohkojen välin;
@@ -1436,6 +1448,25 @@ def convert_details(text: str) -> tuple[str, int, int]:
                 summaries += found
         out.append(line)
     return "\n".join(out), tags, summaries
+
+
+def escape_pi_in_details(text: str) -> tuple[str, int]:
+    """<details markdown>-lohkon rivinsisäinen koodi, jossa on "<?", raa'aksi
+    <code>-elementiksi entiteetein. -> (teksti, jaksoja). Ks. PI_CODE_RE.
+    Raaka elementti kulkee md_in_html:n läpi sellaisenaan, ja tulos on sama
+    kuin koodijaksosta (<code>Change&lt;? extends E&gt;</code>). Ajetaan
+    convert_detailsin jälkeen, koska lohko tunnistetaan sen attribuutista.
+    """
+    count = 0
+
+    def escape_block(block: re.Match) -> str:
+        nonlocal count
+        text, found = PI_CODE_RE.subn(
+            lambda m: f"<code>{html.escape(m[1], quote=False)}</code>", block[0])
+        count += found
+        return text
+
+    return DETAILS_BLOCK_RE.sub(escape_block, text), count
 
 
 def drop_breaks(text: str) -> tuple[str, int]:
@@ -3082,6 +3113,7 @@ def convert_page(origin: Path, source_path: str, clips: set[str] | None = None) 
     converted, _, page_used = convert_plantuml(converted, page)
     # details ja drop_breaks: paikalla ei ole väliä.
     converted, *_ = convert_details(converted)
+    converted, _ = escape_pi_in_details(converted)
     converted, _ = drop_breaks(converted)
     # Divit ennen tehtäväkortteja (näkee vain lähteen divit) ja ennen
     # svgbobia (kääre ei saa markdown="1":tä).
