@@ -103,6 +103,9 @@ def test_the_keyboard_keeps_the_focus_and_the_tooltip(desktop):
     """Näppäimistöllä painettu nappi pitää kohdistuksen, jotta lukija voi
     jatkaa siitä; vihje saa jäädä."""
     desktop.focus(COPY)
+    # Teema näyttää vihjeen vasta viiveiden jälkeen (focusin, animaatiokehys);
+    # kuormitettuna se ehtii sivulle kopiointi-ilmoitusta myöhemmin.
+    desktop.wait_for_selector(ACTIVE)
     desktop.keyboard.press("Enter")
     desktop.wait_for_selector(".jyu-copied--shown")
     assert desktop.evaluate("document.activeElement.matches('[data-md-type=copy]')")
