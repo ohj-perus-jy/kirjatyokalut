@@ -69,6 +69,15 @@
   /* Hakuikkunan pinta (search.css): vaaleassa sivun pohja, joka erottuu
    * tummennetusta verhosta; tummassa sivua vaaleampi. */
   --jyu-dialog-bg: var(--md-default-bg-color);
+
+  /* Musteella täytetty nappi (TIM-nappi tasks.css, esityksen Seuraava ja
+   * nykyinen luku walkthrough.css): tekstin väri ja hoverin täyttö. Hover
+   * ei voi olla aksentti, koska se on sama muste; täyttö siirtyy poispäin
+   * sivun taustasta eli tummenee vaaleassa ja vaalenee tummassa. Tekstin
+   * väri on tummassa lähes musta, koska valkoinen ei yllä vaaleammalla
+   * musteella pienen tekstin kontrastiin. */
+  --jyu-ink-fg: #fff;
+  --jyu-ink-hover: color-mix(in srgb, var(--md-accent-fg-color) 85%, black);
 }
 
 /* Tumma teema: sama sävy (teeman --md-hue 225°), kylläisyys 12 %. Teeman
@@ -102,6 +111,8 @@
   --jyu-rule: hsl(var(--md-hue) 15% 90% / 0.2);
   --jyu-edge: color-mix(in srgb, hsl(var(--md-hue) 12% 8%), hsl(var(--md-hue) 15% 90%) 20%);
   --jyu-dialog-bg: hsl(var(--md-hue) 12% 14%);
+  --jyu-ink-fg: #13151b;
+  --jyu-ink-hover: color-mix(in srgb, var(--md-accent-fg-color) 85%, white);
 }
 
 /* Liike: yksi käyrä ja kolme kestoa kaikkiin tiedostoihin. Lyhyt on

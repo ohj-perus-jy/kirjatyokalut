@@ -290,15 +290,18 @@
   color: var(--md-accent-fg-color);
 }
 
+/* Nykyinen luku ja Seuraava ovat musteella täytettyjä nappeja: hover on
+ * paletin --jyu-ink-hover, koska aksentti on sama muste kuin täyttö eikä
+ * siihen vaihtaminen näkyisi. */
 .jw-pill[aria-current="true"] {
   background: var(--md-primary-fg-color);
-  color: var(--md-primary-bg-color);
+  color: var(--jyu-ink-fg);
 }
 
 .jw-pill[aria-current="true"]:hover,
 .jw-pill[aria-current="true"]:focus-visible {
-  background: var(--md-accent-fg-color);
-  color: var(--md-accent-bg-color);
+  background: var(--jyu-ink-hover);
+  color: var(--jyu-ink-fg);
 }
 
 /* Painikkeen näkyvä palkki on 6 px, nykyisen vaiheen 10 px, osuma-alue 22 px
@@ -363,7 +366,15 @@
 .jw-bar .jw-next {
   border-color: var(--md-primary-fg-color);
   background: var(--md-primary-fg-color);
-  color: var(--md-primary-bg-color);
+  color: var(--jyu-ink-fg);
+  transition: background-color var(--jyu-fast) var(--jyu-ease), border-color var(--jyu-fast) var(--jyu-ease);
+}
+
+.jw-bar .jw-next svg {
+  width: 1em;
+  height: 1em;
+  margin-right: 0.35em;
+  vertical-align: -0.15em;
 }
 
 .jw-bar .jw-replay {
@@ -388,9 +399,9 @@
 
 .jw-bar .jw-next:not(:disabled):hover,
 .jw-bar .jw-next:not(:disabled):focus-visible {
-  border-color: var(--md-accent-fg-color);
-  background: var(--md-accent-fg-color);
-  color: var(--md-accent-bg-color);
+  border-color: var(--jyu-ink-hover);
+  background: var(--jyu-ink-hover);
+  color: var(--jyu-ink-fg);
 }
 
 .jw-bar button:disabled {

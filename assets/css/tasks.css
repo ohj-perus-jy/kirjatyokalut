@@ -19,19 +19,12 @@
 }
 
 /* TIM-napin sävyt. Täyttö on --md-typeset-a-color eli muste (paletti.css),
- * sama kuin numerossa ja pisteissä. Tekstin väri on tummassa teemassa
- * lähes musta, koska valkoinen ei yllä tumman teeman vaaleammalla
- * musteella pienen tekstin kontrastiin. Hover tummenee vaaleassa ja
- * vaalenee tummassa, eli poispäin sivun taustasta. Ei hehkua: syvyys on
- * pinnan muutos. */
+ * sama kuin numerossa ja pisteissä. Tekstin väri ja hoverin täyttö ovat
+ * paletin musteella täytetyn napin sävyt (--jyu-ink-*). Ei hehkua: syvyys
+ * on pinnan muutos. */
 :root {
-  --jyu-task-btn-fg: #fff;
-  --jyu-task-btn-bg-hover: color-mix(in srgb, var(--md-typeset-a-color) 85%, black);
-}
-
-[data-md-color-scheme="slate"] {
-  --jyu-task-btn-fg: #13151b;
-  --jyu-task-btn-bg-hover: color-mix(in srgb, var(--md-typeset-a-color) 85%, white);
+  --jyu-task-btn-fg: var(--jyu-ink-fg);
+  --jyu-task-btn-bg-hover: var(--jyu-ink-hover);
 }
 
 /* ------------------------------------------------------------------ kaista */

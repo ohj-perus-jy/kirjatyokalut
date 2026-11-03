@@ -93,6 +93,25 @@ def test_one_step_is_shown_at_a_time(opened):
     assert errors == []
 
 
+def test_the_last_step_offers_to_restart(opened):
+    """Viimeisessä vaiheessa Seuraava-napin tilalla on Aloita esitys alusta,
+    joka animoi ensimmäisen vaiheen. Nuoli oikealle ei tee lopussa mitään."""
+    page, errors = opened("#vertaa-tulosta")
+    assert page.inner_text(".jw-count") == "Vaihe 6 / 6"
+    assert page.inner_text(".jw-next") == "Aloita esitys alusta"
+    assert not page.is_disabled(".jw-next")
+    page.click(".jw-stage")
+    page.keyboard.press("ArrowRight")
+    assert page.inner_text(".jw-count") == "Vaihe 6 / 6"
+    page.click(".jw-next")
+    assert shown(page) == ["avaa-sivu"]
+    assert page.inner_text(".jw-count") == "Vaihe 1 / 6"
+    assert page.inner_text(".jw-next") == "Seuraava →"
+    assert not page.is_visible(".jw-play")
+    page.wait_for_function("document.querySelector('.koe-teksti').textContent === 'Hei'")
+    assert errors == []
+
+
 def test_the_walkthrough_opens_waiting_for_the_play_button(opened):
     """Sivun avautuessa vaihe on alussaan ja näyttämöllä on iso toistonappi,
     josta animaatio lähtee; kulman kuvakkeet toimivat napin päällä. Seuraava

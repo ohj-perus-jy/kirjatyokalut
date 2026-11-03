@@ -32,6 +32,8 @@
  * luvun pilleri, aikajanan merkki ja linkki vaiheeseen (sisällysluettelo)
  * animoivat heti. Edellinen näyttää vaiheen heti valmiina, ja vähemmän
  * liikettä pyytäneelle (prefers-reduced-motion) vaihe on aina valmiina.
+ * Viimeisessä vaiheessa Seuraava-napin tilalla on Aloita esitys alusta, joka
+ * animoi ensimmäisen vaiheen; →-näppäin ja pyyhkäisy eivät tee lopussa mitään.
  *
  * Kohtaus on piirretty tietokoneen näytölle. Kapeassa palstassa (puhelin)
  * ohje avautuu siksi tekstinä, ja esityksen saa napista. Jos esityksen avaa
@@ -85,6 +87,11 @@
   const FULL = '<svg viewBox="0 0 24 24" aria-hidden="true">'
     + '<path class="jw-full-on" d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
     + '<path class="jw-full-off" d="M9 4v5H4M15 4v5h5M20 15h-5v5M4 15h5v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
+    + "</svg>";
+
+  /* Viimeisen vaiheen Seuraava-napin kuvake: nuoli kiertää alkuun (go). */
+  const RESTART = '<svg viewBox="0 0 24 24" aria-hidden="true">'
+    + '<path d="M3 12a9 9 0 1 0 2.64-6.36L3 8M3 3v5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
     + "</svg>";
 
   /* Iso toistonappi näyttämöllä, kun esitys odottaa alkamista (go). */
@@ -610,7 +617,7 @@
           `<button type="button" class="jw-tick" aria-label="Vaihe ${step.index + 1}: ${esc(step.title)}"`
           + ` title="${step.index + 1}. ${esc(step.title)}"></button>`).join("")}</div></div>`).join("")}</div>`
       + `<div class="jw-bar"><span class="jw-count" aria-live="polite"></span>`
-      + `<button type="button" class="jw-replay">Toista uudelleen</button>`
+      + `<button type="button" class="jw-replay">Toista vaihe uudelleen</button>`
       + `<button type="button" class="jw-prev">← Edellinen</button>`
       + `<button type="button" class="jw-next">Seuraava →</button></div></div>`;
     root.prepend(shell);
@@ -668,7 +675,8 @@
       steps.forEach((each, i) => each.el.classList.toggle("jyu-step--current", i === current));
       $(".jw-count").textContent = `Vaihe ${current + 1} / ${steps.length}`;
       $(".jw-prev").disabled = current === 0;
-      $(".jw-next").disabled = current === steps.length - 1;
+      $(".jw-next").innerHTML = current === steps.length - 1
+        ? `${RESTART}Aloita esitys alusta` : "Seuraava →";
       for (const button of chapterButtons) {
         button.setAttribute("aria-current", String(Number(button.dataset.chapter) === step.chapter));
       }
@@ -806,7 +814,10 @@
     const next = () => { if (current < steps.length - 1) go(current + 1, true); };
     const previous = () => { if (current > 0) go(current - 1, false); };
 
-    $(".jw-next").addEventListener("click", next);
+    $(".jw-next").addEventListener("click", () => {
+      if (current === steps.length - 1) go(0, true);
+      else next();
+    });
     $(".jw-prev").addEventListener("click", previous);
     $(".jw-replay").addEventListener("click", () => go(current, true));
     /* Toistonappi: odottava animaatio ja ääni alkavat. Painallus on lukijan
