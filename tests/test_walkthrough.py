@@ -78,6 +78,14 @@ def shown(page) -> list[str]:
     return page.eval_on_selector(".jyu-walk", SHOWN)
 
 
+# Aikajanan nykyisen pykälän järjestysnumero 1:stä (walkthrough.js: go).
+CURRENT_TICK = "[...document.querySelectorAll('.jw-tick')].findIndex(t => t.classList.contains('jw-tick--current')) + 1"
+
+
+def current_tick(page) -> int:
+    return page.evaluate(CURRENT_TICK)
+
+
 def to_text(page):
     """Tekstiin kulman valikosta (walkthrough.js: openMenu, setMode)."""
     page.click(".jw-more-button")
@@ -88,7 +96,7 @@ def test_one_step_is_shown_at_a_time(opened):
     """Luvun otsikot ja muut vaiheet piiloon; luvuista napit, vaiheista aikajana."""
     page, errors = opened()
     assert shown(page) == ["avaa-sivu"]
-    assert page.inner_text(".jw-count") == "Vaihe 1 / 6"
+    assert current_tick(page) == 1
     assert page.eval_on_selector_all(
         ".jw-pill", "buttons => buttons.map(b => b.textContent)") == ["Alku", "Loppu", "Kuvat"]
     assert page.locator(".jw-tick").count() == 6
@@ -103,15 +111,15 @@ def test_the_last_step_offers_to_restart(opened):
     """Viimeisessä vaiheessa Seuraava-napin tilalla on Aloita esitys alusta,
     joka animoi ensimmäisen vaiheen. Nuoli oikealle ei tee lopussa mitään."""
     page, errors = opened("#vertaa-tulosta")
-    assert page.inner_text(".jw-count") == "Vaihe 6 / 6"
+    assert current_tick(page) == 6
     assert page.inner_text(".jw-next") == "Aloita esitys alusta"
     assert not page.is_disabled(".jw-next")
     page.click(".jw-stage")
     page.keyboard.press("ArrowRight")
-    assert page.inner_text(".jw-count") == "Vaihe 6 / 6"
+    assert current_tick(page) == 6
     page.click(".jw-next")
     assert shown(page) == ["avaa-sivu"]
-    assert page.inner_text(".jw-count") == "Vaihe 1 / 6"
+    assert current_tick(page) == 1
     assert page.inner_text(".jw-next") == "Seuraava →"
     assert not page.is_visible(".jw-play")
     page.wait_for_function("document.querySelector('.koe-teksti').textContent === 'Hei'")
@@ -286,7 +294,7 @@ def test_the_address_follows_the_step(opened):
     page.click(".jw-next")
     assert page.evaluate("location.hash") == "#anna-komento"
     page.evaluate("location.hash = '#kirjaudu'")
-    page.wait_for_function("document.querySelector('.jw-count').textContent === 'Vaihe 3 / 6'")
+    page.wait_for_function(f"{CURRENT_TICK} === 3")
     for fragment, expected in (("#anna-komento", ["anna-komento"]), ("#loppu", ["kirjaudu"])):
         other, other_errors = opened(fragment)
         assert shown(other) == expected, fragment
@@ -316,7 +324,7 @@ def test_link_in_a_step_opens_the_other_step(opened):
     """Vaiheen tekstin linkki toiseen vaiheeseen avaa sen vaiheen."""
     page, errors = opened("#vertaa-tulosta")
     page.click(".jyu-step--current a[href='#avaa-sivu']")
-    page.wait_for_function("document.querySelector('.jw-count').textContent === 'Vaihe 1 / 6'")
+    page.wait_for_function(f"{CURRENT_TICK} === 1")
     assert shown(page) == ["avaa-sivu"]
     assert errors == []
 

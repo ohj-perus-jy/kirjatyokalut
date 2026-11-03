@@ -633,8 +633,7 @@
         + `<div class="jw-ticks">${part.steps.map((step) =>
           `<button type="button" class="jw-tick" aria-label="Vaihe ${step.index + 1}: ${esc(step.title)}"`
           + ` title="${step.index + 1}. ${esc(step.title)}"></button>`).join("")}</div></div>`).join("")}</div>`
-      + `<div class="jw-bar"><span class="jw-count" aria-live="polite"></span>`
-      + `<button type="button" class="jw-replay">Toista vaihe uudelleen</button>`
+      + `<div class="jw-bar"><button type="button" class="jw-replay">Toista vaihe uudelleen</button>`
       + `<button type="button" class="jw-prev">← Edellinen</button>`
       + `<button type="button" class="jw-next">Seuraava →</button></div></div>`;
     root.prepend(shell);
@@ -695,7 +694,6 @@
       const step = steps[current];
 
       steps.forEach((each, i) => each.el.classList.toggle("jyu-step--current", i === current));
-      $(".jw-count").textContent = `Vaihe ${current + 1} / ${steps.length}`;
       $(".jw-prev").disabled = current === 0;
       $(".jw-next").innerHTML = current === steps.length - 1
         ? `${RESTART}Aloita esitys alusta` : "Seuraava →";

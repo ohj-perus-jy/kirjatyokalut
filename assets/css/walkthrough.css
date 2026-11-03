@@ -420,16 +420,10 @@
 .jw-bar {
   display: flex;
   flex-wrap: wrap;
+  justify-content: flex-end;
   align-items: center;
   gap: 0.4rem;
   padding: 0.3rem 0.8rem 0.5rem;
-}
-
-.jw-count {
-  margin-right: auto;
-  color: var(--md-default-fg-color--light);
-  font-size: 0.7rem;
-  font-variant-numeric: tabular-nums;
 }
 
 .jw-bar button {
@@ -534,26 +528,25 @@
     margin-left: 0;
   }
 
-  /* Laskuri ja Toista ylärivillä, Edellinen ja Seuraava alarivillä. Sarakkeet
-   * nimetään, jotta piilotettu Toista (walkthrough.js: go "wait") ei siirrä
-   * Edellistä laskurin viereen. */
+  /* Toista ylärivillä oikealla, Edellinen ja Seuraava alarivillä. Rivit
+   * nimetään, jotta piilotettu Toista (walkthrough.js: go "wait") ei nosta
+   * Edellistä ja Seuraavaa ylemmäs eri riveille. */
   .jw-bar {
     display: grid;
     grid-template-columns: 1fr 1fr;
   }
 
-  .jw-bar .jw-count,
-  .jw-bar .jw-prev {
-    grid-column: 1;
-  }
-
-  .jw-bar .jw-replay,
-  .jw-bar .jw-next {
-    grid-column: 2;
-  }
-
   .jw-bar .jw-replay {
+    grid-area: 1 / 2;
     justify-self: end;
+  }
+
+  .jw-bar .jw-prev {
+    grid-area: 2 / 1;
+  }
+
+  .jw-bar .jw-next {
+    grid-area: 2 / 2;
   }
 
   .jyu-walk--text .jw-mode {
