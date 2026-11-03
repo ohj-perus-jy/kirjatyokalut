@@ -72,8 +72,14 @@
   outline-offset: 2px;
 }
 
-/* Ohjainrivi: tekstinappi oikeassa reunassa; ilmoitus (tekstinä puhelimella)
- * omalla rivillään. */
+/* Ylärivi vain tekstinä (walkthrough.js: setMode): linkki takaisin esitykseen
+ * oikeassa reunassa ja ilmoitus (tekstinä puhelimella) omalla rivillään.
+ * Esityksessä riviä ei ole, vaan tekstiin pääsee kulman valikosta ja näyttämö
+ * alkaa kehyksen yläreunasta. */
+.jyu-walk--live:not(.jyu-walk--text) .jw-top {
+  display: none;
+}
+
 .jw-top {
   display: flex;
   flex-wrap: wrap;
@@ -119,6 +125,9 @@
   aspect-ratio: 8 / 5;
   max-width: 100%;
   overflow: hidden;
+  /* Kehyksen yläkulmat (.jyu-walk--live) pyöristettyinä reunan sisällä. */
+  border-start-start-radius: calc(0.2rem - 1px);
+  border-start-end-radius: calc(0.2rem - 1px);
   background: color-mix(in srgb, var(--md-primary-fg-color) 9%, var(--md-default-bg-color));
   /* Vaakapyyhkäisy skriptille, pystyvieritys selaimelle. */
   touch-action: pan-y;
@@ -137,11 +146,12 @@
   transition: transform 0.5s ease;
 }
 
+/* Lähikuvan nappi yläreunassa Lisää-kuvakkeen (.jw-more) vasemmalla puolella. */
 .jw-zoom {
   position: absolute;
   z-index: 6;
   top: 0.4rem;
-  right: 0.4rem;
+  right: 2.4rem;
   padding: 0.25rem 0.6rem;
   border: 0;
   border-radius: 1rem;
@@ -210,10 +220,11 @@
 }
 
 /* Kuvakkeet näyttämön oikeassa alakulmassa kuten videosoittimissa: kaiutin
- * (walkthrough.js: SPEAKER, setSpeaking) ja koko ruutu (FULL, setFull);
- * sama tumma pohja kuin lähikuvan napilla. Kaiuttimessa aallot, kun lukeminen
- * on päällä, ja risti, kun ei; koko ruudun nuolet ulos, kun koko ruutu ei
- * ole päällä, ja sisään, kun on. */
+ * (walkthrough.js: SPEAKER, setSpeaking) ja koko ruutu (FULL, setFull), ja
+ * oikeassa yläkulmassa lisää (MORE, openMenu); sama tumma pohja kuin
+ * lähikuvan napilla. Kaiuttimessa aallot, kun lukeminen on päällä, ja risti,
+ * kun ei; koko ruudun nuolet ulos, kun koko ruutu ei ole päällä, ja sisään,
+ * kun on. */
 .jw-controls {
   position: absolute;
   z-index: 6;
@@ -223,7 +234,8 @@
   gap: 0.3rem;
 }
 
-.jw-controls button {
+.jw-controls > button,
+.jw-more-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -236,15 +248,76 @@
   color: #fff;
 }
 
-.jw-controls svg {
+.jw-controls > button svg,
+.jw-more-button svg {
   width: 1.1rem;
   height: 1.1rem;
 }
 
-.jw-controls button:hover,
-.jw-controls button:focus-visible {
+.jw-controls > button:hover,
+.jw-controls > button:focus-visible,
+.jw-more-button:hover,
+.jw-more-button:focus-visible,
+.jw-more-button[aria-expanded="true"] {
   background: var(--md-accent-fg-color);
   color: var(--md-accent-bg-color);
+}
+
+/* Lisää-kuvake näyttämön oikeassa yläkulmassa, ja sen valikko
+ * (walkthrough.js: openMenu) kuvakkeen alapuolelle oikeaan reunaan
+ * tasattuna; ulkoasu kuten kirjasinvalikon paneelilla (fontmenu.css).
+ * Näyttämön overflow: hidden ei haittaa, koska valikko on näyttämön sisällä
+ * kuvakkeen alla. Kohta korostuu myös kohdistuksesta, koska avaus kohdistaa
+ * siihen. */
+.jw-more {
+  position: absolute;
+  z-index: 6;
+  top: 0.4rem;
+  right: 0.4rem;
+  display: flex;
+}
+
+.jw-more-menu {
+  position: absolute;
+  top: calc(100% + 0.3rem);
+  right: 0;
+  z-index: 7;
+  padding: 0.3rem;
+  border-radius: 0.2rem;
+  background: var(--md-default-bg-color);
+  box-shadow: var(--md-shadow-z3);
+}
+
+[data-md-color-scheme="slate"] .jw-more-menu {
+  box-shadow: var(--md-shadow-z3), 0 0 0 0.05rem var(--jyu-rule);
+}
+
+.jw-more-menu[hidden] {
+  display: none;
+}
+
+.jw-more-menu button {
+  display: block;
+  width: 100%;
+  padding: 0.35rem 0.8rem;
+  border: 0;
+  border-radius: 0.1rem;
+  background: none;
+  color: var(--md-default-fg-color);
+  font-size: 0.7rem;
+  line-height: 1.4;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.jw-more-menu button:hover,
+.jw-more-menu button:focus {
+  background: var(--md-accent-fg-color--transparent);
+  color: var(--md-accent-fg-color);
+}
+
+.jw-ui .jw-more-menu button:focus-visible {
+  outline-offset: -2px;
 }
 
 .jw-speak[aria-pressed="true"] .jw-speak-off,
@@ -461,9 +534,22 @@
     margin-left: 0;
   }
 
+  /* Laskuri ja Toista ylärivillä, Edellinen ja Seuraava alarivillä. Sarakkeet
+   * nimetään, jotta piilotettu Toista (walkthrough.js: go "wait") ei siirrä
+   * Edellistä laskurin viereen. */
   .jw-bar {
     display: grid;
     grid-template-columns: 1fr 1fr;
+  }
+
+  .jw-bar .jw-count,
+  .jw-bar .jw-prev {
+    grid-column: 1;
+  }
+
+  .jw-bar .jw-replay,
+  .jw-bar .jw-next {
+    grid-column: 2;
   }
 
   .jw-bar .jw-replay {
@@ -532,6 +618,7 @@
 
 .jyu-walk--full .jw-stage {
   width: min(100cqw, 160cqh);
+  border-radius: 0;
 }
 
 .jyu-walk--full .jw-timeline {

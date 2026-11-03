@@ -78,6 +78,12 @@ def shown(page) -> list[str]:
     return page.eval_on_selector(".jyu-walk", SHOWN)
 
 
+def to_text(page):
+    """Tekstiin kulman valikosta (walkthrough.js: openMenu, setMode)."""
+    page.click(".jw-more-button")
+    page.click(".jw-text")
+
+
 def test_one_step_is_shown_at_a_time(opened):
     """Luvun otsikot ja muut vaiheet piiloon; luvuista napit, vaiheista aikajana."""
     page, errors = opened()
@@ -114,12 +120,14 @@ def test_the_last_step_offers_to_restart(opened):
 
 def test_the_walkthrough_opens_waiting_for_the_play_button(opened):
     """Sivun avautuessa vaihe on alussaan ja näyttämöllä on iso toistonappi,
-    josta animaatio lähtee; kulman kuvakkeet toimivat napin päällä. Seuraava
-    ottaa napin pois, ja tekstistä palatessa esitys odottaa taas. Jaettu osoite
+    josta animaatio lähtee; kulman kuvakkeet toimivat napin päällä. Toista
+    vaihe uudelleen näkyy vasta, kun animaatio on lähtenyt. Seuraava ottaa
+    napin pois, ja tekstistä palatessa esitys odottaa taas. Jaettu osoite
     avaa vaiheensa samoin."""
     page, errors = opened()
     typed = "document.querySelector('.koe-teksti').textContent"
     assert page.is_visible(".jw-play")
+    assert not page.is_visible(".jw-replay")
     assert page.evaluate(typed) == ""
     assert page.locator(".jw-ring").count() == 0
     page.click(".jw-full")
@@ -128,14 +136,17 @@ def test_the_walkthrough_opens_waiting_for_the_play_button(opened):
     page.click(".jw-full")
     page.click(".jw-play")
     assert not page.is_visible(".jw-play")
+    assert page.is_visible(".jw-replay")
     page.wait_for_function(f"{typed} === 'Hei'")
     page.wait_for_selector(".jw-ring")
-    page.click(".jw-mode")
+    to_text(page)
     page.click(".jw-mode")
     assert page.is_visible(".jw-play")
+    assert not page.is_visible(".jw-replay")
     assert page.evaluate(typed) == ""
     page.click(".jw-next")
     assert not page.is_visible(".jw-play")
+    assert page.is_visible(".jw-replay")
     other, other_errors = opened("#kirjaudu")
     assert shown(other) == ["kirjaudu"]
     assert other.is_visible(".jw-play")
@@ -149,7 +160,7 @@ def test_markdown_inside_a_step_is_converted(opened):
     laatikot (myös niiden luettelo ja aita), luettelo, näppäimet, linkit ja
     kuvat."""
     page, errors = opened()
-    page.click(".jw-mode")
+    to_text(page)
     assert page.locator(".jyu-step pre code").count() == 2
     assert page.locator(".jyu-step .admonition").count() == 2
     assert page.locator(".jyu-step .admonition ol > li").count() == 2
@@ -283,6 +294,24 @@ def test_the_address_follows_the_step(opened):
     assert errors == []
 
 
+def test_reload_starts_from_the_first_step(opened):
+    """Uudelleenlataus aloittaa ensimmäisestä vaiheesta, vaikka osoite seurasi
+    vaihetta, ja vaihe lähtee osoitteesta. Jaettu osoite avaa yhä vaiheensa."""
+    page, errors = opened("#kirjaudu")
+    assert shown(page) == ["kirjaudu"]
+    page.click(".jw-next")
+    assert page.evaluate("location.hash") == "#katso-kuvakaappaus"
+    page.reload()
+    page.wait_for_selector(LIVE)
+    assert shown(page) == ["avaa-sivu"]
+    assert page.evaluate("location.hash") == ""
+    assert page.is_visible(".jw-play")
+    page.goto(page.url + "#anna-komento")
+    page.wait_for_selector(LIVE)
+    assert shown(page) == ["anna-komento"]
+    assert errors == []
+
+
 def test_link_in_a_step_opens_the_other_step(opened):
     """Vaiheen tekstin linkki toiseen vaiheeseen avaa sen vaiheen."""
     page, errors = opened("#vertaa-tulosta")
@@ -319,16 +348,49 @@ def test_chapter_button_plays_the_first_step_of_the_chapter(opened):
 
 
 def test_text_mode_shows_the_whole_walkthrough(opened):
-    """Tekstinä: kaikki luvut ja vaiheet näkyviin, kohtaus ja ohjaimet piiloon.
-    Leveällä palstalla ei ilmoitusta puhelimesta."""
+    """Tekstinä kulman valikosta: kaikki luvut ja vaiheet näkyviin, kohtaus ja
+    ohjaimet piiloon, ja tekstin alussa linkki esitykseen; esityksessä
+    ylärivi ei näy. Leveällä palstalla ei ilmoitusta puhelimesta."""
     page, errors = opened()
-    page.click(".jw-mode")
+    assert not page.is_visible(".jw-top")
+    assert not page.is_visible(".jw-mode")
+    to_text(page)
     assert shown(page) == EVERYTHING
     assert not page.is_visible(".jw-stage")
     assert not page.is_visible(".jw-next")
     assert not page.is_visible(".jw-notice")
     assert page.inner_text(".jw-mode") == "Näytä esityksenä"
     page.click(".jw-mode")
+    assert shown(page) == ["avaa-sivu"]
+    assert not page.is_visible(".jw-top")
+    assert errors == []
+
+
+def test_the_corner_menu_opens_and_closes(opened):
+    """Kolmen pisteen valikko: kuvake avaa ja kohdistaa kohtaan, ja kuvakkeen
+    vihje piiloutuu valikon ajaksi. Esc sulkee ja palauttaa kohdistuksen
+    kuvakkeeseen, painallus muualle sulkee, ja nuoli alas avaa näppäimistöllä.
+    Valikon avaus ei vie kohdistusta ohjeelle."""
+    page, errors = opened()
+    assert not page.is_visible(".jw-more-menu")
+    assert page.get_attribute(".jw-more-button", "aria-expanded") == "false"
+    page.hover(".jw-more-button")
+    tip = "#" + page.get_attribute(".jw-more-button", "aria-describedby")
+    assert page.is_visible(tip)
+    page.click(".jw-more-button")
+    assert page.is_visible(".jw-more-menu")
+    assert page.get_attribute(".jw-more-button", "aria-expanded") == "true"
+    assert page.evaluate("document.activeElement.classList.contains('jw-text')")
+    assert not page.is_visible(tip)
+    page.keyboard.press("Escape")
+    assert not page.is_visible(".jw-more-menu")
+    assert page.get_attribute(".jw-more-button", "aria-expanded") == "false"
+    assert page.evaluate("document.activeElement.classList.contains('jw-more-button')")
+    assert "jyu-walk--full" not in page.get_attribute(".jyu-walk", "class")
+    page.keyboard.press("ArrowDown")
+    assert page.is_visible(".jw-more-menu")
+    page.click(".jw-stage", position={"x": 10, "y": 10})
+    assert not page.is_visible(".jw-more-menu")
     assert shown(page) == ["avaa-sivu"]
     assert errors == []
 
@@ -440,8 +502,9 @@ def test_speaker_reads_each_step_aloud(opened):
     assert page.get_attribute(".jw-speak", "aria-pressed") == "true"
     assert page.evaluate("played") == []
     page.click(".jw-play")
-    assert page.evaluate("played") == ["piilotus"]
-    page.click(".jw-mode")
+    # Uudelleenlataus aloittaa ensimmäisestä vaiheesta.
+    assert page.evaluate("played") == ["selain"]
+    to_text(page)
     assert not page.is_visible(".jw-speak")
     assert errors == []
 

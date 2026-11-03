@@ -28,7 +28,9 @@
  *                   järjestyksessä show, click, type
  * Esitys avautuu odottamaan (sivun avautuessa, myös jaetusta osoitteesta, ja
  * tekstistä palatessa): vaihe on alussaan ja näyttämöllä on iso toistonappi,
- * josta animaatio lähtee. Seuraava-nappi, →-näppäin, pyyhkäisy vasemmalle,
+ * josta animaatio lähtee; Toista vaihe uudelleen tulee näkyviin vasta, kun
+ * animaatio on lähtenyt. Osoite seuraa vaihetta, mutta sivun uudelleenlataus
+ * aloittaa ensimmäisestä vaiheesta. Seuraava-nappi, →-näppäin, pyyhkäisy vasemmalle,
  * luvun pilleri, aikajanan merkki ja linkki vaiheeseen (sisällysluettelo)
  * animoivat heti. Edellinen näyttää vaiheen heti valmiina, ja vähemmän
  * liikettä pyytäneelle (prefers-reduced-motion) vaihe on aina valmiina.
@@ -44,7 +46,11 @@
  * Näyttämön oikeassa alakulmassa ovat kuvakkeet kuten videosoittimissa.
  * Koko ruutu -kuvakkeesta esitys täyttää näytön: kohtaus vasemmalla ja
  * vaiheen teksti oikealla, jottei tekstiä tarvitse vierittää kuvan alta.
- * Sama kuvake tai Esc sulkee.
+ * Sama kuvake tai Esc sulkee. Oikean yläkulman kolmesta pisteestä avautuu
+ * valikko, jonka ainoa kohta näyttää ohjeen pelkkänä tekstinä: kaikki luvut ja
+ * vaiheet peräkkäin ilman kohtausta. Tekstiversio on valikon takana, koska
+ * sitä tarvitsee harva eikä sen pidä aueta vahingossa; tekstin alussa on
+ * linkki takaisin esitykseen.
  *
  * Ääneen lukeminen: jos vaiheilla on äänitiedosto (<section data-audio>,
  * convert.py: walkthrough_audio; äänet tekee zensical/puhe.py), kulmassa on
@@ -88,6 +94,12 @@
     + '<path class="jw-full-on" d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
     + '<path class="jw-full-off" d="M9 4v5H4M15 4v5h5M20 15h-5v5M4 15h5v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
     + "</svg>";
+
+  /* Lisävalintojen kuvake näyttämön yläkulmassa: kolme pistettä (setMode). */
+  const MORE = '<svg viewBox="0 0 24 24" aria-hidden="true">'
+    + '<circle cx="12" cy="5" r="2" fill="currentColor"/>'
+    + '<circle cx="12" cy="12" r="2" fill="currentColor"/>'
+    + '<circle cx="12" cy="19" r="2" fill="currentColor"/></svg>';
 
   /* Viimeisen vaiheen Seuraava-napin kuvake: nuoli kiertää alkuun (go). */
   const RESTART = '<svg viewBox="0 0 24 24" aria-hidden="true">'
@@ -600,10 +612,15 @@
       + `<p class="jw-notice" hidden>Kuvallinen esitys on tehty tietokoneen näytölle, `
       + `joten ohje näytetään tässä tekstinä.</p>`
       + `<div class="jw-actions">`
-      + `<button type="button" class="jw-mode">Näytä tekstinä</button></div></div>`
+      + `<button type="button" class="jw-mode">Näytä esityksenä</button></div></div>`
       + `<div class="jw-screen"><div class="jw-stage"><div class="jw-canvas" aria-hidden="true"></div>`
       + `<button type="button" class="jw-play" aria-label="Aloita esitys" hidden>${PLAY}</button>`
       + `<button type="button" class="jw-zoom" hidden>Koko kuva</button>`
+      + `<div class="jw-more"><button type="button" class="jw-more-button" aria-haspopup="menu"`
+      + ` aria-expanded="false" aria-label="Lisää" title="Lisää">${MORE}</button>`
+      + `<div class="jw-more-menu" role="menu" hidden>`
+      + `<button type="button" class="jw-text" role="menuitem">Näytä esitys vain tekstinä</button>`
+      + `</div></div>`
       + `<div class="jw-controls">`
       + (spoken ? `<button type="button" class="jw-speak" aria-pressed="false"`
         + ` aria-label="Lue ääneen" title="Lue ääneen">${SPEAKER}</button>` : "")
@@ -630,6 +647,11 @@
     const zoomButton = $(".jw-zoom");
     const playButton = $(".jw-play");
     const modeButton = $(".jw-mode");
+    const replayButton = $(".jw-replay");
+    const more = $(".jw-more");
+    const moreButton = $(".jw-more-button");
+    const menu = $(".jw-more-menu");
+    const textButton = $(".jw-text");
     const fullButton = $(".jw-full");
     const speakButton = $(".jw-speak");
     const voice = new Audio();
@@ -684,8 +706,8 @@
         tick.classList.toggle("jw-tick--done", i < current);
         tick.classList.toggle("jw-tick--current", i === current);
       });
-      /* Osoite seuraa vaihetta, jotta uudelleenlataus ja jaettu linkki
-       * avaavat saman vaiheen. replaceState ei vieritä eikä laukaise
+      /* Osoite seuraa vaihetta, jotta jaettu linkki avaa saman vaiheen
+       * (uudelleenlataus ei, ks. open). replaceState ei vieritä eikä laukaise
        * hashchangea. */
       if (remember && step.heading?.id) history.replaceState(null, "", `#${step.heading.id}`);
 
@@ -696,6 +718,9 @@
       const wait = animate === "wait";
       const ready = wait ? new Promise((resolve) => { startPlay = resolve; }) : undefined;
       playButton.hidden = !wait;
+      /* Toista vasta, kun jotain on katsottu: odottavassa vaiheessa ei ole
+       * mitään toistettavaa (playButton näyttää sen). */
+      replayButton.hidden = wait;
       scene.show(render(scenes, step.scene), { animate: Boolean(animate), ready });
       if (!wait) speak();
     }
@@ -726,22 +751,37 @@
     /* Esityksen avaus sivun avautuessa ja tekstistä palatessa: osoitteen
      * vaihe tai nykyinen, alussaan odottamassa toistonappia (go "wait").
      * Vähemmän liikettä pyytäneelle vaihe on heti valmiina, koska animaatiota
-     * ei olisi. */
+     * ei olisi.
+     *
+     * Uudelleenlataus (F5) aloittaa ensimmäisestä vaiheesta, vaikka osoite
+     * seuraa vaihetta (go): ensimmäisellä avauksella osoitteen vaihe
+     * ohitetaan ja otetaan pois osoitteesta, jottei osoite väitä muuta.
+     * Jaettu linkki ja sisällysluettelo eivät ole uudelleenlatauksia, joten
+     * ne avaavat vaiheensa. */
+    let reloaded = performance.getEntriesByType("navigation")[0]?.type === "reload";
+
     function open() {
-      const index = hashIndex();
+      let index = hashIndex();
+      if (reloaded && index >= 0) {
+        history.replaceState(null, "", location.pathname + location.search);
+        index = -1;
+      }
+      reloaded = false;
       go(index < 0 ? current : index, reducedMotion.matches ? false : "wait", false);
       if (index >= 0) root.scrollIntoView({ block: "start" });
     }
 
-    /* Tekstinä tai esityksenä. Esitykseen palatessa näyttämö tulee näkyviin,
-     * joten sen koko mitataan ennen vaiheen piirtämistä. */
+    /* Tekstinä tai esityksenä. Tekstiin pääsee kulman valikosta ja takaisin
+     * tekstin alun linkistä (.jw-mode; ylärivi näkyy vain tekstinä). Esitykseen
+     * palatessa näyttämö tulee näkyviin, joten sen koko mitataan ennen vaiheen
+     * piirtämistä. */
     function setMode(text) {
       if (text) {
+        closeMenu(false);
         setFull(false);
         voice.pause();
       }
       root.classList.toggle("jyu-walk--text", text);
-      modeButton.textContent = text ? "Näytä esityksenä" : "Näytä tekstinä";
       notice.hidden = !(text && root.clientWidth < SMALL_WIDTH);
       if (text) return;
       fit();
@@ -825,6 +865,7 @@
      * kohdistaa ohjeen nuolinäppäimiä varten. */
     playButton.addEventListener("click", () => {
       playButton.hidden = true;
+      replayButton.hidden = false;
       startPlay?.();
       startPlay = null;
       speak();
@@ -833,8 +874,71 @@
     for (const button of chapterButtons) {
       button.addEventListener("click", () => go(chapters[Number(button.dataset.chapter)].first, true));
     }
-    modeButton.addEventListener("click", () => setMode(!textMode()));
+    modeButton.addEventListener("click", () => setMode(false));
     fullButton.addEventListener("click", () => setFull(!full));
+
+    /* Kulman valikko (MORE): avautuu kuvakkeesta ja nuolinäppäimistä, ja
+     * kohdistus siirtyy ainoaan kohtaan. Sulkeutuu valinnasta, Escistä
+     * (kohdistus takaisin kuvakkeeseen), kun kohdistus siirtyy muualle (Tab)
+     * tai painetaan valikon ulkopuolelle. Hiirellä avatusta ja suljetusta
+     * valikosta kohdistus ei jää kuvakkeeseen, jottei sen vihje jää auki. */
+    function openMenu() {
+      menu.hidden = false;
+      moreButton.setAttribute("aria-expanded", "true");
+      coverTip();
+      textButton.focus();
+    }
+
+    function closeMenu(refocus) {
+      if (menu.hidden) return;
+      menu.hidden = true;
+      moreButton.setAttribute("aria-expanded", "false");
+      coverTip();
+      if (refocus) moreButton.focus();
+    }
+
+    /* Kuvakkeen vihje ("Lisää", teeman tooltip) piiloon valikon ollessa auki:
+     * se tulisi kuvakkeen alle valikon taakse. Vihje on olemassa vain
+     * avoinna, ja sen id on silloin kuvakkeen aria-describedbyssä, joten id
+     * otetaan talteen (vrt. fontmenu.js). */
+    let moreTip = "";
+    function coverTip() {
+      const tip = document.getElementById(moreTip);
+      if (tip) tip.hidden = !menu.hidden;
+    }
+    new MutationObserver(() => {
+      moreTip = moreButton.getAttribute("aria-describedby") || moreTip;
+      coverTip();
+    }).observe(moreButton, { attributeFilter: ["aria-describedby"] });
+
+    moreButton.addEventListener("click", (event) => {
+      if (menu.hidden) {
+        openMenu();
+      } else {
+        closeMenu(false);
+        if (event.detail) moreButton.blur();
+      }
+    });
+    moreButton.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        event.preventDefault();
+        openMenu();
+      }
+    });
+    textButton.addEventListener("click", () => setMode(true));
+    menu.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        closeMenu(true);
+      }
+    });
+    more.addEventListener("focusout", (event) => {
+      if (event.relatedTarget && !more.contains(event.relatedTarget)) closeMenu(false);
+    });
+    document.addEventListener("pointerdown", (event) => {
+      if (!more.contains(event.target)) closeMenu(false);
+    });
     if (speakButton) {
       try {
         speaking = localStorage.getItem(SPEAK_KEY) === "1";
@@ -851,7 +955,11 @@
       view.toggle();
       if (view.closeUp() && scene.finished()) scene.focusFinished(false);
     });
-    stage.addEventListener("click", () => root.focus({ preventScroll: true }));
+    stage.addEventListener("click", (event) => {
+      /* Valikon avaus pitää kohdistuksen valikossa (openMenu). */
+      if (event.target.closest(".jw-more")) return;
+      root.focus({ preventScroll: true });
+    });
     /* Kuvasuurennus vie kohdistuksen bodyyn (teema poistaa sen avatessa), ja
      * se jää sinne sulkemisen jälkeen: nuolet ja Esc eivät tulisi ohjeelle.
      * Vaiheen kuvasta avatun suurennuksen sulkeutuessa kohdistus palaa. */
