@@ -160,11 +160,17 @@
  * sitä. Nappi peittää koko näyttämön, joten kohtausta klikkaamalla esitys
  * alkaa; näkyvä ympyrä on keskellä kuten videosoittimissa, värit kuin
  * .jw-zoom. Kohdistuskehys ympyrään: koko näyttämön ympärillä se jäisi
- * näyttämön overflow: hiddenin alle. Lähikuvan nappi (.jw-zoom) on päällä. */
+ * näyttämön overflow: hiddenin alle. Lähikuvan nappi (.jw-zoom) on päällä.
+ * Oikea alakulma kuvakkeiden (.jw-controls) ympäriltä on leikattu napista
+ * pois (clip-path leikkaa myös osuma-alueen), jottei kuvakkeen viereen
+ * osunut klikkaus käynnistä esitystä eikä hiiri kuvakkeiden luona korosta
+ * toistonappia. */
 .jw-play {
   position: absolute;
   z-index: 5;
   inset: 0;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 3rem), calc(100% - 7rem) calc(100% - 3rem),
+    calc(100% - 7rem) 100%, 0 100%);
   display: grid;
   place-items: center;
   width: 100%;

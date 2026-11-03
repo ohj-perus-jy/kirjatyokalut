@@ -333,6 +333,28 @@ def test_text_mode_shows_the_whole_walkthrough(opened):
     assert errors == []
 
 
+def test_a_click_beside_the_corner_icons_does_not_start_the_show(opened):
+    """Toistonappi peittää näyttämön, mutta oikea alakulma kuvakkeiden ympäriltä
+    on leikattu siitä pois (walkthrough.css: .jw-play clip-path): kuvakkeen
+    viereen osunut klikkaus ei käynnistä esitystä, kohtauksen muu klikkaus
+    käynnistää."""
+    page, errors = opened()
+    stage = page.locator(".jyu-walk .jw-stage").bounding_box()
+    button = page.locator(".jw-full").bounding_box()
+    assert page.is_visible(".jw-play")
+    # Kuvakkeen vasemmalla puolella ja sen yläpuolella, kuvakkeiden välissä.
+    page.mouse.click(button["x"] - 6, button["y"] + button["height"] / 2)
+    page.mouse.click(button["x"] + button["width"] / 2, button["y"] - 6)
+    page.mouse.click(button["x"] + button["width"] + 3, button["y"] + button["height"] + 3)
+    assert page.is_visible(".jw-play")
+    assert page.evaluate("document.querySelector('.koe-teksti').textContent") == ""
+    # Suoja-alueen ulkopuolella kohtauksen klikkaus käynnistää.
+    page.mouse.click(stage["x"] + stage["width"] * 0.8, stage["y"] + stage["height"] * 0.8)
+    assert not page.is_visible(".jw-play")
+    page.wait_for_function("document.querySelector('.koe-teksti').textContent === 'Hei'")
+    assert errors == []
+
+
 def test_full_screen_puts_the_text_beside_the_scene(opened):
     """Koko ruutu näyttämön oikean alakulman kuvakkeesta: kohtaus vasemmalla
     koko korkeudeltaan näkyvissä ja vaiheen teksti sen oikealla puolella;
