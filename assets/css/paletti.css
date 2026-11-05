@@ -86,8 +86,16 @@
  * 16 %. --md-default-bg-colorin kolme peittoa ovat teeman omia muuttujia
  * (mm. yläpalkin sumennus), ja koodin kaksi peittoa nappirivin tausta
  * (.md-code__nav), joka kelluu lohkon päällä; 16 % on arvo, jolla teeman
- * --lightillä piirtämät kommentit ja operaattorit pysyvät WCAG AA:n yli. */
-[data-md-color-scheme="slate"] {
+ * --lightillä piirtämät kommentit ja operaattorit pysyvät WCAG AA:n yli.
+ * Toinen valitsin on tarkkuuden takia: teema antaa bodylle aina
+ * data-md-color-primary="indigo", vaikka kirja ei väriä aseta, ja sen
+ * palette.css asettaa linkkivärin tummassa kahden attribuutin valitsimella
+ * [data-md-color-scheme=slate][data-md-color-primary=indigo] (#5488e8).
+ * Pelkkä scheme-valitsin häviäisi sille, ja tumman teeman linkit,
+ * sisällysluettelon valittu rivi ja TIM-nappi jäisivät teeman siniseen;
+ * päävalikon valittu rivi (accent) vaihtuisi, ja sävyt olisivat eri. */
+[data-md-color-scheme="slate"],
+[data-md-color-scheme="slate"][data-md-color-primary] {
   --md-primary-fg-color: #8fb3ff;
   --md-accent-fg-color: #8fb3ff;
   --md-accent-fg-color--transparent: #8fb3ff1a;
