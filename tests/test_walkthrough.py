@@ -197,15 +197,23 @@ def test_next_animates_the_step(opened):
     assert errors == []
 
 
-def test_previous_shows_the_finished_step_at_once(opened):
-    """Taaksepäin ei animoida: teksti, klikkauksen luokka ja kehys ovat heti paikallaan."""
+def test_previous_starts_the_step_from_the_beginning(opened):
+    """Taaksepäin vaihe alkaa alusta ja animoituu kuten eteenpäin: teksti
+    kirjoittuu, nappi klikataan ja kehys tulee vasta lopussa."""
     page, errors = opened()
     page.click(".jw-next")
+    page.wait_for_function(
+        "document.querySelectorAll('.jw-terminal [data-type]')[1].textContent === 'git status'")
     page.click(".jw-prev")
     assert shown(page) == ["avaa-sivu"]
-    assert page.inner_text(".koe-teksti") == "Hei"
-    assert "jw-on" in page.get_attribute(".koe-nappi", "class")
-    assert page.locator(".jw-ring").count() == 1
+    assert current_tick(page) == 1
+    assert not page.is_visible(".jw-play")
+    assert page.inner_text(".koe-teksti") != "Hei"
+    assert "jw-on" not in page.get_attribute(".koe-nappi", "class")
+    assert page.locator(".jw-ring").count() == 0
+    page.wait_for_function("document.querySelector('.koe-teksti').textContent === 'Hei'")
+    page.wait_for_function("document.querySelector('.koe-nappi').classList.contains('jw-on')")
+    page.wait_for_selector(".jw-ring")
     assert errors == []
 
 

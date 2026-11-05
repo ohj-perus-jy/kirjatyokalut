@@ -30,10 +30,12 @@
  * tekstistä palatessa): vaihe on alussaan ja näyttämöllä on iso toistonappi,
  * josta animaatio lähtee; Toista vaihe uudelleen tulee näkyviin vasta, kun
  * animaatio on lähtenyt. Osoite seuraa vaihetta, mutta sivun uudelleenlataus
- * aloittaa ensimmäisestä vaiheesta. Seuraava-nappi, →-näppäin, pyyhkäisy vasemmalle,
- * luvun pilleri, aikajanan merkki ja linkki vaiheeseen (sisällysluettelo)
- * animoivat heti. Edellinen näyttää vaiheen heti valmiina, ja vähemmän
- * liikettä pyytäneelle (prefers-reduced-motion) vaihe on aina valmiina.
+ * aloittaa ensimmäisestä vaiheesta. Jokainen siirtyminen aloittaa vaiheen
+ * alusta ja animoi heti: Seuraava- ja Edellinen-napit, nuolinäppäimet,
+ * pyyhkäisy, luvun pilleri, aikajanan merkki ja linkki vaiheeseen
+ * (sisällysluettelo). Myös Edellinen animoi, koska vaiheen ääni lähtee aina
+ * alusta ja kuvan on kuljettava sen mukana; vähemmän liikettä pyytäneelle
+ * (prefers-reduced-motion) vaihe on aina valmiina.
  * Viimeisessä vaiheessa Seuraava-napin tilalla on Aloita esitys alusta, joka
  * animoi ensimmäisen vaiheen; →-näppäin ja pyyhkäisy eivät tee lopussa mitään.
  *
@@ -850,7 +852,7 @@
     }
 
     const next = () => { if (current < steps.length - 1) go(current + 1, true); };
-    const previous = () => { if (current > 0) go(current - 1, false); };
+    const previous = () => { if (current > 0) go(current - 1, true); };
 
     $(".jw-next").addEventListener("click", () => {
       if (current === steps.length - 1) go(0, true);
