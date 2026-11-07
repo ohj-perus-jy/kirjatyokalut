@@ -127,7 +127,8 @@ Ylläpito:
   jos 8001 on varattu (10-02). Asennuksen eteneminen `vaihe.sh`:lla (09-25).
 - Kaikkien kirjojen päivitys ja työkalujen kiinnitys kerralla (`skriptit/`,
   10-02).
-- Zensical 0.0.62 → 0.0.68; 0.0.68 vaatii Python 3.11:n.
+- Zensical 0.0.62 → 0.0.68; 0.0.68 vaatii Python 3.11:n. 0.0.74 siirsi
+  teeman `zensical-ui`-pakettiin, 0.1.0 (11-07) on beta.
 
 ## Avoinna koeputken ajoilta
 

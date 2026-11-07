@@ -1252,8 +1252,10 @@ def test_convert_icons_is_repeatable():
 def test_icon_glyphs_are_the_theme_files():
     """Glyfit ovat kopioita (convert.py ajetaan systeemin python3:lla), joten
     ero teemaan näkyy tässä."""
-    zensical = pytest.importorskip("zensical")
-    icons = Path(zensical.__file__).parent / "templates" / ".icons"
+    # Mallit ovat 0.0.74:stä alkaen zensical-ui-paketissa, joten polku kysytään
+    # Zensicalilta eikä johdeta sen omasta sijainnista.
+    config = pytest.importorskip("zensical.config")
+    icons = Path(config.get_builtin_theme_dir()) / ".icons"
     for icon in sorted(set(convert.ICON_MAP.values())):
         theme = icons / f"{icon}.svg"
         assert theme.is_file(), f"teemalla ei ole glyfiä {icon}"

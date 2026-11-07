@@ -43,6 +43,10 @@ Kun Zensicalin versio vaihtuu, tarkista käsin:
   `data-md-switching`-lippuun.
 - `mkdocs-pohja.yml`:n `markdown_extensions` on kopio oletuslistasta (ks.
   Ansat). Vertaa sitä uuteen `DEFAULT_MARKDOWN_EXTENSIONS`iin.
+- Teeman mallit, bundle ja kuvakkeet ovat 0.0.74:stä alkaen erillisessä
+  `zensical-ui`-paketissa (`zensical.config.get_builtin_theme_dir()`), eivät
+  `zensical/templates/`-hakemistossa. Zensicalin versio kiinnittää
+  `zensical-ui`:n version, joten `requirements.txt`:ssä on vain Zensical.
 - `search.css` käyttää teeman minifioituja luokkanimiä, ja `tooltips.js`
   jäljittelee teeman vihjettä. Muutokset tulevat esiin testeissä
   `test_search.py` ja `test_tooltips.py`.
